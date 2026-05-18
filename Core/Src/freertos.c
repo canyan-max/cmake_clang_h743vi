@@ -129,15 +129,6 @@ void StartDefaultTask(void *argument)
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-__weak void shellTask(void *param)
-{
-//    Shell *shell = (Shell *)param;
-    (void)param;
-    while(1)
-    {
-        vTaskDelay(50);
-    }
 
-}
 /* USER CODE END Application */
 

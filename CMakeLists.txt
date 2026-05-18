@@ -38,7 +38,7 @@ add_executable(${CMAKE_PROJECT_NAME})
 add_subdirectory(cmake/stm32cubemx)
 # Add user-defined sources of the cmakelists files in the project
 add_subdirectory(Middlewares/LetterShell) 
-add_subdirectory(bsp_drivers)
+# add_subdirectory(bsp_drivers)
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined library search paths
@@ -47,11 +47,13 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
+    Core/Src/cmds.c         
 )
 
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
+     Core/Inc    
 )
 
 # Add project symbols (macros)
@@ -68,7 +70,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 
     # Add user defined libraries
     letter_shell
-    bsp_drivers
+    # bsp_drivers
 )
 
 # generate .hex and .bin files from the .elf file after building the executable

@@ -93,11 +93,13 @@ SECTIONS
 
     KEEP (*(.init))
     KEEP (*(.fini))
+
     . = ALIGN(4);
-    
     _shell_command_start = .;
     KEEP (*(shellCommand))
-    _shell_command_end = .;
+    . = ALIGN(4);
+    _shell_command_end   = .;
+
 
     _etext = .;        /* define a global symbols at end of code */
   } >FLASH
