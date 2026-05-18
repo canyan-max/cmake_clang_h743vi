@@ -1,0 +1,9 @@
+# ---------- bsp drivers ----------
+set(BSP_DRIVERS_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/cmds.c
+)
+add_library(bsp_drivers STATIC ${BSP_DRIVERS_SRC})
+
+target_include_directories(bsp_drivers PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Inc)
+
+target_link_libraries(bsp_drivers PRIVATE letter_shell stm32cubemx)
