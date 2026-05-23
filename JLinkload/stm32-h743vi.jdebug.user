@@ -1,0 +1,33 @@
+
+
+Breakpoint=D:/program_CC/00_my_information/02_st/clang_st32_h743vi/Middlewares/SeggerHardFault/SEGGER_HardFaultHandler.c:235, State=BP_STATE_DISABLED
+Breakpoint=D:/program_CC/00_my_information/02_st/clang_st32_h743vi/Middlewares/SeggerHardFault/SEGGER_HardFaultHandler.c:254, State=BP_STATE_DISABLED
+OpenDocument="stm32h7xx_hal_uart.c", FilePath="D:/program_CC/00_my_information/02_st/clang_st32_h743vi/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_uart.c", Line=1286
+OpenDocument="SEGGER_HardFaultHandler.c", FilePath="D:/program_CC/00_my_information/02_st/clang_st32_h743vi/Middlewares/SeggerHardFault/SEGGER_HardFaultHandler.c", Line=155
+OpenDocument="HardFaultHandler.S", FilePath="D:/program_CC/00_my_information/02_st/clang_st32_h743vi/Middlewares/SeggerHardFault/HardFaultHandler.S", Line=163
+OpenDocument="main.c", FilePath="D:/program_CC/00_my_information/02_st/clang_st32_h743vi/Core/Src/main.c", Line=103
+OpenToolbar="Debug", Floating=0, x=0, y=0
+OpenWindow="Registers 1", DockArea=RIGHT, x=0, y=0, w=742, h=501, TabPos=1, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, FilteredItems=[], RefreshRate=1
+OpenWindow="Source Files", DockArea=LEFT, x=0, y=1, w=472, h=246, TabPos=0, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=1, w=742, h=386, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Break & Tracepoints", DockArea=LEFT, x=0, y=0, w=472, h=641, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VectorCatchIndexMask=254
+OpenWindow="Memory 1", DockArea=RIGHT, x=0, y=0, w=742, h=501, TabPos=2, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, EditorAddress=0x8005AA9
+OpenWindow="Watched Data 1", DockArea=RIGHT, x=0, y=0, w=742, h=501, TabPos=0, TopOfStack=1, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Functions", DockArea=LEFT, x=0, y=1, w=472, h=246, TabPos=1, TopOfStack=1, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Data Sampling", DockArea=BOTTOM, x=1, y=0, w=798, h=296, TabPos=0, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VisibleTab=0, UniformSampleSpacing=0
+OpenWindow="Timeline", DockArea=BOTTOM, x=1, y=0, w=798, h=296, TabPos=1, TopOfStack=1, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=1, DataPaneShown=1, PowerPaneShown=1, CodePaneShown=1, PinCursor="Cursor Movable", TimePerDiv="1 ns / Div", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=1, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="570;0", DataGraphShowNamesAtCursor=0, PowerGraphDrawAsPoints=0, PowerGraphLegendShown=1, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="571;0", CodeGraphLegendShown=1, CodeGraphLegendPosition="586;0"
+OpenWindow="Console", DockArea=BOTTOM, x=0, y=0, w=1637, h=315, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+SmartViewPlugin="", Page="", Toolbar="Hidden", Window="SmartView 1"
+TableHeader="Data Sampling Table", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time"], ColWidths=[100;100]
+TableHeader="Data Sampling Setup", SortCol="Expression", SortOrder="DESCENDING", VisibleCols=["Expression";"Type";"Value";"Min";"Max";"Average";"# Changes";"Min. Change";"Max. Change"], ColWidths=[438;100;100;100;100;100;110;126;754]
+TableHeader="Source Files", SortCol="File", SortOrder="ASCENDING", VisibleCols=["File";"Status"], ColWidths=[256;190]
+TableHeader="Watched Data 1", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Refresh"], ColWidths=[202;261;279]
+TableHeader="Registers 1", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Description"], ColWidths=[192;144;513]
+TableHeader="Functions", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Address";"Size";"#Insts";"Source"], ColWidths=[978;104;100;100;262]
+TableHeader="Power Sampling", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";"Ch 0"], ColWidths=[100;100;100]
+TableHeader="RegisterSelectionDialog", SortCol="None", SortOrder="ASCENDING", VisibleCols=[], ColWidths=[]
+TableHeader="TargetExceptionDialog", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Address";"Description"], ColWidths=[200;136;185;471]
+TableHeader="Vector Catches", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Vector Catch";"Description"], ColWidths=[50;300;500]
+TableHeader="Break & Tracepoints", SortCol="", SortOrder="ASCENDING", VisibleCols=["";"Type";"Location";"Extras"], ColWidths=[100;100;246;686]
+WatchedExpression="_Continue", DisplayFormat=DISPLAY_FORMAT_HEX, Window=Watched Data 1
+WatchedExpression="HardFaultRegs", DisplayFormat=DISPLAY_FORMAT_HEX, Window=Watched Data 1

@@ -38,6 +38,8 @@ add_executable(${CMAKE_PROJECT_NAME})
 add_subdirectory(cmake/stm32cubemx)
 # Add user-defined sources of the cmakelists files in the project
 add_subdirectory(Middlewares/LetterShell) 
+add_subdirectory(Middlewares/SeggerHardFault)
+add_subdirectory(st_bsp)
 add_subdirectory(bsp_drivers)
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
@@ -67,10 +69,11 @@ list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)
 # Add linked libraries
 target_link_libraries(${CMAKE_PROJECT_NAME}
     stm32cubemx
-
     # Add user defined libraries
     letter_shell
     bsp_drivers
+    st_bsp
+    SeggerHardFault
 )
 
 # generate .hex and .bin files from the .elf file after building the executable
