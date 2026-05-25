@@ -44,9 +44,8 @@
 
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>                                /* stdint lib header file */
-#include "main.h"                                    /* main lib header file */
 #include "shell.h"                                  /* shell lib header file */
-
+#include "bsp_handle_led.h"               /* bsp_handle_led lib header file. */
 /* define   -----------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/
@@ -59,8 +58,7 @@
 
 int led_tog2(void)
 {
-    HAL_GPIO_TogglePin(LED2_GPIO_Port,LED2_Pin);
-    HAL_GPIO_TogglePin(LED1_GPIO_Port,LED1_Pin);
+    led_handle_blink(LED_INDEX_2);
     return 1;
 }
 
@@ -73,7 +71,7 @@ SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC), \
 
 int led_tog1(void)
 {
-    HAL_GPIO_TogglePin(LED1_GPIO_Port,LED1_Pin);
+    led_handle_blink(LED_INDEX_1);
     return 1;
 }
 

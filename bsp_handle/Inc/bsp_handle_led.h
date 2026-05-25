@@ -62,8 +62,8 @@ typedef enum LED_HANDLE_STATE_T
 
 typedef enum LED_HANDLE_DEVINDEX_T
 {
-    LED_INDEX_0              = 0x00U,    // LED index 0.
-    LED_INDEX_1              = 0x01U,    // LED index 1.
+    LED_INDEX_1              = 0x00U,    // LED index 1.
+    LED_INDEX_2              = 0x01U,    // LED index 2.
     LED_INDEX_MAX
 }led_handle_devindex_t;
 
@@ -77,7 +77,7 @@ typedef struct LED_HANDLE_T
 
 /* functions ----------------------------------------------------------------*/
 /**
-  * @brief            :  [led_handle_instuct]
+  * @brief            :  [led_drv_register_handle]
   * @retval           :  [ LED_HANDLE_OK              = 0x00U,    // Operation is OK.
                            LED_HANDLE_ERROR           = 0x01U,    // Operation is error.
                            LED_HANDLE_BUSY            = 0x02U,    // Operation is busy.
@@ -86,8 +86,7 @@ typedef struct LED_HANDLE_T
   * @param[in]        :  [led_handle_t *p_handle , \
                           void * p_drv]
  */
-led_handle_state_t led_handle_instuct(led_handle_t *p_handle , \
-                                      void * p_drv);
+led_handle_state_t led_drv_register_handle(void * p_drv);
 /**
   * @brief            :  [led_handle_on]
   * @retval           :  [ LED_HANDLE_OK              = 0x00U,    // Operation is OK.

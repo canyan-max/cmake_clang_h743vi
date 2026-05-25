@@ -115,8 +115,7 @@ static led_driver_state_t st_led_on(led_driver_t*self)
 {
     /* led on code. */
     // check parameter. 
-    if(NULL == self || LED_DRIVER_NOT_INIT == self->is_init|| \
-       LED_DRIVER_NOT_INIT != self->is_init)
+    if(NULL == self || LED_DRIVER_NOT_INIT == self->is_init)
     {
         return LED_ERROR;
     }
@@ -145,8 +144,7 @@ static led_driver_state_t st_led_off(led_driver_t*self)
 {
     /* led off code. */
     // check parameter.
-    if(NULL == self || LED_DRIVER_NOT_INIT == self->is_init|| \
-       LED_DRIVER_NOT_INIT != self->is_init)
+    if(NULL == self || LED_DRIVER_NOT_INIT == self->is_init)
     {
         return LED_ERROR;
     }
@@ -175,8 +173,7 @@ static led_driver_state_t st_led_blink(led_driver_t*self)
 {
     /* led blink code. */   
     // check parameter.
-    if(NULL == self || LED_DRIVER_NOT_INIT == self->is_init || \
-       LED_DRIVER_NOT_INIT != self->is_init)
+    if(NULL == self || LED_DRIVER_NOT_INIT == self->is_init)
     {
         return LED_ERROR;
     }

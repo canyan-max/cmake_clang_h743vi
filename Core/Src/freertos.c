@@ -21,14 +21,16 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
-#include "FreeRTOS.h"
 #include "cmsis_os2.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdint.h>
 #include <stdio.h>
 #include "shell_port.h"
+#include "log.h"
 #include "bsp_driver_led.h"               /* bsp_driver_led lib header file. */
+#include "bsp_handle_led.h"               /* bsp_handle_led lib header file. */
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -60,7 +62,10 @@ const osThreadAttr_t defaultTask_attributes = {
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-
+extern const led_operation_t g_led1_ops;
+extern const led_operation_t g_led2_ops;
+static led_driver_t g_led1_drv;
+static led_driver_t g_led2_drv;
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -105,6 +110,16 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
+  led_driver_state_t ret = LED_OK;
+  led_handle_state_t h_ret = LED_HANDLE_OK;
+  ret = bsp_driver_led_init(&g_led1_drv, &g_led1_ops);
+  logInfo("bsp_driver_led_init ret = %d", ret);
+  ret = bsp_driver_led_init(&g_led2_drv, &g_led2_ops);
+  logInfo("bsp_driver_led_init ret = %d", ret);
+  h_ret = led_drv_register_handle(&g_led1_drv);
+  logInfo("led_drv_register_handle ret = %d", h_ret);
+  h_ret = led_drv_register_handle(&g_led2_drv);
+  logInfo("led_drv_register_handle ret = %d", h_ret);
   /* USER CODE END RTOS_EVENTS */
 
 }

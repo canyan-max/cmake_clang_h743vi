@@ -51,6 +51,7 @@
 #define LED_HANDLE_NOT_INIT           (0x00U)
 #define LED_DECLARE_DRV(drv, index) \
             led_driver_t *drv = (led_driver_t *)(g_led_handle.p_led_drv[index])
+
 #define LED_DRV_IS_NULL(index) \
     (NULL == g_led_handle.p_led_drv[index])
 
@@ -150,7 +151,7 @@ led_handle_state_t led_handle_blink(led_handle_devindex_t index)
     return LED_HANDLE_OK;
 }
 /**
-  * @brief            :  [led_handle_instuct]
+  * @brief            :  [led_drv_register_handle]
   * @retval           :  [ LED_HANDLE_OK              = 0x00U,    // Operation is OK.
                            LED_HANDLE_ERROR           = 0x01U,    // Operation is error.
                            LED_HANDLE_BUSY            = 0x02U,    // Operation is busy.
@@ -159,8 +160,7 @@ led_handle_state_t led_handle_blink(led_handle_devindex_t index)
   * @param[in]        :  [led_handle_t *p_handle , \
                           void * p_drv]
  */
-led_handle_state_t led_handle_instuct(led_handle_t *p_handle , \
-                                      void * p_drv)
+led_handle_state_t led_drv_register_handle(void * p_drv)
 {
 
     if( NULL == p_drv || g_led_drv_count >= LED_INDEX_MAX )
@@ -173,7 +173,7 @@ led_handle_state_t led_handle_instuct(led_handle_t *p_handle , \
         led_handle_init();
     }
 
-    p_handle->p_led_drv[g_led_drv_count] = p_drv;
+    g_led_handle.p_led_drv[g_led_drv_count] = p_drv;
     g_led_drv_count+=1;
     return LED_HANDLE_OK;
 }
