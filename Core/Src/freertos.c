@@ -139,6 +139,7 @@ void StartDefaultTask(void *argument)
   for(;;)
   {
     // printf("Hello World!\r\n");
+    logInfo("Hello World!");
     osDelay(1000);
   }
   /* USER CODE END StartDefaultTask */
