@@ -43,7 +43,7 @@
  */
 
 /* Includes -----------------------------------------------------------------*/
-#include <stddef.h>                               /* stdint lib header file. */
+#include <stddef.h>                               /* stddef lib header file. */
 #include "bsp_driver_led.h"               /* bsp_driver_led lib header file. */
 /* define   -----------------------------------------------------------------*/
 
