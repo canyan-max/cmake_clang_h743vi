@@ -46,6 +46,7 @@
 #include <stddef.h>                                /* stdint lib header file */
 #include "shell.h"                                  /* shell lib header file */
 #include "bsp_handle_led.h"               /* bsp_handle_led lib header file. */
+#include "i2c.h"
 /* define   -----------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/
@@ -55,32 +56,46 @@
 /* Private  functions  ------------------------------------------------------*/
 
 /* Exported functions -------------------------------------------------------*/
-
-int led_tog2(void)
+int write_i2c1(void)
 {
-    led_handle_blink(LED_INDEX_2);
-    return 1;
+
+  uint8_t i = 0x55;
+  uint32_t ret = HAL_I2C_Mem_Write(&hi2c1, \
+                             0xA0, \
+                             0x00,\
+                             I2C_MEMADD_SIZE_8BIT,\
+                             &i, 1,\
+                             1000);
+  return ret;
 }
 
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC), \
-                 tog_led2, \
-                 led_tog2, \
-                 led_tog);
+                 write_i2c1, \
+                 write_i2c1, \
+                 write_i2c1);
 
 
 
-int led_tog1(void)
+int read_i2c1(void)
 {
-    led_handle_blink(LED_INDEX_1);
-    return 1;
+  uint8_t i = 0xff; 
+  if(HAL_I2C_Mem_Read(&hi2c1, \
+                             0xA1, \
+                             0x00,\
+                             I2C_MEMADD_SIZE_8BIT,\
+                             &i, 1,\
+                             1000) != HAL_OK)
+  {
+    return -1;
+  }
+  return i;
 }
 
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC), \
-                 tog_led1, \
-                 led_tog1, \
-                 led_tog1);
+                 read_i2c1, \
+                 read_i2c1, \
+                 read_i2c1);
 
-/* end of file --------------------------------------------------------------*/
 
 
 

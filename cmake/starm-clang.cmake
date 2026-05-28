@@ -55,11 +55,11 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-parentheses-equality")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-reserved-identifier")
 
 
-set(CMAKE_C_FLAGS_DEBUG "-Og -g3")
-# set(CMAKE_C_FLAGS_DEBUG "-O0 -g3")
+# set(CMAKE_C_FLAGS_DEBUG "-Og -g3")
+set(CMAKE_C_FLAGS_DEBUG "-O0 -g3")
 set(CMAKE_C_FLAGS_RELEASE "-Oz -g0")
-set(CMAKE_CXX_FLAGS_DEBUG "-Og -g3")
-# set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3")
+# set(CMAKE_CXX_FLAGS_DEBUG "-Og -g3")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3")
 set(CMAKE_CXX_FLAGS_RELEASE "-Oz -g0")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -fno-rtti -fno-exceptions -fno-threadsafe-statics")

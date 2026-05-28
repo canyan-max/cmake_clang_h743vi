@@ -21,6 +21,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
+#include "FreeRTOS.h"
 #include "cmsis_os2.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -140,7 +141,7 @@ void StartDefaultTask(void *argument)
   {
     // printf("Hello World!\r\n");
     logInfo("Hello World!");
-    osDelay(1000);
+    osDelay(10000);
   }
   /* USER CODE END StartDefaultTask */
 }

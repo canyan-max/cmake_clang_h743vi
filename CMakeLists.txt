@@ -38,7 +38,7 @@ add_executable(${CMAKE_PROJECT_NAME})
 add_subdirectory(cmake/stm32cubemx)
 # Add user-defined sources of the cmakelists files in the project
 add_subdirectory(Middlewares/LetterShell) 
-add_subdirectory(Middlewares/SeggerHardFault)
+# add_subdirectory(Middlewares/SeggerHardFault)
 add_subdirectory(st_bsp)
 add_subdirectory(bsp_drivers)
 add_subdirectory(bsp_handle)
@@ -56,7 +56,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
-     Core/Inc    
+     Core/Inc
 )
 
 # Add project symbols (macros)
@@ -74,7 +74,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     letter_shell
     bsp_drivers
     st_bsp
-    SeggerHardFault
+    # SeggerHardFault
     bsp_handle
 )
 
