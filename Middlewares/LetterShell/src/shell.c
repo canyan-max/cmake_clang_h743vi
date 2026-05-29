@@ -1755,10 +1755,13 @@ void shellHelp(int argc, char *argv[])
         shellWriteCommandHelp(shell, argv[1]);
     }
 }
+// SHELL_EXPORT_CMD(
+// SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN)|SHELL_CMD_DISABLE_RETURN,
+// help, shellHelp, show command info\r\nhelp [cmd]);
+
 SHELL_EXPORT_CMD(
 SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_MAIN)|SHELL_CMD_DISABLE_RETURN,
-help, shellHelp, show command info\r\nhelp [cmd]);
-
+ls, shellHelp, show command info\r\nhelp [cmd]);
 /**
  * @brief shell 输入处理
  * 

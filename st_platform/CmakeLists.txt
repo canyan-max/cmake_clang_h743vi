@@ -1,0 +1,8 @@
+# ---------- st_platform  ----------
+set(ST_PLATFORM_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/st_led.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/st_iic.c
+)
+add_library(st_platform STATIC ${ST_PLATFORM_SRC})
+target_include_directories(st_platform PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Inc)
+target_link_libraries(st_platform PRIVATE bsp_drivers stm32cubemx)

@@ -8,6 +8,11 @@
             "binaryDir": "${sourceDir}/build/${presetName}",
 		    "toolchainFile": "${sourceDir}/cmake/starm-clang.cmake",
             "cacheVariables": {
+                "CMAKE_C_FLAGS_DEBUG": "-O0 -g3",
+                "CMAKE_C_FLAGS_RELEASE": "-Oz -g0",
+                "CMAKE_CXX_FLAGS_DEBUG": "-O0 -g3",
+                "CMAKE_CXX_FLAGS_RELEASE": "-Oz -g0",
+                "TARGET_FLAGS": "--target=arm-none-eabi -mcpu=cortex-m7 -mfpu=fpv5-d16 -mfloat-abi=hard"
             }
         },
         {

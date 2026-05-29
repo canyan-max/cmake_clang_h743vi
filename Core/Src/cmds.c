@@ -46,7 +46,8 @@
 #include <stddef.h>                                /* stdint lib header file */
 #include "shell.h"                                  /* shell lib header file */
 #include "bsp_handle_led.h"               /* bsp_handle_led lib header file. */
-#include "i2c.h"
+#include "bsp_driver_at24.h"               /* bsp_driver_at24 lib header file. */
+// #include "i2c.h"
 /* define   -----------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/
@@ -56,16 +57,14 @@
 /* Private  functions  ------------------------------------------------------*/
 
 /* Exported functions -------------------------------------------------------*/
-int write_i2c1(void)
+extern at24_driver_t g_at24c02_drv; 
+int write_i2c1(uint8_t w_code)
 {
 
-  uint8_t i = 0x55;
-  uint32_t ret = HAL_I2C_Mem_Write(&hi2c1, \
-                             0xA0, \
-                             0x00,\
-                             I2C_MEMADD_SIZE_8BIT,\
-                             &i, 1,\
-                             1000);
+  uint8_t i = w_code;
+  at24_state_t ret = AT24_OK;
+  ret = \
+  g_at24c02_drv.pf_write_byte(&g_at24c02_drv, 0x00, i, 5);
   return ret;
 }
 
@@ -78,15 +77,16 @@ SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC), \
 
 int read_i2c1(void)
 {
-  uint8_t i = 0xff; 
-  if(HAL_I2C_Mem_Read(&hi2c1, \
-                             0xA1, \
-                             0x00,\
-                             I2C_MEMADD_SIZE_8BIT,\
-                             &i, 1,\
-                             1000) != HAL_OK)
+  uint8_t i = 0x00;
+  at24_state_t ret = AT24_OK;
+  ret = g_at24c02_drv.pf_read_bytes(&g_at24c02_drv, \
+                            0x00, \
+                            &i, \
+                            1, \
+                            5);
+  if(AT24_OK != ret)
   {
-    return -1;
+      return ret;
   }
   return i;
 }
@@ -95,6 +95,16 @@ SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC), \
                  read_i2c1, \
                  read_i2c1, \
                  read_i2c1);
+
+int sys_restart(void)
+{
+    NVIC_SystemReset();
+}
+
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC), \
+                 sys_restart, \
+                 sys_restart, \
+                 sys_restart);
 
 
 
