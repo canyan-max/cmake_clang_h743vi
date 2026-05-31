@@ -55,8 +55,7 @@
 typedef struct KFIFO_T
 {
     uint8_t*    buffer;
-    uint32_t    size;  
-    uint32_t    mask;  
+    uint32_t    size;
     uint32_t    in;    
     uint32_t    out;   
 }kfifo_t;
@@ -110,7 +109,7 @@ static inline uint32_t kfifo_avail(const kfifo_t *fifo)
  */
 static inline uint32_t kfifo_contig_write_space(const kfifo_t *fifo)
 {
-    return fifo->size - (fifo->in & fifo->mask);
+    return fifo->size - (fifo->in & (fifo->size - 1));
 }
 /**
  * @brief            :  [kfifo_contig_read_data]
@@ -119,7 +118,7 @@ static inline uint32_t kfifo_contig_write_space(const kfifo_t *fifo)
  */
 static inline uint32_t kfifo_contig_read_data(const kfifo_t *fifo)
 {
-    return fifo->size - (fifo->out & fifo->mask);
+    return fifo->size - (fifo->out & (fifo->size - 1));
 }
 /**
  * @brief            :  [min_u32]
