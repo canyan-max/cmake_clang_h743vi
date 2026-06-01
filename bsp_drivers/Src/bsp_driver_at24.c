@@ -68,19 +68,33 @@
                                         (p_data), \
                                         (size), \
                                         (timeout)))
+
+
 #define AT24_DEBUG_LOG
 #ifdef AT24_DEBUG_LOG
 #include "log.h"
 #define AT_LOG(fmt, ...)  \
         logFormat(INFO_TEXT, LOG_INFO, fmt, ##__VA_ARGS__)
 #else 
-
+#define AT_LOG(fmt, ...)  \
+        do{ } while(0)
 #endif 
 /* typedef ------------------------------------------------------------------*/
 
 /* variables ----------------------------------------------------------------*/
 
 /* Private  functions  ------------------------------------------------------*/
+/**
+  * @brief            :  [write_page]
+  * @retval           :  [      AT24_OK        = 0x00U,
+                                AT24_ERROR     = 0x01U,
+                                AT24_BUSY      = 0x02U,
+                                AT24_TIMEOUT   = 0x03U,
+                                AT24_PARAM_ERR = 0x04U,]
+  * @param[in]        :  [struct AT24_DRIVER_T *p_drv, uint16_t mem_adr, \
+                          uint8_t *p_data, uint16_t size, \
+                          uint32_t timeout]
+ */
 static at24_state_t write_page(struct AT24_DRIVER_T *p_drv, uint16_t mem_adr, \
                                 uint8_t *p_data, uint16_t size, \
                                 uint32_t timeout)
@@ -103,7 +117,17 @@ static at24_state_t write_page(struct AT24_DRIVER_T *p_drv, uint16_t mem_adr, \
     }
     return AT24_OK;
 }
-
+/**
+  * @brief            :  [read_page]
+  * @retval           :  [      AT24_OK        = 0x00U,
+                                AT24_ERROR     = 0x01U,
+                                AT24_BUSY      = 0x02U,
+                                AT24_TIMEOUT   = 0x03U,
+                                AT24_PARAM_ERR = 0x04U,]
+  * @param[in]        :  [     struct AT24_DRIVER_T *p_drv, uint16_t mem_adr, \
+                               uint8_t *p_data, uint16_t size, \
+                               uint32_t timeout]
+ */
 static at24_state_t read_page (struct AT24_DRIVER_T *p_drv, uint16_t mem_adr, \
                                uint8_t *p_data, uint16_t size, \
                                uint32_t timeout)
@@ -125,7 +149,18 @@ static at24_state_t read_page (struct AT24_DRIVER_T *p_drv, uint16_t mem_adr, \
     }
     return AT24_OK;
 }
-
+/**
+  * @brief            :  [write_byte]
+  * @retval           :  [      AT24_OK        = 0x00U,
+                                AT24_ERROR     = 0x01U,
+                                AT24_BUSY      = 0x02U,
+                                AT24_TIMEOUT   = 0x03U,
+                                AT24_PARAM_ERR = 0x04U,]
+  * @param[in]        :  [    struct AT24_DRIVER_T *p_drv, \
+                              uint16_t mem_adr, \
+                              uint8_t  data, \
+                              uint32_t timeout]
+ */
 static at24_state_t write_byte(struct AT24_DRIVER_T *p_drv, \
                               uint16_t mem_adr, \
                               uint8_t  data, \
@@ -148,28 +183,7 @@ static at24_state_t write_byte(struct AT24_DRIVER_T *p_drv, \
     }
     return AT24_OK;
 } 
-// static at24_state_t read_byte(struct AT24_DRIVER_T *p_drv, \
-//                               uint16_t mem_adr, \
-//                               uint8_t *p_data, \
-//                               uint32_t timeout)
-// {
-//     at24_state_t ret = AT24_OK;
-//     if(DRV_IS_NULL(p_drv) || DRV_IS_NOT_INIT(p_drv))
-//     {
-//         return AT24_ERROR;
-//     }
-//     if(mem_adr >= p_drv->max_byte_addr || \
-//         (mem_adr + 1) > p_drv->max_byte_addr)
-//     {
-//         return AT24_PARAM_ERR;
-//     }
-//     ret = AT24_MEM_READ(p_drv, mem_adr, p_data, 1, timeout);
-//     if(AT24_OK != ret)
-//     {
-//         return ret;
-//     }
-//     return AT24_OK;
-// }                                
+                               
 /* Exported functions -------------------------------------------------------*/
 /**
  * @brief            :  [at24_driver_instruct 
