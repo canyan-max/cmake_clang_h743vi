@@ -71,14 +71,14 @@
 
 
 #define AT24_DEBUG_LOG
-#ifdef AT24_DEBUG_LOG
+#ifdef  AT24_DEBUG_LOG
 #include "log.h"
 #define AT_LOG(fmt, ...)  \
         logFormat(INFO_TEXT, LOG_INFO, fmt, ##__VA_ARGS__)
 #else 
 #define AT_LOG(fmt, ...)  \
         do{ } while(0)
-#endif 
+#endif // end of AT24_DEBUG_LOG
 /* typedef ------------------------------------------------------------------*/
 
 /* variables ----------------------------------------------------------------*/

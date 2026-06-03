@@ -1,6 +1,7 @@
 # ---------- bsp handle ----------
 set(BSP_HANDLE_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_handle_led.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_handle_at24cxx.c
 )
 add_library(bsp_handle STATIC ${BSP_HANDLE_SRC})
 
