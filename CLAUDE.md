@@ -1,6 +1,15 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code when working with code in this repository.
+
+## Current Work
+
+> **当前正在做的事，做完划掉，新的加进来。**
+
+- [ ] （示例）给 AT24C02 驱动加上写保护检查
+- [ ] （示例）移植 SPI Flash 驱动
+
+---
 
 ## Build & Flash
 
@@ -18,7 +27,7 @@ cmake --build build/Debug -j 16
 - **Compiler**: starm-clang (ST's LLVM/Clang for ARM embedded), target `arm-none-eabi -mcpu=cortex-m7 -mfpu=fpv5-d16 -mfloat-abi=hard`
 - **C library**: picolibc
 - **Generator**: Ninja
-- Alternaive GCC toolchain exists at `cmake/gcc-arm-none-eabi.cmake` but presets use starm-clang.
+- Alternative GCC toolchain exists at `cmake/gcc-arm-none-eabi.cmake` but presets use starm-clang.
 
 ## Hardware
 
@@ -48,3 +57,28 @@ Application (Core/Src/main.c, freertos.c, cmds.c)
 - **Kfifo** (`Middlewares/Kfifo/`): size must be a power of 2. Single-producer/single-consumer design — not internally thread-safe, add external mutex for multi-task use.
 - **CubeMX re-generation**: Files under `Core/`, `Drivers/`, and `cmake/stm32cubemx/` are CubeMX-managed. User code goes between `USER CODE BEGIN/END` comments in `Core/Src/` files, or better, in `bsp_drivers/`, `bsp_handle/`, `st_platform/`, or `Middlewares/`.
 - **Shell commands**: define in any `.c` file with `SHELL_EXPORT_CMD`; no need to register manually.
+
+## Coding Conventions
+
+- **C standard**: C11
+- **Naming**: types `xxx_t`, functions `module_action`, macros `UPPER_CASE`, files `driver_<peripheral>.c/.h`
+- **Include order**: own header → bsp → middleware → HAL → standard library
+- **Error handling**: return 0 on success, negative `int32_t` on error
+
+## Common Tasks
+
+### Add a shell command
+1. Write handler: `static void my_cmd(int argc, char *argv[])`
+2. Register: `SHELL_EXPORT_CMD(mycmd, "Description", my_cmd)`
+3. Rebuild — done
+
+### Add a new peripheral driver
+1. Create `bsp_drivers/driver_<name>.c` and `.h` — implement ops (init/read/write)
+2. Wrap in `bsp_handle/` if it needs a FreeRTOS task
+3. Add shell commands for testing in `Core/Src/cmds.c`
+4. Add source files to `CMakeLists.txt`
+
+### Debug a HardFault
+1. Check task stack overflow (increase `configMINIMAL_STACK_SIZE` or task stack depth)
+2. Check for float usage in tasks (FPU disabled — float operations will fault)
+3. Check kfifo buffer sizes are power-of-2
