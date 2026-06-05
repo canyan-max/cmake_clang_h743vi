@@ -46,7 +46,7 @@
 #include <stddef.h>                                /* stdint lib header file */
 #include "shell.h"                                  /* shell lib header file */
 #include "bsp_handle_led.h"               /* bsp_handle_led lib header file. */
-#include "bsp_driver_at24.h"               /* bsp_driver_at24 lib header file. */
+#include "bsp_drv_at24.h"               /* bsp_driver_at24 lib header file. */
 // #include "i2c.h"
 /* define   -----------------------------------------------------------------*/
 

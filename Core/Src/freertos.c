@@ -30,9 +30,9 @@
 #include "shell_port.h"
 #include "log.h"
 #include "kfifo.h"                                 /* kfifo lib header file. */
-#include "bsp_driver_led.h"               /* bsp_driver_led lib header file. */
+#include "bsp_drv_led.h"               /* bsp_driver_led lib header file. */
 #include "bsp_handle_led.h"               /* bsp_handle_led lib header file. */
-#include "bsp_driver_at24.h"             /* bsp_driver_at24 lib header file. */
+#include "bsp_drv_at24.h"             /* bsp_driver_at24 lib header file. */
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/

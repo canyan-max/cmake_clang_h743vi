@@ -19,38 +19,21 @@
  * 
  *@version            :   V1.0 
  *@note               :   1 tab == 4 spaces!
- *                        global variable format 
- *                        uint8_t  g_xxxx_xxx = 0U;
- *                        uint8_t *p_xxxx_xxx = 0U;
- *                        
- *                        enumeration format 
- *                        typedef enum XXX_XXXX_T
- *                        {
- *                          XXXXX_XXXX              = 0x00U,
- *                        }xxxx_xxxx_t;
- *
- *                        struct format 
- *                        typedef struct XXXXXX_T
- *                        {
- *                          uint8_t xxxx_xxxx;
- *                          uint8_t (*pf_iic_init)(void*);
- *                        }xxxxx_t;
- *
- *                        macro definition format
- *                        #define XXXX_XXXX
- *                        #define XXXX_XXXX         (0U)
  ******************************************************************************
  */
 
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>                               /* stdint lib header file. */
-#include "bsp_driver_at24.h"             /* bsp_driver_at24 lib header file. */
+#include "bsp_drv_at24.h"                   /* bsp_drv_at24 lib header file. */
 
 /* define   -----------------------------------------------------------------*/
 #define AT24_DRIVER_IS_INITED      (0x01U)
 #define AT24_DRIVER_NOT_INITED     (0x00U)
+
 #define DRV_IS_NULL(p_drv)         (NULL == p_drv)
-#define DRV_IS_NOT_INIT(p_drv)     (AT24_DRIVER_NOT_INITED == p_drv->is_inited)
+
+#define DRV_IS_NOT_INIT(p_drv)     \
+        (AT24_DRIVER_NOT_INITED == p_drv->is_inited)
 
 #define AT24_MEM_WRITE(p_drv, mem_adr, p_data, size, timeout) \
         ((p_drv)->iic_ops->pf_mem_write((p_drv)->iic_ops->p_iic_handle, \
@@ -91,11 +74,12 @@
                                 AT24_BUSY      = 0x02U,
                                 AT24_TIMEOUT   = 0x03U,
                                 AT24_PARAM_ERR = 0x04U,]
-  * @param[in]        :  [struct AT24_DRIVER_T *p_drv, uint16_t mem_adr, \
+  * @param[in]        :  [struct AT24_DRIVER_T *p_drv, 
+                          uint16_t mem_adr, \
                           uint8_t *p_data, uint16_t size, \
                           uint32_t timeout]
  */
-static at24_state_t write_page(struct AT24_DRIVER_T *p_drv, uint16_t mem_adr, \
+static at24_state_t write_page(at24_driver_t *p_drv, uint16_t mem_adr, \
                                 uint8_t *p_data, uint16_t size, \
                                 uint32_t timeout)
 {
@@ -128,7 +112,7 @@ static at24_state_t write_page(struct AT24_DRIVER_T *p_drv, uint16_t mem_adr, \
                                uint8_t *p_data, uint16_t size, \
                                uint32_t timeout]
  */
-static at24_state_t read_page (struct AT24_DRIVER_T *p_drv, uint16_t mem_adr, \
+static at24_state_t read_page (at24_driver_t *p_drv, uint16_t mem_adr, \
                                uint8_t *p_data, uint16_t size, \
                                uint32_t timeout)
 {
@@ -161,7 +145,7 @@ static at24_state_t read_page (struct AT24_DRIVER_T *p_drv, uint16_t mem_adr, \
                               uint8_t  data, \
                               uint32_t timeout]
  */
-static at24_state_t write_byte(struct AT24_DRIVER_T *p_drv, \
+static at24_state_t write_byte(at24_driver_t *p_drv, \
                               uint16_t mem_adr, \
                               uint8_t  data, \
                               uint32_t timeout)

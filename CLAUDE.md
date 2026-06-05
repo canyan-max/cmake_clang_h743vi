@@ -1,84 +1,130 @@
-# CLAUDE.md
+# CLAUDE.md – STM32H743 + FreeRTOS + starm-clang 嵌入式项目
 
-This file provides guidance to Claude Code when working with code in this repository.
+> 本文件融合了通用 LLM 编码行为准则（第 0 章）与嵌入式项目特定规范（第 1-5 章）。
 
-## Current Work
+## 0. 核心行为准则（针对 LLM 的通用要求）
 
-> **当前正在做的事，做完划掉，新的加进来。**
+以下准则适用于所有代码生成与修改任务，优先级高于具体编码规范。
 
-- [ ] （示例）给 AT24C02 驱动加上写保护检查
-- [ ] （示例）移植 SPI Flash 驱动
+**Tradeoff:** 这些准则偏向谨慎而非速度。对于琐碎任务，可自行判断。
+
+### 0.1 先思后写（Think Before Coding）
+
+**不假设、不隐藏困惑、暴露权衡。**
+
+实现之前：
+- 明确列出你的假设。如果不确定，**必须问**，不要猜。
+- 如果存在多种合理解释（如轮询 vs 中断、阻塞 vs 非阻塞），全部列出并说明选择理由。
+- 如果有更简单的方案，直接提出。合理时推翻原要求。
+- 如果某处不清楚，停下来。指出哪里混乱，然后提问。
+
+### 0.2 简洁优先（Simplicity First）
+
+**最小代码解决问题，不写投机性代码。**
+
+- 不实现超出要求的功能。
+- 不为单次使用的代码创建抽象层。
+- 不添加未要求的“灵活性”或“可配置性”。
+- **嵌入式例外**：数组越界检查、超时机制、硬件防御性检查虽然“看似多余”，但必须保留（参见第 3.3 节防御性编程）。
+
+自问：“资深工程师会觉得这个过度复杂吗？” 如果是，简化。
+
+### 0.3 手术式修改（Surgical Changes）
+
+**只改必须改的，只清理自己制造的垃圾。**
+
+修改已有代码时：
+- 不“顺便改进”相邻代码、注释或格式。
+- 不重构没坏的东西。
+- 匹配现有风格（即使你不喜欢）。
+- 如果发现无关的死代码，**仅提及**，不要删除。
+
+当你的改动产生孤儿代码时：
+- 删除**因你改动而变得未使用**的导入/变量/函数。
+- 不要删除之前就存在的死代码，除非特别要求。
+
+检验标准：每一行改动都应直接追溯到用户的需求。
+
+### 0.4 目标驱动执行（Goal-Driven Execution）
+
+**定义成功标准，循环验证直到通过。**
+
+将任务转化为可验证的目标：
+- “添加校验” → “编写针对无效输入的测试，然后让测试通过”
+- “修复 bug” → “编写复现 bug 的测试，然后让测试通过”
+- “重构 X” → “确保重构前后测试全部通过”
+
+对于多步骤任务，先给出简要计划（在实现前）：
+
+强成功标准让你可以独立迭代。弱标准（“让它工作”）需要不断澄清。
 
 ---
 
-## Build & Flash
+## 1. 项目环境
 
-```bash
-# Build (Debug)
-./compile.sh
-# Or manually:
-cmake --preset Debug -B build/Debug -G Ninja
-cmake --build build/Debug -j 16
+| 项目     | 值                                                    |
+| -------- | ----------------------------------------------------- |
+| MCU      | STM32H743VIT6 (Cortex-M7, 400MHz, FPU, 双 Bank Flash) |
+| 工具链   | starm-clang (基于 LLVM/clang) + CMake                 |
+| RTOS     | FreeRTOS Kernel V10.6.2                               |
+| 调试器   | J-Link (JLinkGDBServer / JLinkExe)                    |
+| 构建系统 | CMake (Debug/Release 分离)                            |
 
-# Flash via J-Link
-./flash.sh
-```
+## 2. 关键约束（内存/存储）
 
-- **Compiler**: starm-clang (ST's LLVM/Clang for ARM embedded), target `arm-none-eabi -mcpu=cortex-m7 -mfpu=fpv5-d16 -mfloat-abi=hard`
-- **C library**: picolibc
-- **Generator**: Ninja
-- Alternative GCC toolchain exists at `cmake/gcc-arm-none-eabi.cmake` but presets use starm-clang.
+请参考项目链接脚本 `STM32H743XX_FLASH.ld` 中的实际值。典型配置如下：
 
-## Hardware
+| 区域  | 起始地址   | 大小  | 说明                          |
+| ----- | ---------- | ----- | ----------------------------- |
+| Flash | 0x08000000 | 2048K | 代码 + 只读数据               |
+| ITCM  | 0x00000000 | 64KB  | 紧耦合指令内存（可选）        |
+| DTCM  | 0x20000000 | 128KB | 紧耦合数据内存（关键变量/栈） |
+| SRAM1 | 0x24000000 | 320KB | 通用 AXI SRAM                 |
+| SRAM2 | 0x24050000 | 32KB  | AXI SRAM 备用                 |
+| SRAM3 | 0x24058000 | 32KB  | AXI SRAM 备用                 |
 
-- **MCU**: STM32H743VIT6 (Cortex-M7, 480 MHz, 2048 KB Flash)
-- **Console UART**: LPUART1 (PA9/PA10, 115200 baud) — used by LetterShell
-- **Other peripherals**: I2C1 (PB8/PB9), SPI4 (PE11/PE12/PE14), TIM17 (HAL timebase), GPIO LEDs on PE9/PE10
-- **Debug probe**: J-Link (SWD, 4000 kHz)
+实际值以 `STM32H743XX_FLASH.ld` 为准。  
+如果链接脚本中定义了 `_estack`、`_Min_Stack_Size`，请参考。  
+默认 FreeRTOS 堆放在 `heap_4.c` 中通过 `configTOTAL_HEAP_SIZE` 定义，通常放在 DTCM 或 SRAM1。
 
-## Architecture
+### 运行时约束
 
-```
-Application (Core/Src/main.c, freertos.c, cmds.c)
-  └─ bsp_handle/        — higher-level driver wrappers
-       └─ bsp_drivers/   — driver objects (LED, AT24C02 EEPROM)
-            └─ st_platform/ — platform abstraction over HAL
-                 └─ Drivers/ — STM32 HAL + CMSIS
-```
+- 栈大小：每个任务建议 1024 字 (4KB)，中断栈使用 `configISR_STACK_SIZE_WORDS`
+- 禁止动态内存分配（`pvPortMalloc` 除外，但必须经过 FreeRTOS 堆，且注意碎片）
+- 关键时序：UART 中断响应 < 10us；控制环路周期 1kHz
 
-**Driver pattern**: Drivers use C function-pointer tables (vtables). `led_driver_t` and `at24_driver_t` each contain an `ops` struct with `init/deinit/read/write` function pointers. Upper layers depend on the interface, not the implementation.
+## 3. 编码规范
 
-**Shell**: LetterShell runs over LPUART1. Commands are registered via `SHELL_EXPORT_CMD(cmd_name, description, function_ptr)` macro in any `.c` file — the linker collects them into the `.shellCommand` section. See `Core/Src/cmds.c` for examples.
+### 3.1 类型与宽度
 
-**FreeRTOS**: V10.6.2 with CMSIS-RTOS V2 wrapper. Uses the Cortex-M4F port (`ARM_CM4F`), heap_4.c, TIM17 as HAL timebase (SysTick reserved for RTOS). **FPU is disabled** in FreeRTOS config (`configENABLE_FPU 0`) — no lazy FPU context saving.
+- 必须包含 `<stdint.h>`，使用 `uint8_t`、`uint32_t` 等。
+- 常量后缀 `U`（如 `0U`），禁止魔术数字。
+- 禁止使用 `int`、`long`（除非与 HAL 库交互时显式转换）。
 
-## Key Rules
+### 3.2 命名规则
 
-- **Kfifo** (`Middlewares/Kfifo/`): size must be a power of 2. Single-producer/single-consumer design — not internally thread-safe, add external mutex for multi-task use.
-- **CubeMX re-generation**: Files under `Core/`, `Drivers/`, and `cmake/stm32cubemx/` are CubeMX-managed. User code goes between `USER CODE BEGIN/END` comments in `Core/Src/` files, or better, in `bsp_drivers/`, `bsp_handle/`, `st_platform/`, or `Middlewares/`.
-- **Shell commands**: define in any `.c` file with `SHELL_EXPORT_CMD`; no need to register manually.
+- 全局变量：`g_` 前缀（如 `g_led_handle`）
+- 静态全局变量：无前缀，文件作用域
+- 类型名：`_t` 后缀，结构体/枚举名全大写或 PascalCase（如 `led_handle_t`）
+- 宏定义：全大写 + 下划线
+- 函数名：小写 + 下划线（如 `led_handle_on`）
 
-## Coding Conventions
+### 3.3 防御性编程
 
-- **C standard**: C11
-- **Naming**: types `xxx_t`, functions `module_action`, macros `UPPER_CASE`, files `driver_<peripheral>.c/.h`
-- **Include order**: own header → bsp → middleware → HAL → standard library
-- **Error handling**: return 0 on success, negative `int32_t` on error
+- 函数入口检查参数：`NULL`、范围、初始化标志。
+- 数组/缓冲区访问必须带上界检查。
+- 循环等待硬件标志必须有超时退出机制。
+- 不使用 `malloc`/`free`（使用静态分配或 FreeRTOS 堆 `pvPortMalloc` 需明确注释）。
+- 所有 `switch` 必须有 `default`。
 
-## Common Tasks
+### 3.4 注释与文档
 
-### Add a shell command
-1. Write handler: `static void my_cmd(int argc, char *argv[])`
-2. Register: `SHELL_EXPORT_CMD(mycmd, "Description", my_cmd)`
-3. Rebuild — done
+函数注释风格如下：
 
-### Add a new peripheral driver
-1. Create `bsp_drivers/driver_<name>.c` and `.h` — implement ops (init/read/write)
-2. Wrap in `bsp_handle/` if it needs a FreeRTOS task
-3. Add shell commands for testing in `Core/Src/cmds.c`
-4. Add source files to `CMakeLists.txt`
-
-### Debug a HardFault
-1. Check task stack overflow (increase `configMINIMAL_STACK_SIZE` or task stack depth)
-2. Check for float usage in tasks (FPU disabled — float operations will fault)
-3. Check kfifo buffer sizes are power-of-2
+```c
+/**
+  * @brief            : [函数名称] 简单描述一下这个函数的功能（必须添加）
+  * @retval           : [返回值说明] 如果是枚举类型需要列出内部能返回的值，无需全部列出。没有此项可以不添加
+  * @param[in]        : [参数名 参数说明] 没有此项可以不添加
+  * @param[out]       : [参数名 参数说明] 没有此项可以不添加
+  */

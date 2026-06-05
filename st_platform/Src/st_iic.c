@@ -4,8 +4,7 @@
  *                        2026
  *@file               :   st_iic.c
  * 
- *@pardependencies    :
- *                        st_iic.c
+ *@pardependencies    :   st_iic.c
  *                        xxx.h   
  *                        xxxx.h
  * 
@@ -19,26 +18,6 @@
  * 
  *@version            :   V1.0 
  *@note               :   1 tab == 4 spaces!
- *                        global variable format 
- *                        uint8_t  g_xxxx_xxx = 0U;
- *                        uint8_t *p_xxxx_xxx = 0U;
- *                        
- *                        enumeration format 
- *                        typedef enum XXX_XXXX_T
- *                        {
- *                          XXXXX_XXXX              = 0x00U,
- *                        }xxxx_xxxx_t;
- *
- *                        struct format 
- *                        typedef struct XXXXXX_T
- *                        {
- *                          uint8_t xxxx_xxxx;
- *                          uint8_t (*pf_iic_init)(void*);
- *                        }xxxxx_t;
- *
- *                        macro definition format
- *                        #define XXXX_XXXX
- *                        #define XXXX_XXXX         (0U)
  ******************************************************************************
  */
 
@@ -46,7 +25,7 @@
 #include <stddef.h>                               /* stdint lib header file. */
 #include "st_iic.h"                               /* st_iic lib header file. */
 #include "i2c.h"                                     /* i2c lib header file. */
-#include "bsp_driver_at24.h"             /* bsp_driver_at24 lib header file. */
+#include "bsp_drv_at24.h"                   /* bsp_drv_at24 lib header file. */
 /* define   -----------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/
@@ -121,8 +100,8 @@ static at24_state_t st_dev_is_ready(void*hi2c, \
 {
     I2C_HandleTypeDef *p_hi2c = (I2C_HandleTypeDef *)hi2c;
     uint32_t hal_ret = HAL_I2C_IsDeviceReady(p_hi2c, \
-                            dev_adr,\
-                            tails,\
+                            dev_adr, \
+                            tails, \
                             timeout);
     if(HAL_OK != hal_ret)
     {

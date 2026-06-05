@@ -19,38 +19,19 @@
  * 
  *@version            :   V1.0 
  *@note               :   1 tab == 4 spaces!
- *                        global variable format 
- *                        uint8_t  g_xxxx_xxx = 0U;
- *                        uint8_t *p_xxxx_xxx = 0U;
- *                        
- *                        enumeration format 
- *                        typedef enum XXX_XXXX_T
- *                        {
- *                          XXXXX_XXXX              = 0x00U,
- *                        }xxxx_xxxx_t;
- *
- *                        struct format 
- *                        typedef struct XXXXXX_T
- *                        {
- *                          uint8_t xxxx_xxxx;
- *                          uint8_t (*pf_iic_init)(void*);
- *                        }xxxxx_t;
- *
- *                        macro definition format
- *                        #define XXXX_XXXX
- *                        #define XXXX_XXXX         (0U)
  ******************************************************************************
  */
 
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>                               /* stdint lib header file. */
-#include "bsp_driver_led.h"               /* bsp_driver_led lib header file. */
+#include "bsp_drv_led.h"                     /* bsp_drv_led lib header file. */
 #include "bsp_handle_led.h"               /* bsp_handle_led lib header file. */
 /* define   -----------------------------------------------------------------*/
 #define LED_HANDLE_IS_INIT            (0x01U)
 #define LED_HANDLE_NOT_INIT           (0x00U)
+
 #define LED_DECLARE_DRV(drv, index) \
-            led_driver_t *drv = (led_driver_t *)(g_led_handle.p_led_drv[index])
+        led_driver_t *drv = (led_driver_t *)(g_led_handle.p_led_drv[index])
 
 #define LED_DRV_IS_NULL(index) \
     (NULL == g_led_handle.p_led_drv[index])
@@ -81,11 +62,11 @@ static void led_handle_init(void)
 /* Exported functions -------------------------------------------------------*/
 /**
   * @brief            :  [led_handle_on]
-  * @retval           :  [ LED_HANDLE_OK              = 0x00U,    // Operation is OK.
-                           LED_HANDLE_ERROR           = 0x01U,    // Operation is error.
-                           LED_HANDLE_BUSY            = 0x02U,    // Operation is busy.
-                           LED_HANDLE_TIMEOUT         = 0x03U,    // Operation is timeout.
-                           LED_HANDLE_INVALID_PARAM   = 0x04U,    // Operation is invalid parameter.]
+  * @retval           :  [ LED_HANDLE_OK              = 0x00U,
+                           LED_HANDLE_ERROR           = 0x01U,
+                           LED_HANDLE_BUSY            = 0x02U,
+                           LED_HANDLE_TIMEOUT         = 0x03U,
+                           LED_HANDLE_INVALID_PARAM   = 0x04U,]
   * @param[in]        :  [led_handle_devindex_t index]
  */
 led_handle_state_t led_handle_on(led_handle_devindex_t index)
@@ -105,11 +86,10 @@ led_handle_state_t led_handle_on(led_handle_devindex_t index)
 }
 /**
   * @brief            :  [led_handle_off]
-  * @retval           :  [ LED_HANDLE_OK              = 0x00U,    // Operation is OK.
-                           LED_HANDLE_ERROR           = 0x01U,    // Operation is error.
-                           LED_HANDLE_BUSY            = 0x02U,    // Operation is busy.
-                           LED_HANDLE_TIMEOUT         = 0x03U,    // Operation is timeout.
-                           LED_HANDLE_INVALID_PARAM   = 0x04U,    // Operation is invalid parameter.]
+  * @retval           :  [ LED_HANDLE_OK              = 0x00U, 
+                           LED_HANDLE_ERROR           = 0x01U, 
+                           LED_HANDLE_TIMEOUT         = 0x03U, 
+                           LED_HANDLE_INVALID_PARAM   = 0x04U,]
   * @param[in]        :  [led_handle_devindex_t index]
  */
 led_handle_state_t led_handle_off(led_handle_devindex_t index)
@@ -128,11 +108,11 @@ led_handle_state_t led_handle_off(led_handle_devindex_t index)
 }
 /**
   * @brief            :  [led_handle_blink]
-  * @retval           :  [ LED_HANDLE_OK              = 0x00U,    // Operation is OK.
-                           LED_HANDLE_ERROR           = 0x01U,    // Operation is error.
-                           LED_HANDLE_BUSY            = 0x02U,    // Operation is busy.
-                           LED_HANDLE_TIMEOUT         = 0x03U,    // Operation is timeout.
-                           LED_HANDLE_INVALID_PARAM   = 0x04U,    // Operation is invalid parameter.]
+  * @retval           :  [ LED_HANDLE_OK              = 0x00U,
+                           LED_HANDLE_ERROR           = 0x01U,
+                           LED_HANDLE_BUSY            = 0x02U,
+                           LED_HANDLE_TIMEOUT         = 0x03U,
+                           LED_HANDLE_INVALID_PARAM   = 0x04U,]
   * @param[in]        :  [led_handle_devindex_t index]
  */
 led_handle_state_t led_handle_blink(led_handle_devindex_t index)
@@ -152,11 +132,11 @@ led_handle_state_t led_handle_blink(led_handle_devindex_t index)
 }
 /**
   * @brief            :  [led_drv_register_handle]
-  * @retval           :  [ LED_HANDLE_OK              = 0x00U,    // Operation is OK.
-                           LED_HANDLE_ERROR           = 0x01U,    // Operation is error.
-                           LED_HANDLE_BUSY            = 0x02U,    // Operation is busy.
-                           LED_HANDLE_TIMEOUT         = 0x03U,    // Operation is timeout.
-                           LED_HANDLE_INVALID_PARAM   = 0x04U,    // Operation is invalid parameter.]
+  * @retval           :  [ LED_HANDLE_OK              = 0x00U,
+                           LED_HANDLE_ERROR           = 0x01U,
+                           LED_HANDLE_BUSY            = 0x02U,
+                           LED_HANDLE_TIMEOUT         = 0x03U,
+                           LED_HANDLE_INVALID_PARAM   = 0x04U,]
   * @param[in]        :  [led_handle_t *p_handle , \
                           void * p_drv]
  */

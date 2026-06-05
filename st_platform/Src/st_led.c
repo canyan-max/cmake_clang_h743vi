@@ -19,33 +19,13 @@
  * 
  *@version            :   V1.0 
  *@note               :   1 tab == 4 spaces!
- *                        global variable format 
- *                        uint8_t  g_xxxx_xxx = 0U;
- *                        uint8_t *p_xxxx_xxx = 0U;
- *                        
- *                        enumeration format 
- *                        typedef enum XXX_XXXX_T
- *                        {
- *                          XXXXX_XXXX              = 0x00U,
- *                        }xxxx_xxxx_t;
- *
- *                        struct format 
- *                        typedef struct XXXXXX_T
- *                        {
- *                          uint8_t xxxx_xxxx;
- *                          uint8_t (*pf_iic_init)(void*);
- *                        }xxxxx_t;
- *
- *                        macro definition format
- *                        #define XXXX_XXXX
- *                        #define XXXX_XXXX         (0U)
  ******************************************************************************
  */
 
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>                               /* stdint lib header file. */
 #include "st_led.h"                               /* st_led lib header file. */
-#include "bsp_driver_led.h"               /* bsp_driver_led lib header file. */
+#include "bsp_drv_led.h"               /* bsp_drv_led lib header file. */
 #include "gpio.h"                                   /* gpio lib header file. */
 #include "stm32h7xx_hal_gpio.h"
 /* define   -----------------------------------------------------------------*/
