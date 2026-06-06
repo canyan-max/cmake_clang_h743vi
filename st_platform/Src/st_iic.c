@@ -5,18 +5,15 @@
  *@file               :   st_iic.c
  * 
  *@pardependencies    :   st_iic.c
- *                        xxx.h   
- *                        xxxx.h
+ *                        i2c.h   
+ *                        bsp_drv_at24.h
  * 
  *@author             :   null
  * 
  *@brief              :   Provide the HAL APIs of description.
  * 
- *@Processingflow     :
- * 
- *@calldirectly       :
- * 
  *@version            :   V1.0 
+ *
  *@note               :   1 tab == 4 spaces!
  ******************************************************************************
  */

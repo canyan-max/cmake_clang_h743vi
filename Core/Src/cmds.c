@@ -6,18 +6,15 @@
  * 
  *@pardependencies    :
  *                        cmds.c
- *                        xxx.h   
- *                        xxxx.h
+ *                        shell.h   
+ *                        bsp_drv_at24.h
  * 
  *@author             :   null
  * 
  *@brief              :   Provide the HAL APIs of description.
  * 
- *@Processingflow     :
- * 
- *@calldirectly       :
- * 
  *@version            :   V1.0 
+ *
  *@note               :   1 tab == 4 spaces!
  ******************************************************************************
  */
@@ -25,8 +22,7 @@
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>                                /* stdint lib header file */
 #include "shell.h"                                  /* shell lib header file */
-#include "bsp_drv_at24.h"               /* bsp_driver_at24 lib header file. */
-// #include "i2c.h"
+#include "bsp_drv_at24.h"                /* bsp_driver_at24 lib header file. */
 /* define   -----------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/

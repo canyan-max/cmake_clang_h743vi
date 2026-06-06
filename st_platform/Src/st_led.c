@@ -6,18 +6,15 @@
  * 
  *@pardependencies    :
  *                        st_led.c
- *                        xxx.h   
- *                        xxxx.h
+ *                        bsp_drv_led.h   
+ *                        gpio.h
  * 
  *@author             :   null
  * 
  *@brief              :   Provide the HAL APIs of description.
  * 
- *@Processingflow     :
- * 
- *@calldirectly       :
- * 
  *@version            :   V1.0 
+ *
  *@note               :   1 tab == 4 spaces!
  ******************************************************************************
  */
@@ -27,7 +24,6 @@
 #include "st_led.h"                               /* st_led lib header file. */
 #include "bsp_drv_led.h"               /* bsp_drv_led lib header file. */
 #include "gpio.h"                                   /* gpio lib header file. */
-#include "stm32h7xx_hal_gpio.h"
 /* define   -----------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/
@@ -64,11 +60,11 @@ const led_operation_t g_led2_ops =
 /**
   * @brief            :  [st_led_init]
                          initialize the led hardware
-  * @retval           :  [LED_OK              = 0x00U,    // Operation is OK.
-                          LED_ERROR           = 0x01U,    // Operation is error.
-                          LED_BUSY            = 0x02U,    // Operation is busy.
-                          LED_TIMEOUT         = 0x03U,    // Operation is timeout.
-                          LED_INVALID_PARAM   = 0x04U,    // Operation is invalid parameter.]
+  * @retval           :  [LED_OK              = 0x00U,
+                          LED_ERROR           = 0x01U,
+                          LED_BUSY            = 0x02U,
+                          LED_TIMEOUT         = 0x03U,
+                          LED_INVALID_PARAM   = 0x04U,]
   * @param[in]        :  [led_driver_t*self]
  */
 static led_driver_state_t st_led_init(led_driver_t*self)
@@ -84,11 +80,11 @@ static led_driver_state_t st_led_init(led_driver_t*self)
 /**
   * @brief            :  [st_led_init]
                          initialize the led hardware
-  * @retval           :  [LED_OK              = 0x00U,    // Operation is OK.
-                          LED_ERROR           = 0x01U,    // Operation is error.
-                          LED_BUSY            = 0x02U,    // Operation is busy.
-                          LED_TIMEOUT         = 0x03U,    // Operation is timeout.
-                          LED_INVALID_PARAM   = 0x04U,    // Operation is invalid parameter.]
+  * @retval           :  [LED_OK              = 0x00U,
+                          LED_ERROR           = 0x01U,
+                          LED_BUSY            = 0x02U,
+                          LED_TIMEOUT         = 0x03U,
+                          LED_INVALID_PARAM   = 0x04U,]
   * @param[in]        :  [led_driver_t*self]
  */
 static led_driver_state_t st_led_on(led_driver_t*self)
@@ -113,11 +109,11 @@ static led_driver_state_t st_led_on(led_driver_t*self)
 /**
   * @brief            :  [st_led_init]
                          initialize the led hardware
-  * @retval           :  [LED_OK              = 0x00U,    // Operation is OK.
-                          LED_ERROR           = 0x01U,    // Operation is error.
-                          LED_BUSY            = 0x02U,    // Operation is busy.
-                          LED_TIMEOUT         = 0x03U,    // Operation is timeout.
-                          LED_INVALID_PARAM   = 0x04U,    // Operation is invalid parameter.]
+  * @retval           :  [LED_OK              = 0x00U,
+                          LED_ERROR           = 0x01U,
+                          LED_BUSY            = 0x02U,
+                          LED_TIMEOUT         = 0x03U,
+                          LED_INVALID_PARAM   = 0x04U,]
   * @param[in]        :  [led_driver_t*self]
  */
 static led_driver_state_t st_led_off(led_driver_t*self)
@@ -142,11 +138,11 @@ static led_driver_state_t st_led_off(led_driver_t*self)
 /**
   * @brief            :  [st_led_init]
                          initialize the led hardware
-  * @retval           :  [LED_OK              = 0x00U,    // Operation is OK.
-                          LED_ERROR           = 0x01U,    // Operation is error.
-                          LED_BUSY            = 0x02U,    // Operation is busy.
-                          LED_TIMEOUT         = 0x03U,    // Operation is timeout.
-                          LED_INVALID_PARAM   = 0x04U,    // Operation is invalid parameter.]
+  * @retval           :  [LED_OK              = 0x00U,
+                          LED_ERROR           = 0x01U,
+                          LED_BUSY            = 0x02U,
+                          LED_TIMEOUT         = 0x03U,
+                          LED_INVALID_PARAM   = 0x04U,]
   * @param[in]        :  [led_driver_t*self]
  */
 static led_driver_state_t st_led_blink(led_driver_t*self)
@@ -166,11 +162,11 @@ static led_driver_state_t st_led_blink(led_driver_t*self)
 /**
   * @brief            :  [st_led_init]
                          initialize the led hardware
-  * @retval           :  [LED_OK              = 0x00U,    // Operation is OK.
-                          LED_ERROR           = 0x01U,    // Operation is error.
-                          LED_BUSY            = 0x02U,    // Operation is busy.
-                          LED_TIMEOUT         = 0x03U,    // Operation is timeout.
-                          LED_INVALID_PARAM   = 0x04U,    // Operation is invalid parameter.]
+  * @retval           :  [LED_OK              = 0x00U,
+                          LED_ERROR           = 0x01U,
+                          LED_BUSY            = 0x02U,
+                          LED_TIMEOUT         = 0x03U,
+                          LED_INVALID_PARAM   = 0x04U,]
   * @param[in]        :  [led_driver_t*self]
  */
 static led_driver_state_t st_led_deinit(led_driver_t*self)

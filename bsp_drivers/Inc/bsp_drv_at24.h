@@ -9,14 +9,11 @@
  *                        st_iic.h
  *
  *@author             :   null
+ * 
+ *@brief              :   Provide the HAL APIs of description.
+ * 
+ *@version            :   V1.0 
  *
- *@brief              :   Provide the HAL APIs of AT24Cxx EEPROM driver.
- *
- *@Processingflow     :
- *
- *@calldirectly       :
- *
- *@version            :   V1.0
  *@note               :   1 tab == 4 spaces!
  ******************************************************************************
  */

@@ -13,32 +13,9 @@
  * 
  *@brief              :   Provide the HAL APIs of description.
  * 
- *@Processingflow     :
- * 
- *@calldirectly       :
- * 
  *@version            :   V1.0 
+ * 
  *@note               :   1 tab == 4 spaces!
- *                        global variable format 
- *                        uint8_t  g_xxxx_xxx = 0U;
- *                        uint8_t *p_xxxx_xxx = 0U;
- *                        
- *                        enumeration format 
- *                        typedef enum XXX_XXXX_T
- *                        {
- *                          XXXXX_XXXX              = 0x00U,
- *                        }xxxx_xxxx_t;
- *
- *                        struct format 
- *                        typedef struct XXXXXX_T
- *                        {
- *                          uint8_t xxxx_xxxx;
- *                          uint8_t (*pf_iic_init)(void*);
- *                        }xxxxx_t;
- *
- *                        macro definition format
- *                        #define XXXX_XXXX
- *                        #define XXXX_XXXX         (0U)
  ******************************************************************************
  */
 
@@ -56,7 +33,8 @@
 /* Private  functions  ------------------------------------------------------*/
 /**
  * @brief            :  [check_fifo_size_pow_of_two
-                        Because the value of a power of 2 has only one bit set to 1 in binary. ]
+                        Because the value of a pow of 2 .
+                        has only one bit set to 1 in binary.]
  * @retval           :  [true - success, false - error]
  * @param[in]        :  [uint32_t size]
  */

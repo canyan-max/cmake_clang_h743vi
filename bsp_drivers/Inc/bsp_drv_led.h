@@ -11,13 +11,10 @@
  * 
  *@author             :   null
  * 
- *@brief              :   Provide the HAL APIs of led drivers .
- * 
- *@Processingflow     :
- * 
- *@calldirectly       :
+ *@brief              :   Provide the HAL APIs of description.
  * 
  *@version            :   V1.0 
+ *
  *@note               :   1 tab == 4 spaces!
  ******************************************************************************
  */

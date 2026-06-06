@@ -13,11 +13,8 @@
  * 
  *@brief              :   Provide the HAL APIs of description.
  * 
- *@Processingflow     :
- * 
- *@calldirectly       :
- * 
  *@version            :   V1.0 
+ *
  *@note               :   1 tab == 4 spaces!
  ******************************************************************************
  */
@@ -80,8 +77,8 @@
                           uint32_t timeout]
  */
 static at24_state_t write_page(at24_driver_t *p_drv, uint16_t mem_adr, \
-                                uint8_t *p_data, uint16_t size, \
-                                uint32_t timeout)
+                               uint8_t *p_data, uint16_t size, \
+                               uint32_t timeout)
 {
     at24_state_t ret = AT24_OK;
     if(DRV_IS_NULL(p_drv) || DRV_IS_NOT_INIT(p_drv) || NULL == p_data)

@@ -2,8 +2,6 @@
 set(BSP_DRIVERS_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_drv_led.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_drv_at24.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_drv_aht21.c
-
 )
 add_library(bsp_drivers STATIC ${BSP_DRIVERS_SRC})
 
