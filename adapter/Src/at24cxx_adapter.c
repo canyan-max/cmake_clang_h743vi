@@ -107,13 +107,13 @@ uint8_t drv_init(void *p_drv, \
                  uint16_t adr_size, \
                  uint8_t dev_adr)
 {
-    if(NULL == p_drv)
+    if(NULL == p_drv)    
     {
-        return 1;
+        return 1;     
     }
-    at24_driver_t * p_at24 = (at24_driver_t * )p_drv;
+    at24_driver_t * p_at25 = (at24_driver_t * )p_drv;
     at24_state_t ret = AT24_OK;
-    ret = at24_driver_instruct(p_at24, \
+    ret = at24_driver_instruct(p_at25, \
                      &g_at24c02_iic_ops, \
                      max_byte_addr, page_size,\
                      adr_size, \
