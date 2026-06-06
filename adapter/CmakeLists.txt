@@ -1,0 +1,9 @@
+# ---------- ADAPTER_SRC ----------
+set(ADAPTER_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/at24cxx_adapter.c
+)
+add_library(adapter STATIC ${ADAPTER_SRC})
+
+target_include_directories(adapter PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Inc)
+
+target_link_libraries(adapter PRIVATE bsp_drivers)

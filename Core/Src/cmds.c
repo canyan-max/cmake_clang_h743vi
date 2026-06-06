@@ -22,25 +22,28 @@
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>                                /* stdint lib header file */
 #include "shell.h"                                  /* shell lib header file */
-#include "bsp_drv_at24.h"                /* bsp_driver_at24 lib header file. */
+#include "storage_handle.h"                      /* storage_lib header file. */
+#include "main.h"
+#include "log.h"
 /* define   -----------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/
 
 /* variables ----------------------------------------------------------------*/
-
+extern storage_handle_t g_at24c02_storage_handle;
 /* Private  functions  ------------------------------------------------------*/
 
 /* Exported functions -------------------------------------------------------*/
-extern at24_driver_t g_at24c02_drv; 
-int write_i2c1(uint8_t w_code)
-{
 
-  uint8_t i = w_code;
-  at24_state_t ret = AT24_OK;
-  ret = \
-  g_at24c02_drv.pf_write_byte(&g_at24c02_drv, 0x00, i, 5);
-  return ret;
+int write_i2c1(uint8_t adr , uint8_t w_code)
+{
+    uint32_t time = HAL_GetTick();
+    uint8_t  ret = storage_handle_write(&g_at24c02_storage_handle, \
+                          adr, &w_code, 1, \
+                          2);
+    time = HAL_GetTick() - time;
+    logInfo("write_i2c1 time %d ms" , time);
+    return ret;
 }
 
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC), \
@@ -50,20 +53,16 @@ SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC), \
 
 
 
-int read_i2c1(void)
+int read_i2c1(uint8_t adr)
 {
-  uint8_t i = 0x00;
-  at24_state_t ret = AT24_OK;
-  ret = g_at24c02_drv.pf_read_bytes(&g_at24c02_drv, \
-                            0x00, \
-                            &i, \
-                            1, \
-                            5);
-  if(AT24_OK != ret)
-  {
-      return ret;
-  }
-  return i;
+    uint8_t r_code = 0;
+    uint32_t time = HAL_GetTick();
+    storage_handle_read(&g_at24c02_storage_handle, \
+                          adr, &r_code, 1, \
+                          2);
+    time = HAL_GetTick() - time;
+    logInfo("read_i2c1 time %d ms" , time);
+    return r_code;
 }
 
 SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC), \

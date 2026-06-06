@@ -42,7 +42,8 @@ add_subdirectory(Middlewares/Kfifo)
 # add_subdirectory(Middlewares/SeggerHardFault)
 add_subdirectory(st_platform)
 add_subdirectory(bsp_drivers)
-add_subdirectory(bsp_handle)
+add_subdirectory(adapter)
+add_subdirectory(handle)
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined library search paths
@@ -77,7 +78,8 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     kfifo
     bsp_drivers
     st_platform
-    bsp_handle
+    adapter
+    handle
 )
 
 # generate .hex and .bin files from the .elf file after building the executable

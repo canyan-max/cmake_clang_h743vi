@@ -30,9 +30,9 @@
 #include "shell_port.h"
 #include "log.h"
 #include "kfifo.h"                                 /* kfifo lib header file. */
-#include "bsp_drv_led.h"               /* bsp_driver_led lib header file. */
-#include "bsp_handle_led.h"               /* bsp_handle_led lib header file. */
-#include "bsp_drv_at24.h"             /* bsp_driver_at24 lib header file. */
+#include "storage_handle.h"                      /* storage_lib header file. */
+#include "at24cxx_adapter.h"             /* at24cxx_adapter lib header file. */
+#include "bsp_drv_at24.h"                        /* at24 driver header file. */
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -64,14 +64,16 @@ const osThreadAttr_t defaultTask_attributes = {
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-extern const led_operation_t g_led1_ops;
-extern const led_operation_t g_led2_ops;
-static led_driver_t g_led1_drv;
-static led_driver_t g_led2_drv;
-extern const iic_ops_t g_at24c02_iic_ops;
-at24_driver_t g_at24c02_drv; 
 uint8_t k_fifo_buffer[16];
 kfifo_t g_kfifo;
+at24_driver_t g_at24c02_drv;
+extern const iic_ops_t g_at24c02_iic_ops;
+const storage_ops_t g_at24c02_storage_ops={
+    .pf_drv_init   = drv_init,
+    .pf_write_page = drv_write_page,
+    .pf_read_bytes = drv_read_bytes
+};
+storage_handle_t g_at24c02_storage_handle;
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -111,27 +113,22 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   userShellInit();
-//   bsp_led_init();
+//   at24_driver_instruct(&g_at24c02_drv, \
+//                      &g_at24c02_iic_ops, \
+//                      0xff, 8,\
+//                      AT24_MEMADD_SIZE_8BIT, \
+//                      0xA0);
+  storage_handle_instruct(&g_at24c02_storage_handle, \
+                                &g_at24c02_storage_ops, \
+                                &g_at24c02_drv);
+  storage_handle_drv_init(&g_at24c02_storage_handle, \
+                            0xff, 8, \
+                            AT24_MEMADD_SIZE_8BIT, \
+                            0xA0);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
-  led_driver_state_t ret = LED_OK;
-  led_handle_state_t h_ret = LED_HANDLE_OK;
-  ret = bsp_driver_led_init(&g_led1_drv, &g_led1_ops);
-  logInfo("bsp_driver_led_init ret = %d", ret);
-  ret = bsp_driver_led_init(&g_led2_drv, &g_led2_ops);
-  logInfo("bsp_driver_led_init ret = %d", ret);
-  h_ret = led_drv_register_handle(&g_led1_drv);
-  logInfo("led_drv_register_handle ret = %d", h_ret);
-  h_ret = led_drv_register_handle(&g_led2_drv);
-  logInfo("led_drv_register_handle ret = %d", h_ret);
-
-  at24_driver_instruct(&g_at24c02_drv, \
-                     &g_at24c02_iic_ops, \
-                     0xff, 8,\
-                     AT24_MEMADD_SIZE_8BIT, \
-                     0xA0);
   kfifo_init(&g_kfifo, k_fifo_buffer, sizeof(k_fifo_buffer));
   /* USER CODE END RTOS_EVENTS */
 
