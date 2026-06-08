@@ -193,6 +193,11 @@ at24_state_t at24_driver_instruct(at24_driver_t *p_drv , \
     AT_LOG("AT24 driver initialized start.\n");
 #endif // end of AT24_DEBUG_LOG
     at24_state_t ret = AT24_OK;
+    if(!DRV_IS_NOT_INIT(p_drv))
+    {
+        return AT24_OK;
+    }
+    
     if((NULL == p_drv) || (NULL == p_iic_ops))
     {
         return AT24_ERROR;

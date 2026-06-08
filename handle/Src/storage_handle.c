@@ -44,7 +44,7 @@ uint8_t storage_handle_drv_init(storage_handle_t *p_handle, \
                                 uint32_t max_byte_addr, \
                                 uint32_t page_size, \
                                 uint16_t adr_size, \
-                                uint8_t dev_adr)
+                                uint8_t  dev_adr)
 {
     if(NULL == p_handle || NULL == p_handle->p_ops || \
        NULL == p_handle->p_ops->pf_drv_init)
@@ -120,7 +120,11 @@ uint8_t storage_handle_read(storage_handle_t *p_handle, \
  */
 uint8_t storage_handle_instruct(storage_handle_t *p_handle, \
                                 const storage_ops_t *p_ops, \
-                                void *p_drv)
+                                void *p_drv, \
+                                uint32_t max_byte_addr, \
+                                uint32_t page_size, \
+                                uint16_t adr_size, \
+                                uint8_t  dev_adr)
 {
     if(NULL == p_handle || NULL == p_drv || NULL == p_ops)
     {
@@ -128,6 +132,10 @@ uint8_t storage_handle_instruct(storage_handle_t *p_handle, \
     }
     p_handle->p_ops = p_ops;
     p_handle->p_drv = p_drv;
-    return 0;
+    return p_handle->p_ops->pf_drv_init(p_handle->p_drv, \
+                                        max_byte_addr, \
+                                        page_size, \
+                                        adr_size, \
+                                        dev_adr);;
 }
 /* end of  file -------------------------------------------------------------*/

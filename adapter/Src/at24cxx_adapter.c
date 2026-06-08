@@ -101,9 +101,7 @@ uint8_t drv_read_bytes( void *p_drv,     uint16_t mem_adr, \
                         uint16_t adr_size, \
                         uint8_t dev_adr]
  */
-uint8_t drv_init(void *p_drv, \
-                 uint32_t max_byte_addr, \
-                 uint32_t page_size, \
+uint8_t drv_init(void *p_drv,uint32_t max_byte_addr, uint32_t page_size, \
                  uint16_t adr_size, \
                  uint8_t dev_adr)
 {

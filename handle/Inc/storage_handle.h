@@ -97,10 +97,18 @@ uint8_t storage_handle_read(storage_handle_t *p_handle, \
                          1 invalid parameter
                         ]
  * @param[in]        :  [storage_handle_t *p_handle, \
-                         const storage_ops_t *p_ops, \
-                         void *p_drv]
+                                const storage_ops_t *p_ops, \
+                                void *p_drv, \
+                                uint32_t max_byte_addr, \
+                                uint32_t page_size, \
+                                uint16_t adr_size, \
+                                uint8_t  dev_adr]
  */
 uint8_t storage_handle_instruct(storage_handle_t *p_handle, \
                                 const storage_ops_t *p_ops, \
-                                void *p_drv);
+                                void *p_drv, \
+                                uint32_t max_byte_addr, \
+                                uint32_t page_size, \
+                                uint16_t adr_size, \
+                                uint8_t  dev_adr);
 #endif /* STORAGE_HANDLE_H */

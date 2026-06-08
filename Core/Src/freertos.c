@@ -67,7 +67,6 @@ const osThreadAttr_t defaultTask_attributes = {
 uint8_t k_fifo_buffer[16];
 kfifo_t g_kfifo;
 at24_driver_t g_at24c02_drv;
-extern const iic_ops_t g_at24c02_iic_ops;
 const storage_ops_t g_at24c02_storage_ops={
     .pf_drv_init   = drv_init,
     .pf_write_page = drv_write_page,
@@ -113,18 +112,16 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   userShellInit();
-//   at24_driver_instruct(&g_at24c02_drv, \
-//                      &g_at24c02_iic_ops, \
-//                      0xff, 8,\
-//                      AT24_MEMADD_SIZE_8BIT, \
-//                      0xA0);
   storage_handle_instruct(&g_at24c02_storage_handle, \
-                                &g_at24c02_storage_ops, \
-                                &g_at24c02_drv);
-  storage_handle_drv_init(&g_at24c02_storage_handle, \
-                            0xff, 8, \
-                            AT24_MEMADD_SIZE_8BIT, \
-                            0xA0);
+                          &g_at24c02_storage_ops, \
+                          &g_at24c02_drv, \
+                          0xff, 8, \
+                          AT24_MEMADD_SIZE_8BIT, \
+                          0xA0);
+  // storage_handle_drv_init(&g_at24c02_storage_handle, \
+  //                           0xff, 8, \
+  //                           AT24_MEMADD_SIZE_8BIT, \
+  //                           0xA0);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -177,8 +174,8 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    logInfo("Hello World!");
-    osDelay(60000);
+    logInfo("asd...");
+    osDelay(10000);
   }
   /* USER CODE END StartDefaultTask */
 }
