@@ -87,7 +87,8 @@ static at24_state_t write_page(at24_driver_t *p_drv, uint16_t mem_adr, \
     }
     if(mem_adr >= p_drv->max_byte_addr || \
         (mem_adr + size) > p_drv->max_byte_addr || \
-    size > p_drv->page_size)
+        size > p_drv->page_size
+      )
     {
         return AT24_PARAM_ERR;
     }
@@ -118,11 +119,14 @@ static at24_state_t read_page (at24_driver_t *p_drv, uint16_t mem_adr, \
     {
         return AT24_ERROR;
     }
+
     if(mem_adr >= p_drv->max_byte_addr || \
-        (mem_adr + size) > p_drv->max_byte_addr)
+        (mem_adr + size) > p_drv->max_byte_addr
+      )
     {
         return AT24_PARAM_ERR;
     }
+
     ret = AT24_MEM_READ(p_drv, mem_adr, p_data, size, timeout);
     if(AT24_OK != ret)
     {
@@ -153,7 +157,8 @@ static at24_state_t write_byte(at24_driver_t *p_drv, \
         return AT24_ERROR;
     }
     if(mem_adr >= p_drv->max_byte_addr || \
-        (mem_adr + 1) > p_drv->max_byte_addr)
+        (mem_adr + 1) > p_drv->max_byte_addr
+      )
     {
         return AT24_PARAM_ERR;
     }
@@ -178,8 +183,9 @@ static at24_state_t write_byte(at24_driver_t *p_drv, \
                             AT24_PARAM_ERR = 0x04U,]
  * @param[in]        :  [at24_driver_t *p_driver , \
                          iic_ops_t *p_iic_ops , \
-                         uint32_t max_page , \
+                         uint32_t max_byte_addr , \
                          uint32_t page_size , \
+                         uint16_t adr_size , \
                          uint8_t  dev_adr)]
  */
 at24_state_t at24_driver_instruct(at24_driver_t *p_drv , \

@@ -112,16 +112,14 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   userShellInit();
+  // init the at24c02 storage handle.
+  // which will be used in the shell command to read/write at24c02.
   storage_handle_instruct(&g_at24c02_storage_handle, \
                           &g_at24c02_storage_ops, \
                           &g_at24c02_drv, \
                           0xff, 8, \
                           AT24_MEMADD_SIZE_8BIT, \
                           0xA0);
-  // storage_handle_drv_init(&g_at24c02_storage_handle, \
-  //                           0xff, 8, \
-  //                           AT24_MEMADD_SIZE_8BIT, \
-  //                           0xA0);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -174,7 +172,7 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    logInfo("asd...");
+    logInfo("start default task loop delay 10s");
     osDelay(10000);
   }
   /* USER CODE END StartDefaultTask */
