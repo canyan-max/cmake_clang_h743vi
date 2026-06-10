@@ -70,7 +70,7 @@ uint8_t drv_write_page( void *p_drv, uint16_t mem_adr, \
                         uint8_t *p_data, uint16_t size, \
                         uint32_t timeout]
  */
-uint8_t drv_read_bytes( void *p_drv,     uint16_t mem_adr, \
+uint8_t drv_read_bytes( void    *p_drv,  uint16_t mem_adr, \
                         uint8_t *p_data, uint16_t size, \
                         uint32_t timeout)
 {
@@ -102,8 +102,7 @@ uint8_t drv_read_bytes( void *p_drv,     uint16_t mem_adr, \
                         uint8_t dev_adr]
  */
 uint8_t drv_init(void *p_drv,uint32_t max_byte_addr, uint32_t page_size, \
-                 uint16_t adr_size, \
-                 uint8_t dev_adr)
+                 uint16_t adr_size, uint8_t dev_adr)
 {
     if(NULL == p_drv)    
     {

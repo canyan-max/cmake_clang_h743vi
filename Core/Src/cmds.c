@@ -30,7 +30,7 @@
 /* typedef ------------------------------------------------------------------*/
 
 /* variables ----------------------------------------------------------------*/
-extern storage_handle_t g_at24c02_storage_handle;
+extern storage_handle_t g_storage_handle;
 /* Private  functions  ------------------------------------------------------*/
 
 /* Exported functions -------------------------------------------------------*/
@@ -38,7 +38,7 @@ extern storage_handle_t g_at24c02_storage_handle;
 int write_i2c1(uint8_t adr , uint8_t w_code)
 {
     uint32_t time = HAL_GetTick();
-    uint8_t  ret = storage_handle_write(&g_at24c02_storage_handle, \
+    uint8_t  ret = storage_handle_write(&g_storage_handle, \
                           adr, &w_code, 1, \
                           2);
     time = HAL_GetTick() - time;
@@ -57,7 +57,7 @@ int read_i2c1(uint8_t adr)
 {
     uint8_t r_code = 0;
     uint32_t time = HAL_GetTick();
-    storage_handle_read(&g_at24c02_storage_handle, \
+    storage_handle_read(&g_storage_handle, \
                           adr, &r_code, 1, \
                           2);
     time = HAL_GetTick() - time;

@@ -67,12 +67,12 @@ const osThreadAttr_t defaultTask_attributes = {
 uint8_t k_fifo_buffer[16];
 kfifo_t g_kfifo;
 at24_driver_t g_at24c02_drv;
-const storage_ops_t g_at24c02_storage_ops={
+const storage_ops_t g_storage_ops={
     .pf_drv_init   = drv_init,
     .pf_write_page = drv_write_page,
     .pf_read_bytes = drv_read_bytes
 };
-storage_handle_t g_at24c02_storage_handle;
+storage_handle_t g_storage_handle;
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -107,19 +107,20 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  defaultTaskHandle = osThreadNew(StartDefaultTask, \
+                            NULL, \
+                            &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   userShellInit();
   // init the at24c02 storage handle.
-  // which will be used in the shell command to read/write at24c02.
-  storage_handle_instruct(&g_at24c02_storage_handle, \
-                          &g_at24c02_storage_ops, \
+  storage_handle_instruct(&g_storage_handle, \
+                          &g_storage_ops, \
                           &g_at24c02_drv, \
-                          0xff, 8, \
+                          0xffU, 8U, \
                           AT24_MEMADD_SIZE_8BIT, \
-                          0xA0);
+                          0xA0U);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -166,7 +167,8 @@ void StartDefaultTask(void *argument)
     logInfo("kfifo_get ret %d" , ret);
     logInfo("kfifo len %d" , kfifo_len(&g_kfifo));
     logInfo("kfifo avail %d" , kfifo_avail(&g_kfifo));
-    for(uint8_t i = 0; i < ret; i++) {
+    for(uint8_t i = 0; i < ret; i++) 
+    {
         logInfo("rdata[%d] = 0x%02X", i, rdata[i]);
     }
   /* Infinite loop */

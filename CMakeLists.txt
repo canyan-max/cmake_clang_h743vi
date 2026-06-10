@@ -39,6 +39,7 @@ add_subdirectory(cmake/stm32cubemx)
 # Add user-defined sources of the cmakelists files in the project
 add_subdirectory(Middlewares/LetterShell)
 add_subdirectory(Middlewares/Kfifo)
+add_subdirectory(Middlewares/Soc)
 # add_subdirectory(Middlewares/SeggerHardFault)
 add_subdirectory(st_platform)
 add_subdirectory(bsp_drivers)
@@ -76,6 +77,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     # SeggerHardFault
     letter_shell
     kfifo
+    Soc
     bsp_drivers
     st_platform
     adapter
