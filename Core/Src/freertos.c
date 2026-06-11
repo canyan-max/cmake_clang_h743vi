@@ -33,6 +33,7 @@
 #include "storage_handle.h"                      /* storage_lib header file. */
 #include "at24cxx_adapter.h"             /* at24cxx_adapter lib header file. */
 #include "bsp_drv_at24.h"                        /* at24 driver header file. */
+#include "core_dwt.h"                                    /* dwt header file. */
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -86,7 +87,7 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-
+  dwt_init();
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -174,8 +175,9 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    logInfo("start default task loop delay 10s");
-    osDelay(10000);
+    HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+    logInfo("dwt time %d",get_dwt_us());
+    osDelay(15000);
   }
   /* USER CODE END StartDefaultTask */
 }

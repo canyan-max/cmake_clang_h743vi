@@ -88,7 +88,7 @@ uint8_t drv_read_bytes( void    *p_drv,  uint16_t mem_adr, \
 
         return 2;
     }
-    return 0; 
+    return 0;
 }
 /**
  * @brief            :  [drv_init]
@@ -108,9 +108,9 @@ uint8_t drv_init(void *p_drv,uint32_t max_byte_addr, uint32_t page_size, \
     {
         return 1;     
     }
-    at24_driver_t * p_at25 = (at24_driver_t * )p_drv;
+    at24_driver_t * p_at24 = (at24_driver_t * )p_drv;
     at24_state_t ret = AT24_OK;
-    ret = at24_driver_instruct(p_at25, \
+    ret = at24_driver_instruct(p_at24, \
                      &g_at24c02_iic_ops, \
                      max_byte_addr, page_size,\
                      adr_size, \

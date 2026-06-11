@@ -265,7 +265,7 @@ main() {
     if ! $BUILD_ONLY; then
         flash_firmware
     else
-        log_info "Build-only mode, skipping flash"
+        log_info "Build-only mode, skipping loading operations"
     fi
 }
 

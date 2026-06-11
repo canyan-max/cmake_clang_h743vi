@@ -40,6 +40,7 @@ add_subdirectory(cmake/stm32cubemx)
 add_subdirectory(Middlewares/LetterShell)
 add_subdirectory(Middlewares/Kfifo)
 add_subdirectory(Middlewares/Soc)
+add_subdirectory(Middlewares/Dwt)
 # add_subdirectory(Middlewares/SeggerHardFault)
 add_subdirectory(st_platform)
 add_subdirectory(bsp_drivers)
@@ -82,6 +83,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     st_platform
     adapter
     handle
+    dwt
 )
 
 # generate .hex and .bin files from the .elf file after building the executable

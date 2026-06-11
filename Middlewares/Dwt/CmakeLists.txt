@@ -1,0 +1,12 @@
+# ---------- DWT_SRC ----------
+set(DWT_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/core_dwt.c
+)
+add_library(dwt STATIC ${DWT_SRC})
+
+target_include_directories(dwt PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Inc)
+target_link_libraries(dwt PRIVATE stm32cubemx)
+
+
+
+

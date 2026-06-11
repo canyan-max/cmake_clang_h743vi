@@ -1,10 +1,11 @@
+Device STM32H743VI
 si SWD
 speed 4000
-Device STM32H743VI
 connect
 r
 h
+erase
 loadfile build/Debug/cmake-clang-h743vi.hex
-r
+r 
 g
 exit
