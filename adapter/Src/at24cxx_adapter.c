@@ -61,6 +61,68 @@ uint8_t drv_write_page( void *p_drv, uint16_t mem_adr, \
     return 0; 
 }
 /**
+ * @brief            :  [drv_write_bytes]
+ * @retval           :  [0 : success, 
+                         1 : invalid parameter, 
+                         2 : write failed
+                        ]
+ * @param[in]        :  [void *p_drv, uint16_t mem_adr, \
+                        uint8_t *p_data, uint16_t size, \
+                        uint32_t timeout]
+ */
+uint8_t drv_write_bytes(void *p_drv, uint16_t mem_adr, \
+                        uint8_t *p_data, uint16_t size, \
+                        uint32_t timeout)
+{
+    at24_driver_t *p_at24 = (at24_driver_t *)p_drv;
+    uint16_t left_size = size;
+    uint16_t current_adr = mem_adr;
+    uint8_t *p_cursor = p_data;
+
+    if(NULL == p_at24 || NULL == p_data || 0U == size)
+    {
+        return 1;
+    }
+
+    if((mem_adr >= p_at24->max_byte_addr) || \
+       ((mem_adr + size) > p_at24->max_byte_addr))
+    {
+        return 1;
+    }
+
+    while(0U != left_size)
+    {
+        uint16_t chunk_size = p_at24->page_size;
+
+        if(0U == chunk_size)
+        {
+            return 1;
+        }
+
+        chunk_size -= (current_adr % p_at24->page_size);
+        if(chunk_size > left_size)
+        {
+            chunk_size = left_size;
+        }
+
+        if(0U == chunk_size)
+        {
+            chunk_size = left_size;
+        }
+
+        if(0U != drv_write_page(p_at24, current_adr, p_cursor, chunk_size, timeout))
+        {
+            return 2;
+        }
+
+        current_adr += chunk_size;
+        p_cursor += chunk_size;
+        left_size -= chunk_size;
+    }
+
+    return 0;
+}
+/**
  * @brief            :  [drv_read_bytes]
  * @retval           :  [0 : success, 
                          1 : invalid parameter, 

@@ -64,6 +64,19 @@ uint8_t drv_write_page( void    *p_drv,  uint16_t mem_adr, \
                         uint8_t *p_data, uint16_t size, \
                         uint32_t timeout);
 /**
+ * @brief            :  [drv_write_bytes]
+ * @retval           :  [0 : success, 
+                         1 : invalid parameter, 
+                         2 : write failed
+                        ]
+ * @param[in]        :  [void *p_drv, uint16_t mem_adr, \
+                        uint8_t *p_data, uint16_t size, \
+                        uint32_t timeout]
+ */
+uint8_t drv_write_bytes(void *p_drv, uint16_t mem_adr, \
+                        uint8_t *p_data, uint16_t size, \
+                        uint32_t timeout);
+/**
  * @brief            :  [drv_read_bytes]
  * @retval           :  [0 : success, 
                          1 : invalid parameter, 

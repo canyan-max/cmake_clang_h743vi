@@ -168,7 +168,7 @@ static at24_state_t write_byte(at24_driver_t *p_drv, \
         return ret;
     }
     return AT24_OK;
-} 
+}
                                
 /* Exported functions -------------------------------------------------------*/
 /**
