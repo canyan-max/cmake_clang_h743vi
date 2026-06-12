@@ -121,7 +121,7 @@ static at24_state_t read_page (at24_driver_t *p_drv, uint16_t mem_adr, \
     }
 
     if(mem_adr >= p_drv->max_byte_addr || \
-        (mem_adr + size) > p_drv->max_byte_addr
+        ((uint32_t)mem_adr + (uint32_t)size) > p_drv->max_byte_addr
       )
     {
         return AT24_PARAM_ERR;
@@ -157,7 +157,7 @@ static at24_state_t write_byte(at24_driver_t *p_drv, \
         return AT24_ERROR;
     }
     if(mem_adr >= p_drv->max_byte_addr || \
-        (mem_adr + 1) > p_drv->max_byte_addr
+        ((uint32_t)mem_adr + 1U) > p_drv->max_byte_addr
       )
     {
         return AT24_PARAM_ERR;

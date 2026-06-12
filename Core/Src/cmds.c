@@ -36,14 +36,32 @@ extern storage_handle_t g_storage_handle;
 
 /* Exported functions -------------------------------------------------------*/
 
-int write_i2c1(uint8_t adr , uint8_t w_code)
+int write_cross_i2c1(uint8_t adr , uint8_t w_code,uint8_t size)
 {
     uint32_t time = get_dwt_us();
-    uint8_t  ret = storage_handle_write(&g_storage_handle, \
-                          adr, &w_code, 1, \
+    uint8_t  arrs[5] = {w_code, w_code+1, w_code+2, w_code+3, w_code+4};
+    uint8_t  ret = storage_handle_write_cross_page(&g_storage_handle, \
+                          adr, arrs, size, \
                           2);
     time = get_dwt_us() - time;
-    logInfo("write_i2c1 time %d us" , time);
+    logInfo("write_cross_i2c1 time %d us" , time);
+    return ret;
+}
+
+SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC), \
+                 write_cross_i2c1, \
+                 write_cross_i2c1, \
+                 write_cross_i2c1);
+
+int write_i2c1(uint8_t adr , uint8_t w_code,uint8_t size)
+{
+    uint32_t time = get_dwt_us();
+    uint8_t  arrs[5] = {w_code, w_code+1, w_code+2, w_code+3, w_code+4};
+    uint8_t  ret = storage_handle_write(&g_storage_handle, \
+                          adr, arrs, size, \
+                          2);
+    time = get_dwt_us() - time;
+    logInfo("write_page time %d us" , time);
     return ret;
 }
 
@@ -53,17 +71,15 @@ SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC), \
                  write_i2c1);
 
 
-
 int read_i2c1(uint8_t adr)
 {
     uint8_t r_code = 0;
     uint32_t time = get_dwt_us();
-    logInfo("read_i2c1 time1 %d us" , time);
     storage_handle_read(&g_storage_handle, \
                           adr, &r_code, 1, \
-                          2);
+                          1);
     time = get_dwt_us() - time;
-    logInfo("read_i2c1 time2 %d us" , time);
+    logInfo("read_byte time %d us" , time);
     return r_code;
 }
 

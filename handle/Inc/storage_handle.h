@@ -35,6 +35,9 @@ typedef struct {
     uint8_t (*pf_write_page)(void *p_drv, uint16_t mem_adr, \
                             uint8_t *p_data, uint16_t size, \
                             uint32_t timeout);
+    uint8_t (*pf_write_cross_page)(void *p_drv, uint16_t mem_adr, \
+                        uint8_t *p_data, uint16_t size, \
+                        uint32_t timeout);
     uint8_t (*pf_read_bytes)(void *p_drv, uint16_t mem_adr, \
                             uint8_t *p_data, uint16_t size, \
                             uint32_t timeout);
@@ -75,6 +78,19 @@ uint8_t storage_handle_drv_init(storage_handle_t *p_handle, \
                          void *p_drv]
  */
 uint8_t storage_handle_write(storage_handle_t *p_handle, \
+                            uint16_t mem_adr, \
+                            uint8_t *p_data, uint16_t size, \
+                            uint32_t timeout);
+/**
+ * @brief            :  [storage_handle_instruct]
+ * @retval           :  [0 successful, 
+                         1 invalid parameter
+                        ]
+ * @param[in]        :  [storage_handle_t *p_handle, \
+                         const storage_ops_t *p_ops, \
+                         void *p_drv]
+ */
+uint8_t storage_handle_write_cross_page(storage_handle_t *p_handle, \
                             uint16_t mem_adr, \
                             uint8_t *p_data, uint16_t size, \
                             uint32_t timeout);

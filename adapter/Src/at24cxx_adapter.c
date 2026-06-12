@@ -27,7 +27,10 @@
 
 /* variables ----------------------------------------------------------------*/
 extern const iic_ops_t g_at24c02_iic_ops;
+extern void HAL_Delay(uint32_t Delay);
+extern uint32_t HAL_GetTick(void);
 /* Private  functions  ------------------------------------------------------*/
+
 
 /* Exported functions -------------------------------------------------------*/
 /**
@@ -61,7 +64,7 @@ uint8_t drv_write_page( void *p_drv, uint16_t mem_adr, \
     return 0; 
 }
 /**
- * @brief            :  [drv_write_bytes]
+ * @brief            :  [drv_write_bytes_cross]
  * @retval           :  [0 : success, 
                          1 : invalid parameter, 
                          2 : write failed
@@ -70,7 +73,7 @@ uint8_t drv_write_page( void *p_drv, uint16_t mem_adr, \
                         uint8_t *p_data, uint16_t size, \
                         uint32_t timeout]
  */
-uint8_t drv_write_bytes(void *p_drv, uint16_t mem_adr, \
+uint8_t drv_write_bytes_cross(void *p_drv, uint16_t mem_adr, \
                         uint8_t *p_data, uint16_t size, \
                         uint32_t timeout)
 {
@@ -78,6 +81,7 @@ uint8_t drv_write_bytes(void *p_drv, uint16_t mem_adr, \
     uint16_t left_size = size;
     uint16_t current_adr = mem_adr;
     uint8_t *p_cursor = p_data;
+    at24_state_t ret = AT24_OK;
 
     if(NULL == p_at24 || NULL == p_data || 0U == size)
     {
@@ -85,41 +89,49 @@ uint8_t drv_write_bytes(void *p_drv, uint16_t mem_adr, \
     }
 
     if((mem_adr >= p_at24->max_byte_addr) || \
-       ((mem_adr + size) > p_at24->max_byte_addr))
+       ((uint32_t)mem_adr + (uint32_t)size) > p_at24->max_byte_addr)
     {
         return 1;
     }
 
     while(0U != left_size)
     {
-        uint16_t chunk_size = p_at24->page_size;
+        uint16_t page_remain = p_at24->page_size;
+        uint16_t chunk_size = 0U;
+        page_remain -= (uint16_t)(current_adr % p_at24->page_size);
+        chunk_size = (left_size < page_remain) ? left_size : page_remain;
 
-        if(0U == chunk_size)
-        {
-            return 1;
-        }
-
-        chunk_size -= (current_adr % p_at24->page_size);
-        if(chunk_size > left_size)
-        {
-            chunk_size = left_size;
-        }
-
-        if(0U == chunk_size)
-        {
-            chunk_size = left_size;
-        }
-
-        if(0U != drv_write_page(p_at24, current_adr, p_cursor, chunk_size, timeout))
+        ret = p_at24->pf_write_page(p_at24, current_adr, \
+                                    p_cursor, chunk_size, \
+                                    timeout);
+        if(AT24_OK != ret)
         {
             return 2;
         }
-
         current_adr += chunk_size;
         p_cursor += chunk_size;
         left_size -= chunk_size;
+        if(0U == left_size)
+        {
+            break;
+        }
+        uint32_t start = HAL_GetTick();
+        while ((HAL_GetTick() - start) < 5)
+        {
+            if(AT24_OK == p_at24->iic_ops->pf_iic_dev_isready(p_at24->iic_ops->p_iic_handle, \
+                                                            p_at24->dev_adr, \
+                                                            1U, \
+                                                            0U))
+            {
+                break;
+            }
+            HAL_Delay(1U);
+        }
+        if ((HAL_GetTick() - start) >= 10)
+        {
+            return 3;
+        }
     }
-
     return 0;
 }
 /**

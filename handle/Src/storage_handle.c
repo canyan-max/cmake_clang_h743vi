@@ -93,6 +93,32 @@ uint8_t storage_handle_write(storage_handle_t *p_handle, \
                          const storage_ops_t *p_ops, \
                          void *p_drv]
  */
+uint8_t storage_handle_write_cross_page(storage_handle_t *p_handle, \
+                            uint16_t mem_adr, \
+                            uint8_t *p_data, uint16_t size, \
+                            uint32_t timeout)
+{
+    if(NULL == p_handle || NULL == p_data || 0 == size || \
+       NULL == p_handle->p_ops || \
+       NULL == p_handle->p_ops->pf_write_cross_page)
+    {
+        return 1;
+    }
+    return p_handle->p_ops->pf_write_cross_page(p_handle->p_drv, mem_adr, \
+                                p_data, size, \
+                                timeout);
+                
+}
+
+/**
+ * @brief            :  [storage_handle_instruct]
+ * @retval           :  [0 successful, 
+                         1 invalid parameter
+                        ]
+ * @param[in]        :  [storage_handle_t *p_handle, \
+                         const storage_ops_t *p_ops, \
+                         void *p_drv]
+ */
 uint8_t storage_handle_read(storage_handle_t *p_handle, \
                             uint16_t mem_adr, \
                             uint8_t *p_data, uint16_t size, \

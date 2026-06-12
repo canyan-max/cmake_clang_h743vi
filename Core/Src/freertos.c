@@ -71,6 +71,7 @@ at24_driver_t g_at24c02_drv;
 const storage_ops_t g_storage_ops={
     .pf_drv_init   = drv_init,
     .pf_write_page = drv_write_page,
+    .pf_write_cross_page = drv_write_bytes_cross,
     .pf_read_bytes = drv_read_bytes
 };
 storage_handle_t g_storage_handle;
