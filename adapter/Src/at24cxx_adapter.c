@@ -58,7 +58,6 @@ uint8_t drv_write_page( void *p_drv, uint16_t mem_adr, \
                                 timeout);
     if(AT24_OK != ret)
     {
-
         return 2;
     }
     return 0; 
@@ -116,18 +115,20 @@ uint8_t drv_write_bytes_cross(void *p_drv, uint16_t mem_adr, \
             break;
         }
         uint32_t start = HAL_GetTick();
-        while ((HAL_GetTick() - start) < 5)
+        uint8_t timeout_flag = 1U;
+        while ((HAL_GetTick() - start) <= 5U)
         {
-            if(AT24_OK == p_at24->iic_ops->pf_iic_dev_isready(p_at24->iic_ops->p_iic_handle, \
-                                                            p_at24->dev_adr, \
-                                                            1U, \
-                                                            0U))
+            if(AT24_OK == p_at24->iic_ops->pf_iic_dev_isready(
+                    p_at24->iic_ops->p_iic_handle, \
+                     p_at24->dev_adr, \
+                      1U, \
+                     0U))
             {
+                timeout_flag = 0U;
                 break;
             }
-            HAL_Delay(1U);
         }
-        if ((HAL_GetTick() - start) >= 10)
+        if(timeout_flag)
         {
             return 3;
         }
@@ -148,13 +149,13 @@ uint8_t drv_read_bytes( void    *p_drv,  uint16_t mem_adr, \
                         uint8_t *p_data, uint16_t size, \
                         uint32_t timeout)
 {
-
+    at24_driver_t * p_at24 = (at24_driver_t * )p_drv;
+    at24_state_t ret = AT24_OK;
     if(NULL == p_drv || NULL == p_data || 0 == size)
     {
         return 1;
     }
-    at24_driver_t * p_at24 = (at24_driver_t * )p_drv;
-    at24_state_t ret = AT24_OK;
+
     ret = p_at24->pf_read_bytes(p_at24, mem_adr, \
                                 p_data, size, timeout);
     if(AT24_OK != ret)
