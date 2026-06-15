@@ -43,7 +43,6 @@
  */
 led_driver_state_t bsp_driver_led_init(led_driver_t   *p_drv , \
                                        const led_operation_t *p_ops)
-
 {
 
     if((NULL == p_drv) || (NULL == p_ops) || \

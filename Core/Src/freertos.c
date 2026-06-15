@@ -34,6 +34,9 @@
 #include "at24cxx_adapter.h"             /* at24cxx_adapter lib header file. */
 #include "bsp_drv_at24.h"                        /* at24 driver header file. */
 #include "core_dwt.h"                                    /* dwt header file. */
+#include "led_adapter.h"                     /* led_adapter lib header file. */
+#include "bsp_drv_led.h"                     /* bsp_drv_led lib header file. */
+#include "led_handle.h"                       /* led_handle lib header file. */
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -75,6 +78,18 @@ const storage_ops_t g_storage_ops={
     .pf_read_bytes = drv_read_bytes
 };
 storage_handle_t g_storage_handle;
+
+// led handle
+const led_handle_ops_t g_led1_adapter_ops ={
+  .pf_drv_init  = drv_led_init,
+  .pf_led_on    = drv_led_on,
+  .pf_led_off   = drv_led_off,
+  .pf_led_blink = drv_led_blink
+};
+led_driver_t    g_led1_drv;
+led_handle_t    g_led1_handle;
+extern const led_operation_t g_led1_ops;
+extern const led_operation_t g_led2_ops;
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -123,6 +138,8 @@ void MX_FREERTOS_Init(void) {
                           0xffU, 8U, \
                           AT24_MEMADD_SIZE_8BIT, \
                           0xA0U);
+  led_handle_instruct(&g_led1_handle,&g_led1_adapter_ops, \
+                        (void*)&g_led1_drv ,  (void*)&g_led1_ops);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -176,9 +193,10 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
-    logInfo("dwt time %d",get_dwt_us());
-    osDelay(15000);
+    // HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+   uint8_t ret =  led_handle_blink(&g_led1_handle);
+   logInfo("blink state of led  %d",ret);
+   osDelay(1500);
   }
   /* USER CODE END StartDefaultTask */
 }

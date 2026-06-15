@@ -69,8 +69,7 @@ SHELL_EXPORT_CMD(SHELL_CMD_PERMISSION(0)|SHELL_CMD_TYPE(SHELL_TYPE_CMD_FUNC), \
                  write_i2c1, \
                  write_i2c1, \
                  write_i2c1);
-
-
+                 
 int read_i2c1(uint8_t adr)
 {
     uint8_t r_code = 0;

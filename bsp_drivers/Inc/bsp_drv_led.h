@@ -44,14 +44,14 @@ typedef enum LED_DRIVER_STATE_T
 
 typedef struct LED_OPERATION_T
 {
-    void                                              *p_port;
+    void *                                             p_port;
     led_driver_state_t (*pf_led_init  )   (led_driver_t*self);
     led_driver_state_t (*pf_led_on    )   (led_driver_t*self);
     led_driver_state_t (*pf_led_off   )   (led_driver_t*self);
     led_driver_state_t (*pf_led_blink )   (led_driver_t*self);
     led_driver_state_t (*pf_led_deinit)   (led_driver_t*self);
     uint16_t                                              pin;
-    uint8_t                                      led_on_level; 
+    uint8_t                                      led_on_level;
 }led_operation_t;
 
 typedef struct LED_DRIVER_T
