@@ -93,7 +93,6 @@ SECTIONS
 
     KEEP (*(.init))
     KEEP (*(.fini))
-
     . = ALIGN(4);
     _shell_command_start = .;
     KEEP (*(shellCommand))

@@ -18,6 +18,7 @@
  *@calldirectly       :
  * 
  *@version            :   V1.0 
+ *
  *@note               :   1 tab == 4 spaces!
  ******************************************************************************
  */
@@ -49,7 +50,7 @@ uint16_t g_normal_cap            = 0;// NORMAL CAP
 uint16_t g_old_normal_cap        = 0;// NORMAL CAP 
 uint8_t  g_empty_flg             = 0;
 uint16_t g_cells_full_volt       = 3600; // mv
-uint16_t g_cells_empty_volt      = 2900; // mv
+uint16_t g_cells_empty_volt      = 0; // mv
 uint16_t g_volt_max_diff         = 1000; // mv
 //static float    g_remain_capacity       = 0.0f; // 
 //static float    g_full_max_capacity     = 0.0f; // RealCap_CHG
@@ -236,7 +237,7 @@ uint8_t bat_volatge_empty_check(uint16_t v_min , float i_current)
  * @brief            :  [soc_init_voltage_not_updata_capsoc]
  * @param[in]        :  [float i_current, \
                                         uint16_t vol, \
-                                        int16_t T_average
+                                        int16_t T_average]
  */
 static void soc_init_voltage_not_updata_capsoc(float i_current, \
                                         uint16_t vol_min, \
@@ -296,7 +297,7 @@ static void soc_init_voltage_not_updata_capsoc(float i_current, \
  * @brief            :  [soc_init_voltage_not_updata_capsoc]
  * @param[in]        :  [float i_current, \
                                         uint16_t vol, \
-                                        int16_t T_average
+                                        int16_t T_average]
  */
 static void soc_init_voltage_not_updata_capsoc_chg(float i_current, \
                                         uint16_t vol_min, \
@@ -329,6 +330,20 @@ static void soc_init_voltage_not_updata_capsoc_chg(float i_current, \
     }
 }
 
+/**
+ * @brief            :  [soc_init_value_though_input_value_upload]
+ * @param[in]        :  [float socinput]
+ */
+static void soc_init_value_though_input_value_upload(float socinput)
+{
+    g_soc = socinput;
+    if(g_soc < 0) g_soc = 0;
+    else if(g_soc > 100) g_soc = 100;
+    g_init_soc = g_soc;
+    g_current_soc = g_init_soc / 100.0f;
+    g_remain_capacity = g_current_soc * g_full_max_capacity;
+    
+}
 
 /**
  * @brief            :  [soc_calibration]
@@ -339,19 +354,23 @@ static void soc_init_voltage_not_updata_capsoc_chg(float i_current, \
 static void soc_calibration(float i_current ,uint16_t vol_max, \
                             uint16_t vol_min ,int16_t T_average)
 {
-//    static uint32_t count_chg =0,count_dsg=0,count_standy=0;
-//    static uint32_t count_chg =0;
     static uint32_t count_dsg=0,count_chg=0;
-//    static uint32_t count_standy=0;
-//    if(i_current == 0)
-//    {
-//        count_standy++;
-//        if(count_standy >=3600)
-//        {
-//            count_standy=0;
-//            //
-//        }
-//    }
+    static uint32_t count_standy=0;
+    if(i_current == 0)
+    {
+        count_standy++;
+        if(count_standy >=3600)
+        {
+            count_standy=0;
+            float self_use_power = (1*10) / (g_normal_cap*10);
+            float input_soc      = g_soc - self_use_power;
+            soc_init_value_though_input_value_upload(input_soc);
+        }
+    }
+    else 
+    {
+        count_standy=0;
+    }
     
     if(i_current < 0)
     {
@@ -362,6 +381,10 @@ static void soc_calibration(float i_current ,uint16_t vol_max, \
             soc_init_voltage_not_updata_capsoc( i_current, vol_min, T_average );
         }
     }
+    else 
+    {
+        count_dsg=0;
+    }
     
     if(i_current > 0)
     {
@@ -371,6 +394,10 @@ static void soc_calibration(float i_current ,uint16_t vol_max, \
             count_chg =0;
             soc_init_voltage_not_updata_capsoc_chg( i_current, vol_max, T_average );
         }
+    }
+    else 
+    {
+        count_chg=0;
     }
 }
 
@@ -401,7 +428,7 @@ static void soc_display(float current_i ,float soc , \
     {
         if(soc > 0.0f)
         {
-            g_init_soc += detal_cap_mah * 110.0f / real_capacity;
+            g_init_soc += detal_cap_mah * 105.0f / real_capacity; // 110
         }
         else
         {
@@ -429,11 +456,10 @@ static void soc_display(float current_i ,float soc , \
     {
         if( (current_i > 0 && bat_stasus == 1) || \
             (current_i < 0 && bat_stasus == 2) || \
-            (current_i == 0 && \
-            (g_init_soc ==0.0f || g_init_soc == 100.0f) )
+            (current_i == 0 &&(g_init_soc == 0.0f || g_init_soc == 100.0f) )
           )
         {
-            if(g_init_soc ==0.0f || g_init_soc == 100.0f)
+            if(g_init_soc == 0.0f || g_init_soc == 100.0f)
             {
                 g_soc = g_init_soc*0.3f+g_soc*0.7f;
             }
@@ -542,11 +568,13 @@ static void soc_display(float current_i ,float soc , \
 
 /**
  * @brief            :  [soc_soh_calc]
- * @param[in]        :  [uint16_t volt_max, uint16_t volt_min, float i_current, int16_t tempera]
+ * @param[in]        :  [uint16_t volt_max, uint16_t volt_min, 
+                         float i_current, int16_t tempera]
  */
 #define SOC_DEBUG
 float detal_cap_mah = 0;
-void soc_soh_calc(uint16_t volt_max, uint16_t volt_min, float i_current, int16_t tempera )
+void soc_soh_calc(uint16_t volt_max, uint16_t volt_min, \
+                  float i_current, int16_t tempera )
 {
     // i current ma  g_full_max_capacity  mah
     #ifndef SOC_DEBUG 
@@ -590,7 +618,7 @@ void soc_soh_calc(uint16_t volt_max, uint16_t volt_min, float i_current, int16_t
         {
             g_current_soc = 0.0f;
             g_init_soc    = 0.0f;
-            g_remain_capacity = 0;
+            g_remain_capacity = 0.0f;
         }
     }
     

@@ -21,17 +21,21 @@
 #include <stddef.h>                               /* stdint lib header file. */
 #include "led_adapter.h"                     /* led_adapter lib header file. */
 #include "bsp_drv_led.h"                     /* bsp_drv_led lib header file. */
-
 /* define   -----------------------------------------------------------------*/
 
-         
 /* typedef ------------------------------------------------------------------*/
 
 /* variables ----------------------------------------------------------------*/
 
-/* Private  functions  ------------------------------------------------------*/
+/* private  functions  ------------------------------------------------------*/
 
-/* Exported functions -------------------------------------------------------*/
+/* exported functions -------------------------------------------------------*/
+/**
+ * @brief            :  [drv_led_on
+                        drv open the led operation ]
+ * @retval           :  [0 successfully]
+ * @param[in]        :  [p_drv]
+ */
 uint8_t drv_led_on(void*p_drv)
 {
     if(NULL == p_drv) return 1;
@@ -44,7 +48,12 @@ uint8_t drv_led_on(void*p_drv)
     
     return 0;
 }
-
+/**
+ * @brief            :  [drv_led_off
+                        drv close the led operation ]
+ * @retval           :  [0 successfully]
+ * @param[in]        :  [p_drv]
+ */
 uint8_t drv_led_off(void*p_drv)
 {
     if(NULL == p_drv) return 1;
@@ -55,6 +64,12 @@ uint8_t drv_led_off(void*p_drv)
     if(LED_OK != ret ) return 2;
     return 0;
 }
+/**
+ * @brief            :  [drv_led_blink
+                        drv blink the led operation ]
+ * @retval           :  [0 successfully]
+ * @param[in]        :  [p_drv]
+ */
 uint8_t drv_led_blink(void*p_drv)
 {
     if(NULL == p_drv) return 1;
@@ -65,7 +80,12 @@ uint8_t drv_led_blink(void*p_drv)
     if(LED_OK != ret ) return 2;
     return 0;
 }
-
+/**
+ * @brief            :  [drv_led_init
+                        drv init the led operation ]
+ * @retval           :  [0 successfully]
+ * @param[in]        :  [p_drv]
+ */
 uint8_t drv_led_init(void*p_drv,void*drv_ops)
 {
     if(NULL == p_drv || NULL == drv_ops) return 1;
@@ -76,4 +96,4 @@ uint8_t drv_led_init(void*p_drv,void*drv_ops)
     if(LED_OK != ret ) return 2;
     return 0;
 }
-/* end of  file -------------------------------------------------------------*/
+/* end of file --------------------------------------------------------------*/

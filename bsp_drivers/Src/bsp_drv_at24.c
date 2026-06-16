@@ -63,7 +63,7 @@
 
 /* variables ----------------------------------------------------------------*/
 
-/* Private  functions  ------------------------------------------------------*/
+/* private  functions  ------------------------------------------------------*/
 /**
   * @brief            :  [write_page]
   * @retval           :  [      AT24_OK        = 0x00U,
@@ -170,7 +170,7 @@ static at24_state_t write_byte(at24_driver_t *p_drv, \
     return AT24_OK;
 }
                                
-/* Exported functions -------------------------------------------------------*/
+/* exported functions -------------------------------------------------------*/
 /**
  * @brief            :  [at24_driver_instruct 
                          init the at24 driver and iic ops.

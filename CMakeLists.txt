@@ -42,10 +42,10 @@ add_subdirectory(Middlewares/Kfifo)
 add_subdirectory(Middlewares/Soc)
 add_subdirectory(Middlewares/Dwt)
 # add_subdirectory(Middlewares/SeggerHardFault)
-add_subdirectory(st_platform)
-add_subdirectory(bsp_drivers)
-add_subdirectory(adapter)
-add_subdirectory(handle)
+add_subdirectory(ST_platform)
+add_subdirectory(Bsp_drivers)
+add_subdirectory(Adapter)
+add_subdirectory(Handle)
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined library search paths
@@ -60,7 +60,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
-     Core/Inc
+    Core/Inc
 )
 
 # Add project symbols (macros)
