@@ -103,7 +103,17 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
+//   HAL_Delay(200);
   dwt_init();
+  storage_handle_instruct(&g_storage_handle, \
+                          &g_storage_ops, \
+                          &g_at24c02_drv, \
+                          0xffU, 8U, \
+                          AT24_MEMADD_SIZE_8BIT, \
+                          0xA0U);
+  led_handle_instruct(&g_led1_handle,&g_led1_adapter_ops, \
+                        (void*)&g_led1_drv ,  (void*)&g_led1_ops);
+  kfifo_init(&g_kfifo, k_fifo_buffer, sizeof(k_fifo_buffer));
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -120,6 +130,7 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
+  
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -132,19 +143,10 @@ void MX_FREERTOS_Init(void) {
   /* add threads, ... */
   userShellInit();
   // init the at24c02 storage handle.
-  storage_handle_instruct(&g_storage_handle, \
-                          &g_storage_ops, \
-                          &g_at24c02_drv, \
-                          0xffU, 8U, \
-                          AT24_MEMADD_SIZE_8BIT, \
-                          0xA0U);
-  led_handle_instruct(&g_led1_handle,&g_led1_adapter_ops, \
-                        (void*)&g_led1_drv ,  (void*)&g_led1_ops);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
-  kfifo_init(&g_kfifo, k_fifo_buffer, sizeof(k_fifo_buffer));
   /* USER CODE END RTOS_EVENTS */
 
 }
@@ -160,43 +162,43 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
     ((void)argument);
-    logInfo("StartDefaultTask is running...");
-
-    logInfo("kfifo len %d" , kfifo_len(&g_kfifo));
-    logInfo("kfifo avail %d" , kfifo_avail(&g_kfifo));
-    uint8_t wdata1[] = {0x01, 0x02, 0x03, 0x04, 0x05};
-    uint32_t ret = kfifo_put(&g_kfifo, wdata1, 5);
-    logInfo("kfifo_put ret %d" , ret);
-    logInfo("kfifo len %d" , kfifo_len(&g_kfifo));
-    logInfo("kfifo avail %d" , kfifo_avail(&g_kfifo));
-    uint8_t rdata1[5] = {0};
-    ret = kfifo_get(&g_kfifo, rdata1, 5);
-    logInfo("kfifo_get ret %d" , ret);
-    logInfo("kfifo len %d" , kfifo_len(&g_kfifo));
-    logInfo("kfifo avail %d" , kfifo_avail(&g_kfifo));
-    // write 12 bytes, which is more than the fifo size, to test the boundary condition.
-    uint8_t wdata2[] = {0x11, 0x12, 0x13, 0x14, 0x15, \
-                        0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C};
-    ret = kfifo_put(&g_kfifo, wdata2, 12);
-    logInfo("kfifo_put ret %d" , ret);
-    logInfo("kfifo len %d" , kfifo_len(&g_kfifo));
-    logInfo("kfifo avail %d" , kfifo_avail(&g_kfifo));
-    uint8_t rdata[16] = {0};
-    ret = kfifo_get(&g_kfifo, rdata, 14);
-    logInfo("kfifo_get ret %d" , ret);
-    logInfo("kfifo len %d" , kfifo_len(&g_kfifo));
-    logInfo("kfifo avail %d" , kfifo_avail(&g_kfifo));
-    for(uint8_t i = 0; i < ret; i++) 
-    {
-        logInfo("rdata[%d] = 0x%02X", i, rdata[i]);
-    }
+    // logInfo("StartDefaultTask is running...");
+    // HAL_Delay(100);
+    // logInfo("kfifo len %d" , kfifo_len(&g_kfifo));
+    // logInfo("kfifo avail %d" , kfifo_avail(&g_kfifo));
+    // uint8_t wdata1[] = {0x01, 0x02, 0x03, 0x04, 0x05};
+    // uint32_t ret = kfifo_put(&g_kfifo, wdata1, 5);
+    // logInfo("kfifo_put ret %d" , ret);
+    // logInfo("kfifo len %d" , kfifo_len(&g_kfifo));
+    // logInfo("kfifo avail %d" , kfifo_avail(&g_kfifo));
+    // uint8_t rdata1[5] = {0};
+    // ret = kfifo_get(&g_kfifo, rdata1, 5);
+    // logInfo("kfifo_get ret %d" , ret);
+    // logInfo("kfifo len %d" , kfifo_len(&g_kfifo));
+    // logInfo("kfifo avail %d" , kfifo_avail(&g_kfifo));
+    // // write 12 bytes, which is more than the fifo size, to test the boundary condition.
+    // uint8_t wdata2[] = {0x11, 0x12, 0x13, 0x14, 0x15, \
+    //                     0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C};
+    // ret = kfifo_put(&g_kfifo, wdata2, 12);
+    // logInfo("kfifo_put ret %d" , ret);
+    // logInfo("kfifo len %d" , kfifo_len(&g_kfifo));
+    // logInfo("kfifo avail %d" , kfifo_avail(&g_kfifo));
+    // uint8_t rdata[16] = {0};
+    // ret = kfifo_get(&g_kfifo, rdata, 14);
+    // logInfo("kfifo_get ret %d" , ret);
+    // logInfo("kfifo len %d" , kfifo_len(&g_kfifo));
+    // logInfo("kfifo avail %d" , kfifo_avail(&g_kfifo));
+    // for(uint8_t i = 0; i < ret; i++) 
+    // {
+    //     logInfo("rdata[%d] = 0x%02X", i, rdata[i]);
+    // }
   /* Infinite loop */
   for(;;)
   {
-    // HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
-   uint8_t ret =  led_handle_blink(&g_led1_handle);
-   logInfo("blink state of led  %d",ret);
-   osDelay(1500);
+    uint8_t ret =  led_handle_blink(&g_led1_handle);
+    logInfo("blink state of led  %d",ret);
+    // HAL_Delay(1000);
+    osDelay(15000);
   }
   /* USER CODE END StartDefaultTask */
 }
