@@ -21,10 +21,12 @@
 
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>                               /* stddef lib header file. */
+#include <stdint.h>
 #include "st_lcd_spi.h"                       /* st_lcd_spi lib header file. */
 #include "bsp_drv_st7789.h"            /* bsp_drv_st7789 lib header file. */
 #include "spi.h"                                     /* spi lib header file. */
 #include "gpio.h"                                   /* gpio lib header file. */
+#include "stm32h7xx_hal_spi.h"
 
 /* define   -----------------------------------------------------------------*/
 
@@ -33,6 +35,8 @@
 /* variables ----------------------------------------------------------------*/
 static st7789_state_t st_spi_transmit (uint8_t  *p_data,
                                         uint32_t  lenth);
+static st7789_state_t st_spi_transmit_with_dma(uint8_t  *p_data,
+                                       uint32_t  lenth);                                        
 static st7789_state_t st_backlight_pin(uint8_t   on);
 static st7789_state_t st_dataorcmd_pin (uint8_t   on);
 static void           st_delay_ms      (uint32_t  ms);
@@ -40,6 +44,7 @@ static void           st_delay_ms      (uint32_t  ms);
 const st7789_spi_ops_t g_st7789_spi_ops =
 {
     .pf_spi_transmit    = st_spi_transmit,
+    .pf_spi_transmit_with_dma = st_spi_transmit_with_dma,
     .pf_backlight_pin   = st_backlight_pin,
     .pf_dataorcmd_pin   = st_dataorcmd_pin,
     .pf_delay_ms        = st_delay_ms,
@@ -70,6 +75,36 @@ static st7789_state_t st_spi_transmit(uint8_t  *p_data,
     }
     return ST7789_OK;
 }
+
+/**
+  * @brief            :  [st_spi_transmit]
+                         Pure SPI transmit via SPI4, no DC pin control.
+  * @retval           :  [   ST7789_OK              = 0x00U,
+                             ST7789_ERROR           = 0x01U,]
+  * @param[in]        :  [uint8_t *p_data, uint32_t lenth]
+  */
+static st7789_state_t st_spi_transmit_with_dma(uint8_t  *p_data,
+                                       uint32_t  lenth)
+{
+    HAL_StatusTypeDef hal_ret = HAL_OK;
+
+    if ((NULL == p_data) || (0U == lenth))
+    {
+        return ST7789_INVALID_PARAM;
+    }
+    SCB_CleanDCache_by_Addr(p_data,lenth);
+    while(HAL_SPI_GetState(&hspi4) == HAL_SPI_STATE_BUSY_TX) 
+    {
+    }
+    hal_ret = HAL_SPI_Transmit_DMA(&hspi4, p_data, (uint16_t)lenth);
+    if (HAL_OK != hal_ret)
+    {
+        return ST7789_ERROR;
+    }
+    
+    return ST7789_OK;
+}
+
 
 /**
   * @brief            :  [st_backlight_pin]
@@ -107,5 +142,20 @@ static void st_delay_ms(uint32_t ms)
 {
     HAL_Delay(ms);
 }
-
+uint8_t TX_CODE ;
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+    if (hspi == &hspi4)
+    {
+        TX_CODE+=1;
+    }
+}
+uint8_t ERR_CODE ;
+void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
+{
+    if (hspi == &hspi4)
+    {
+        ERR_CODE+=1;
+    }
+}
 /* end of  file -------------------------------------------------------------*/

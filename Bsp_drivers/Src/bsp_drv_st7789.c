@@ -45,7 +45,7 @@
 /* typedef ------------------------------------------------------------------*/
 
 /* variables ----------------------------------------------------------------*/
-static uint8_t sg_line_buf[ST7789_LINE_BUF_SIZE]; // Line buffer for fill ops.
+__attribute__((section(".dma_buffers"))) uint8_t sg_line_buf[ST7789_LINE_BUF_SIZE]; // Line buffer for fill ops.
 
 /* private  functions  ------------------------------------------------------*/
 /**
@@ -482,8 +482,10 @@ static st7789_state_t st7789_fill_screen(st7789_driver_t *p_drv,
     {
         // ret = st7789_write_buf(p_drv, sg_line_buf, \
         //                        ST7789_LINE_BUF_SIZE);
-        ret = p_drv->p_spi_ops->pf_spi_transmit(sg_line_buf, \
-                                        ST7789_LINE_BUF_SIZE);
+        // ret = p_drv->p_spi_ops->pf_spi_transmit(sg_line_buf, \
+                                        // ST7789_LINE_BUF_SIZE);
+        ret = p_drv->p_spi_ops->pf_spi_transmit_with_dma(sg_line_buf, \
+                                        ST7789_LINE_BUF_SIZE);                             
         if (ST7789_OK != ret)
         {
             return ret;

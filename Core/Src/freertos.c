@@ -21,6 +21,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
+#include "FreeRTOS.h"
 #include "cmsis_os2.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -128,9 +129,7 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the thread(s) */
   /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, \
-                            NULL, \
-                            &defaultTask_attributes);
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -220,7 +219,7 @@ void StartDefaultTask(void *argument)
               g_st7789_drv.pf_fill_screen(&g_st7789_drv, 0x001FU);  // Blue
           }
           color_idx = (color_idx + 1U) % 3U;
-          osDelay(1000);
+          osDelay(20);
       }
   }
   /* USER CODE END StartDefaultTask */

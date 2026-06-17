@@ -50,6 +50,8 @@ typedef struct ST7789_SPI_OPS_T
     // SPI transmit raw bytes.
     st7789_state_t (*pf_spi_transmit)  (uint8_t  *p_data,                       
                                         uint32_t  lenth);
+    st7789_state_t (*pf_spi_transmit_with_dma)  (uint8_t  *p_data,                       
+                                            uint32_t  lenth);
     // Backlight pin: 1=on, 0=off.
     st7789_state_t (*pf_backlight_pin) (uint8_t   on); 
     // DC pin: 1=command, 0=data.

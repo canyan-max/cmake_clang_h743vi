@@ -234,6 +234,13 @@ SECTIONS
 
   PROVIDE( __bss_start = __tbss_start );
   PROVIDE( __bss_size = __bss_end - __bss_start );
+  
+  .dma_buffers (NOLOAD) : ALIGN(4)
+  {
+    *(.dma_buffers)
+    *(.dma_buffers.*)
+    . = ALIGN(4);
+  } >RAM   /* 使用 0x24000000 的 AXI SRAM，DMA1 可访问 */
 
   /* User_heap_stack section, used to check that there is enough RAM left */
   ._user_heap_stack (NOLOAD) :
