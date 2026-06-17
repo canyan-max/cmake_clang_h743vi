@@ -37,6 +37,8 @@
 #include "led_adapter.h"                     /* led_adapter lib header file. */
 #include "bsp_drv_led.h"                     /* bsp_drv_led lib header file. */
 #include "led_handle.h"                       /* led_handle lib header file. */
+#include "st_lcd_spi.h"                     /* st_lcd_spi lib header file. */
+#include "bsp_drv_st7789.h"            /* bsp_drv_st7789 lib header file. */
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -90,6 +92,7 @@ led_driver_t    g_led1_drv;
 led_handle_t    g_led1_handle;
 extern const led_operation_t g_led1_ops;
 extern const led_operation_t g_led2_ops;
+st7789_driver_t g_st7789_drv;
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -103,17 +106,7 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-//   HAL_Delay(200);
   dwt_init();
-  storage_handle_instruct(&g_storage_handle, \
-                          &g_storage_ops, \
-                          &g_at24c02_drv, \
-                          0xffU, 8U, \
-                          AT24_MEMADD_SIZE_8BIT, \
-                          0xA0U);
-  led_handle_instruct(&g_led1_handle,&g_led1_adapter_ops, \
-                        (void*)&g_led1_drv ,  (void*)&g_led1_ops);
-  kfifo_init(&g_kfifo, k_fifo_buffer, sizeof(k_fifo_buffer));
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -142,7 +135,6 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   userShellInit();
-  // init the at24c02 storage handle.
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -192,13 +184,44 @@ void StartDefaultTask(void *argument)
     // {
     //     logInfo("rdata[%d] = 0x%02X", i, rdata[i]);
     // }
+      /* ST7789 LCD test */
+  storage_handle_instruct(&g_storage_handle, \
+                          &g_storage_ops, \
+                          &g_at24c02_drv, \
+                          0xffU, 8U, \
+                          AT24_MEMADD_SIZE_8BIT, \
+                          0xA0U);
+  led_handle_instruct(&g_led1_handle,&g_led1_adapter_ops, \
+                        (void*)&g_led1_drv ,  (void*)&g_led1_ops);
+  kfifo_init(&g_kfifo, k_fifo_buffer, sizeof(k_fifo_buffer));
+
+  
+  st7789_state_t st7789_ret = st7789_driver_instruct(&g_st7789_drv, \
+                                                        &g_st7789_spi_ops);
+    logInfo("st7789 instruct ret: %d", st7789_ret);
+  
+
   /* Infinite loop */
-  for(;;)
   {
-    uint8_t ret =  led_handle_blink(&g_led1_handle);
-    logInfo("blink state of led  %d",ret);
-    // HAL_Delay(1000);
-    osDelay(15000);
+      uint8_t color_idx = 0U;
+      for(;;)
+      {
+          /* R/G/B cycle */
+          if (0U == color_idx)
+          {
+            g_st7789_drv.pf_fill_screen(&g_st7789_drv, 0xF800U);  // Red
+          }
+          else if (1U == color_idx)
+          {
+              g_st7789_drv.pf_fill_screen(&g_st7789_drv, 0x07E0U);  // Green
+          }
+          else
+          {
+              g_st7789_drv.pf_fill_screen(&g_st7789_drv, 0x001FU);  // Blue
+          }
+          color_idx = (color_idx + 1U) % 3U;
+          osDelay(1000);
+      }
   }
   /* USER CODE END StartDefaultTask */
 }
