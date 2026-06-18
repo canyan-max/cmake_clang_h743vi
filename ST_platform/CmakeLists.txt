@@ -4,6 +4,13 @@ set(ST_PLATFORM_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/st_iic.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/st_lcd_spi.c
 )
+set(ST_PLATFORM_DEPEND_LIB
+    bsp_drivers
+    stm32cubemx
+    letter_shell
+    dwt
+)
+
 add_library(st_platform STATIC ${ST_PLATFORM_SRC})
 target_include_directories(st_platform PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Inc)
-target_link_libraries(st_platform PRIVATE bsp_drivers stm32cubemx)
+target_link_libraries(st_platform PRIVATE ${ST_PLATFORM_DEPEND_LIB})

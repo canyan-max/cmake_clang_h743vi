@@ -38,8 +38,8 @@
 #include "led_adapter.h"                     /* led_adapter lib header file. */
 #include "bsp_drv_led.h"                     /* bsp_drv_led lib header file. */
 #include "led_handle.h"                       /* led_handle lib header file. */
-#include "st_lcd_spi.h"                     /* st_lcd_spi lib header file. */
-#include "bsp_drv_st7789.h"            /* bsp_drv_st7789 lib header file. */
+#include "st_lcd_spi.h"                       /* st_lcd_spi lib header file. */
+#include "bsp_drv_st7789.h"               /* bsp_drv_st7789 lib header file. */
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -219,7 +219,7 @@ void StartDefaultTask(void *argument)
               g_st7789_drv.pf_fill_screen(&g_st7789_drv, 0x001FU);  // Blue
           }
           color_idx = (color_idx + 1U) % 3U;
-          osDelay(20);
+          osDelay(1000);
       }
   }
   /* USER CODE END StartDefaultTask */

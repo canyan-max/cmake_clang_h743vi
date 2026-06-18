@@ -3,8 +3,13 @@ set(ADAPTER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/at24cxx_adapter.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/led_adapter.c
 )
+
+set(ADAPTER_DEPEND_LIB
+    bsp_drivers
+)
+
 add_library(adapter STATIC ${ADAPTER_SRC})
 
 target_include_directories(adapter PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Inc)
 
-target_link_libraries(adapter PRIVATE bsp_drivers)
+target_link_libraries(adapter PRIVATE ${ADAPTER_DEPEND_LIB})

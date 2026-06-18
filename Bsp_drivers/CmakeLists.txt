@@ -4,8 +4,15 @@ set(BSP_DRIVERS_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_drv_at24.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_drv_st7789.c
 )
+
+set(BSP_DRIVERS_DEPEND_LIB
+    letter_shell
+
+)
+
+
 add_library(bsp_drivers STATIC ${BSP_DRIVERS_SRC})
 
 target_include_directories(bsp_drivers PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Inc)
 
-target_link_libraries(bsp_drivers PRIVATE letter_shell)
+target_link_libraries(bsp_drivers PRIVATE ${BSP_DRIVERS_DEPEND_LIB})

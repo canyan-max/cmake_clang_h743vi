@@ -2,6 +2,7 @@
 set(KFIFO_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/kfifo.c
 )
+
 add_library(kfifo STATIC ${KFIFO_SRC})
 
 target_include_directories(kfifo PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Inc)

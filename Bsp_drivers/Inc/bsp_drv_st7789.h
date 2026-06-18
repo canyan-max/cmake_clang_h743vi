@@ -55,7 +55,7 @@ typedef struct ST7789_SPI_OPS_T
     // Backlight pin: 1=on, 0=off.
     st7789_state_t (*pf_backlight_pin) (uint8_t   on); 
     // DC pin: 1=command, 0=data.
-    st7789_state_t (*pf_dataorcmd_pin) (uint8_t   on);    
+    st7789_state_t (*pf_dc_pin) (uint8_t   on);    
     // Delay milliseconds.                    
     void           (*pf_delay_ms)      (uint32_t ms);                                
 } st7789_spi_ops_t;
@@ -65,6 +65,7 @@ typedef struct ST7789_DRIVER_T
     // SPI platform ops.
     const st7789_spi_ops_t *p_spi_ops;
     // Set column/row address window.
+    st7789_state_t (*pf_deinit)(st7789_driver_t *p_drv);
     st7789_state_t (*pf_set_window)(st7789_driver_t *p_drv,                   
                                      uint16_t         xs,
                                      uint16_t         ys,

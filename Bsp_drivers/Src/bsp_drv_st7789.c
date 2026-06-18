@@ -41,11 +41,13 @@
 #define ST7789_SLPOUT_DELAY_MS      (120U)       // Delay after sleep out.
 
 #define ST7789_LINE_BUF_SIZE        (ST7789_SCREEN_WIDTH * 2U)
-
 /* typedef ------------------------------------------------------------------*/
 
 /* variables ----------------------------------------------------------------*/
-__attribute__((section(".dma_buffers"))) uint8_t sg_line_buf[ST7789_LINE_BUF_SIZE]; // Line buffer for fill ops.
+ // Line buffer for fill ops.
+__attribute__((section(".ram_dma_buffers"))) \
+uint8_t sg_line_buf[ST7789_LINE_BUF_SIZE];
+// __attribute__((section(".ram_dma_buffers"))) uint16_t sg_line_buf[ST7789_LINE_BUF_SIZE];
 
 /* private  functions  ------------------------------------------------------*/
 /**
@@ -60,9 +62,9 @@ static st7789_state_t st7789_write_cmd(st7789_driver_t *p_drv,
                                         uint8_t          cmd)
 {
     st7789_state_t ret = ST7789_OK;
-
+   
     /* DC pin = command mode */
-    ret = p_drv->p_spi_ops->pf_dataorcmd_pin(1U);
+    ret = p_drv->p_spi_ops->pf_dc_pin(1U);
     if (ST7789_OK != ret)
     {
         return ret;
@@ -86,7 +88,7 @@ static st7789_state_t st7789_write_data(st7789_driver_t *p_drv,
     st7789_state_t ret = ST7789_OK;
 
     /* DC pin = data mode */
-    ret = p_drv->p_spi_ops->pf_dataorcmd_pin(0U);
+    ret = p_drv->p_spi_ops->pf_dc_pin(0U);
     if (ST7789_OK != ret)
     {
         return ret;
@@ -117,13 +119,35 @@ static st7789_state_t st7789_write_buf(st7789_driver_t *p_drv,
     }
 
     /* DC pin = data mode */
-    ret = p_drv->p_spi_ops->pf_dataorcmd_pin(0U);
+    ret = p_drv->p_spi_ops->pf_dc_pin(0U);
     if (ST7789_OK != ret)
     {
         return ret;
     }
     /* SPI transmit data buffer */
-    ret = p_drv->p_spi_ops->pf_spi_transmit(p_data, data_len);
+    while(data_len>0)
+    {
+        uint16_t check_len = data_len>=65535U?65535U:data_len;
+        if(check_len>16)
+        {
+            ret = p_drv->p_spi_ops->pf_spi_transmit_with_dma(p_data, \
+                                                    check_len);
+            if (ST7789_OK != ret)
+            {
+                return ret;
+            } 
+        }
+        else 
+        {
+            ret = p_drv->p_spi_ops->pf_spi_transmit(p_data, check_len);
+            if (ST7789_OK != ret)
+            {
+                return ret;
+            }
+        }
+        p_data+=check_len;
+        data_len-=check_len;
+    }
     return ret;
 }
 
@@ -165,16 +189,16 @@ static st7789_state_t st7789_write_reg(st7789_driver_t *p_drv,
                                         uint32_t        data_len)
 {
     st7789_state_t ret = ST7789_OK;
-
+    if(NULL == p_data || NULL == p_drv || 0==data_len)
+    {
+        return ST7789_INVALID_PARAM;
+    }
     ret = st7789_write_cmd(p_drv, cmd);
     if (ST7789_OK != ret)
     {
         return ret;
     }
-    if ((0U != data_len) && (NULL != p_data))
-    {
-        ret = st7789_write_buf(p_drv, p_data, data_len);
-    }
+    ret = st7789_write_buf(p_drv, p_data, data_len);
     return ret;
 }
 
@@ -300,8 +324,11 @@ static st7789_state_t st7789_init(st7789_driver_t *p_drv)
     /* Step 14: Negative gamma correction */
     {
         uint8_t gamma_n[] = {
-            0xD0U, 0x04U, 0x0CU, 0x11U, 0x13U, 0x2CU, 0x3FU,
-            0x44U, 0x51U, 0x2FU, 0x1FU, 0x1FU, 0x20U, 0x23U
+            0xD0U, 0x04U, 0x0CU, 
+            0x11U, 0x13U, 0x2CU, 
+            0x3FU, 0x44U, 0x51U, 
+            0x2FU, 0x1FU, 0x1FU, 
+            0x20U, 0x23U
         };
         ret = st7789_write_reg(p_drv, 0xE1U,
                                 gamma_n, sizeof(gamma_n));
@@ -340,6 +367,29 @@ static st7789_state_t st7789_init(st7789_driver_t *p_drv)
         return ret;
     }
 
+    return ST7789_OK;
+}
+
+/**
+  * @brief            :  [st7789_deinit]
+                         Deinitialize the ST7789 hardware (register sequence).
+  * @retval           :  [   ST7789_OK              = 0x00U,
+                             ST7789_ERROR           = 0x01U,]
+  * @param[in]        :  [st7789_driver_t *p_drv]
+  */
+static st7789_state_t st7789_deinit(st7789_driver_t *p_drv)
+{
+    if (NULL == p_drv) 
+    {
+        return ST7789_INVALID_PARAM; 
+    }
+
+    if( ST7789_DRIVER_NOT_INIT == p_drv->is_init )
+    {
+        return  ST7789_ERROR;
+    }
+
+    p_drv->is_init = ST7789_DRIVER_NOT_INIT;
     return ST7789_OK;
 }
 
@@ -464,31 +514,30 @@ static st7789_state_t st7789_fill_screen(st7789_driver_t *p_drv,
     }
 
     /* Fill line buffer with the color (RGB565: high byte first) */
-    for (i = 0U; i < ST7789_LINE_BUF_SIZE; i += 2U)
+    for (i = 0U; i < ST7789_LINE_BUF_SIZE; i+=2U)
     {
-        sg_line_buf[i]       = (uint8_t)(color >> 8U);
-        sg_line_buf[i + 1U]  = (uint8_t)(color & 0xFFU);
+      sg_line_buf[i]       = (uint8_t)(color >> 8U);
+      sg_line_buf[i + 1U]  = (uint8_t)(color & 0x00FFU);
     }
-
     /* Send line buffer row by row */
     /* DC pin = data mode */
-    ret = p_drv->p_spi_ops->pf_dataorcmd_pin(0U);
-    if (ST7789_OK != ret)
-    {
-        return ret;
-    }
+    // ret = p_drv->p_spi_ops->pf_dc_pin(0U);
+    // if (ST7789_OK != ret)
+    // {
+    //     return ret;
+    // }
     /* SPI transmit data buffer */
-    for (row = 0U; row < ST7789_SCREEN_HEIGHT; row++)
+    for(row =0U;row<ST7789_SCREEN_HEIGHT;row++)
     {
-        // ret = st7789_write_buf(p_drv, sg_line_buf, \
-        //                        ST7789_LINE_BUF_SIZE);
-        // ret = p_drv->p_spi_ops->pf_spi_transmit(sg_line_buf, \
-                                        // ST7789_LINE_BUF_SIZE);
-        ret = p_drv->p_spi_ops->pf_spi_transmit_with_dma(sg_line_buf, \
-                                        ST7789_LINE_BUF_SIZE);                             
-        if (ST7789_OK != ret)
+        ret = st7789_write_buf(p_drv, (uint8_t*)sg_line_buf, \
+                              ST7789_LINE_BUF_SIZE);
+        // ret = p_drv->p_spi_ops->pf_spi_transmit((uint8_t*)sg_line_buf, \
+        //                       ST7789_LINE_BUF_SIZE);
+        // ret =  p_drv->p_spi_ops->pf_spi_transmit_with_dma((uint8_t*)sg_line_buf, \
+        //                       ST7789_LINE_BUF_SIZE);
+        if(ST7789_OK!=ret)
         {
-            return ret;
+            return ret ;
         }
     }
     return ST7789_OK;
@@ -542,24 +591,21 @@ st7789_state_t st7789_driver_instruct(st7789_driver_t        *p_drv,
     p_drv->p_spi_ops = p_ops;
 
     /* Bind driver function pointers */
-    // p_drv->pf_init         = st7789_init;
+    p_drv->pf_deinit       = st7789_deinit;
     p_drv->pf_set_window   = st7789_set_window;
     p_drv->pf_fill_screen  = st7789_fill_screen;
     p_drv->pf_clear_screen = st7789_clear_screen;
 
     /* Execute hardware init sequence */
-    // ret = p_drv->pf_init(p_drv);
     st7789_init(p_drv);
     if (ST7789_OK != ret)
     {
-        p_drv->p_spi_ops   = NULL;
-        // p_drv->pf_init     = NULL;
+        p_drv->p_spi_ops       = NULL;
         p_drv->pf_set_window   = NULL;
         p_drv->pf_fill_screen  = NULL;
         p_drv->pf_clear_screen = NULL;
         return ret;
     }
-
     p_drv->is_init = ST7789_DRIVER_IS_INIT;
     return ST7789_OK;
 }
