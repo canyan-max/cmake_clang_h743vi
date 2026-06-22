@@ -65,7 +65,7 @@
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
-  .stack_size = 128 * 4,
+  .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 
@@ -108,6 +108,7 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
   dwt_init();
+
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -130,7 +131,6 @@ void MX_FREERTOS_Init(void) {
   /* Create the thread(s) */
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
-
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   userShellInit();
@@ -152,38 +152,8 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
-    ((void)argument);
-    // logInfo("StartDefaultTask is running...");
-    // HAL_Delay(100);
-    // logInfo("kfifo len %d" , kfifo_len(&g_kfifo));
-    // logInfo("kfifo avail %d" , kfifo_avail(&g_kfifo));
-    // uint8_t wdata1[] = {0x01, 0x02, 0x03, 0x04, 0x05};
-    // uint32_t ret = kfifo_put(&g_kfifo, wdata1, 5);
-    // logInfo("kfifo_put ret %d" , ret);
-    // logInfo("kfifo len %d" , kfifo_len(&g_kfifo));
-    // logInfo("kfifo avail %d" , kfifo_avail(&g_kfifo));
-    // uint8_t rdata1[5] = {0};
-    // ret = kfifo_get(&g_kfifo, rdata1, 5);
-    // logInfo("kfifo_get ret %d" , ret);
-    // logInfo("kfifo len %d" , kfifo_len(&g_kfifo));
-    // logInfo("kfifo avail %d" , kfifo_avail(&g_kfifo));
-    // // write 12 bytes, which is more than the fifo size, to test the boundary condition.
-    // uint8_t wdata2[] = {0x11, 0x12, 0x13, 0x14, 0x15, \
-    //                     0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C};
-    // ret = kfifo_put(&g_kfifo, wdata2, 12);
-    // logInfo("kfifo_put ret %d" , ret);
-    // logInfo("kfifo len %d" , kfifo_len(&g_kfifo));
-    // logInfo("kfifo avail %d" , kfifo_avail(&g_kfifo));
-    // uint8_t rdata[16] = {0};
-    // ret = kfifo_get(&g_kfifo, rdata, 14);
-    // logInfo("kfifo_get ret %d" , ret);
-    // logInfo("kfifo len %d" , kfifo_len(&g_kfifo));
-    // logInfo("kfifo avail %d" , kfifo_avail(&g_kfifo));
-    // for(uint8_t i = 0; i < ret; i++) 
-    // {
-    //     logInfo("rdata[%d] = 0x%02X", i, rdata[i]);
-    // }
-      /* ST7789 LCD test */
+  ((void)argument);
+  /* ST7789 LCD test */
   storage_handle_instruct(&g_storage_handle, \
                           &g_storage_ops, \
                           &g_at24c02_drv, \
@@ -192,36 +162,56 @@ void StartDefaultTask(void *argument)
                           0xA0U);
   led_handle_instruct(&g_led1_handle,&g_led1_adapter_ops, \
                         (void*)&g_led1_drv ,  (void*)&g_led1_ops);
-  kfifo_init(&g_kfifo, k_fifo_buffer, sizeof(k_fifo_buffer));
-
-  
   st7789_state_t st7789_ret = st7789_driver_instruct(&g_st7789_drv, \
-                                                        &g_st7789_spi_ops);
-    logInfo("st7789 instruct ret: %d", st7789_ret);
-  
-
+                                                     &g_st7789_spi_ops);
+  logInfo("st7789 instruct ret: %d", st7789_ret);
+  kfifo_init(&g_kfifo, k_fifo_buffer, sizeof(k_fifo_buffer));
+  logInfo("kfifo len %d" , kfifo_len(&g_kfifo));
+  logInfo("kfifo avail %d" , kfifo_avail(&g_kfifo));
+  uint8_t wdata1[] = {0x01, 0x02, 0x03, 0x04, 0x05};
+  uint32_t ret = kfifo_put(&g_kfifo, wdata1, 5);
+  logInfo("kfifo_put ret %d" , ret);
+  logInfo("kfifo len %d" , kfifo_len(&g_kfifo));
+  logInfo("kfifo avail %d" , kfifo_avail(&g_kfifo));
+  uint8_t rdata1[5] = {0};
+  ret = kfifo_get(&g_kfifo, rdata1, 5);
+  logInfo("kfifo_get ret %d" , ret);
+  logInfo("kfifo len %d" , kfifo_len(&g_kfifo));
+  logInfo("kfifo avail %d" , kfifo_avail(&g_kfifo));
+  // write 12 bytes, which is more than the fifo size, to test the boundary condition.
+  uint8_t wdata2[] = {0x11, 0x12, 0x13, 0x14, 0x15, \
+                      0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C};
+  ret = kfifo_put(&g_kfifo, wdata2, 12);
+  logInfo("kfifo_put ret %d" , ret);
+  logInfo("kfifo len %d" , kfifo_len(&g_kfifo));
+  logInfo("kfifo avail %d" , kfifo_avail(&g_kfifo));
+  uint8_t rdata[16] = {0};
+  ret = kfifo_get(&g_kfifo, rdata, 14);
+  logInfo("kfifo_get ret %d" , ret);
+  logInfo("kfifo len %d" , kfifo_len(&g_kfifo));
+  logInfo("kfifo avail %d" , kfifo_avail(&g_kfifo));
+  uint8_t color_idx = 0U;
+  logInfo("StartDefaultTask is running...");
   /* Infinite loop */
+  for(;;)
   {
-      uint8_t color_idx = 0U;
-      for(;;)
-      {
-          /* R/G/B cycle */
-          if (0U == color_idx)
-          {
-            g_st7789_drv.pf_fill_screen(&g_st7789_drv, 0xF800U);  // Red
-          }
-          else if (1U == color_idx)
-          {
-              g_st7789_drv.pf_fill_screen(&g_st7789_drv, 0x07E0U);  // Green
-          }
-          else
-          {
-              g_st7789_drv.pf_fill_screen(&g_st7789_drv, 0x001FU);  // Blue
-          }
-          color_idx = (color_idx + 1U) % 3U;
-          osDelay(1000);
-      }
+    /* R/G/B cycle */
+    if (0U == color_idx)
+    {
+        g_st7789_drv.pf_fill_screen(&g_st7789_drv, 0xF800U);  // Red
+    }
+    else if (1U == color_idx)
+    {
+        g_st7789_drv.pf_fill_screen(&g_st7789_drv, 0x07E0U);  // Green
+    }
+    else
+    {
+        g_st7789_drv.pf_fill_screen(&g_st7789_drv, 0x001FU);  // Blue
+    }
+    color_idx = (color_idx + 1U) % 3U;
+    osDelay(1000);
   }
+  
   /* USER CODE END StartDefaultTask */
 }
 

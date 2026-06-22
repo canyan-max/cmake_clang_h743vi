@@ -33,6 +33,7 @@
 #define ST7789_SCREEN_HEIGHT        (240U)
 
 /* typedef ------------------------------------------------------------------*/
+// befor to declar
 typedef struct ST7789_SPI_OPS_T st7789_spi_ops_t;
 typedef struct ST7789_DRIVER_T  st7789_driver_t;
 
@@ -66,16 +67,10 @@ typedef struct ST7789_DRIVER_T
     const st7789_spi_ops_t *p_spi_ops;
     // Set column/row address window.
     st7789_state_t (*pf_deinit)(st7789_driver_t *p_drv);
-    st7789_state_t (*pf_set_window)(st7789_driver_t *p_drv,                   
-                                     uint16_t         xs,
-                                     uint16_t         ys,
-                                     uint16_t         xe,
-                                     uint16_t         ye);
-    // Fill screen with single color.
     st7789_state_t (*pf_fill_screen)(st7789_driver_t *p_drv,                 
                                      uint16_t         color);
     // Clear screen (fill black).
-    st7789_state_t (*pf_clear_screen)(st7789_driver_t *p_drv);                 
+    st7789_state_t (*pf_clear_screen)(st7789_driver_t *p_drv);    
     uint8_t                  is_init;
 } st7789_driver_t;
 
@@ -86,17 +81,18 @@ typedef struct ST7789_DRIVER_T
 /* functions ----------------------------------------------------------------*/
 /**
   * @brief            :  [st7789_driver_instruct]
-                         Initialize the ST7789 driver with SPI ops, bind
-                         all function pointers to the driver instance.
+                         Initialize the ST7789 driver with SPI ops.
+                         Binds all function pointers to the driver instance
+                         and executes the hardware init sequence.
   * @retval           :  [   ST7789_OK              = 0x00U,
                              ST7789_ERROR           = 0x01U,
                              ST7789_BUSY            = 0x02U,
                              ST7789_TIMEOUT         = 0x03U,
                              ST7789_INVALID_PARAM   = 0x04U,]
-  * @param[in]        :  [st7789_driver_t         *p_drv , \
-                          const st7789_spi_ops_t  *p_ops ]
+  * @param[in]        :  [st7789_driver_t        *p_drv,
+                            const st7789_spi_ops_t *p_ops]
   */
 st7789_state_t st7789_driver_instruct(st7789_driver_t        *p_drv,
-                                       const st7789_spi_ops_t *p_ops);
+                                      const st7789_spi_ops_t *p_ops);;
 
 #endif /* BSP_DRV_ST7789_H */

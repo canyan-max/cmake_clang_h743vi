@@ -38,10 +38,21 @@
  * @retval           :  [true - success, false - error]
  * @param[in]        :  [uint32_t size]
  */
-static bool check_fifo_size_pow_of_two(uint32_t size)
+static inline bool check_fifo_size_pow_of_two(uint32_t size)
 {
     return (size != 0) && ((size & (size - 1)) == 0);
 }
+
+/**
+ * @brief            :  [min_u32]
+ * @retval           :  [minimum of a and b]
+ * @param[in]        :  [uint32_t a, uint32_t b]
+ */
+static inline uint32_t min_u32(uint32_t a, uint32_t b)
+{
+    return a < b ? a : b;
+}
+
 /* Exported functions -------------------------------------------------------*/
 /**
  * @brief            :  [kfifo_init]
@@ -69,8 +80,6 @@ uint8_t kfifo_init(kfifo_t* fifo,uint8_t* buffer,uint32_t size)
 uint32_t kfifo_put(kfifo_t* fifo,const uint8_t* data,uint32_t len)
 {
     uint32_t l ; 
-    // len = min_u32(len, kfifo_avail(fifo));
-    // l   = min_u32(len, kfifo_contig_write_space(fifo));
     len = min_u32(len, \
                   fifo->size - fifo->in+fifo->out); 
     l   = min_u32(len, \
@@ -90,8 +99,6 @@ uint32_t kfifo_put(kfifo_t* fifo,const uint8_t* data,uint32_t len)
 uint32_t kfifo_get(kfifo_t* fifo,uint8_t* data,uint32_t len)
 {
     uint32_t l ;
-    // len         = min_u32(len, kfifo_len(fifo));
-    // l  = min_u32(len, kfifo_contig_read_data(fifo));
 
     len= min_u32(len, fifo->in - fifo->out);
     l  = min_u32(len, fifo->size - (fifo->out & (fifo->size - 1)));

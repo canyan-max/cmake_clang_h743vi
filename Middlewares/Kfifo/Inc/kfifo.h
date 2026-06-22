@@ -97,13 +97,4 @@ static inline uint32_t kfifo_contig_read_data(const kfifo_t *fifo)
 {
     return fifo->size - (fifo->out & (fifo->size - 1));
 }
-/**
- * @brief            :  [min_u32]
- * @retval           :  [minimum of a and b]
- * @param[in]        :  [uint32_t a, uint32_t b]
- */
-static inline uint32_t min_u32(uint32_t a, uint32_t b)
-{
-    return a < b ? a : b;
-}
 #endif /* KFIFO_H */

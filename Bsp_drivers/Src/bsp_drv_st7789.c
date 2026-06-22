@@ -19,10 +19,15 @@
  */
 
 /* Includes -----------------------------------------------------------------*/
+#include <string.h>                               /* string lib header file. */
 #include <stddef.h>                               /* stddef lib header file. */
 #include "bsp_drv_st7789.h"               /* bsp_drv_st7789 lib header file. */
 
 /* define   -----------------------------------------------------------------*/
+/* To avoid gcc/g++ warnings */
+#define ST7789_NOT_USE_FUNCTION     __attribute__((unused))
+#define ST7789_NOT_USE_VARIABLE(x)  ((void)(x))
+
 #define ST7789_CMD_NOP              (0x00U)      // NOP command.
 #define ST7789_CMD_SWRESET          (0x01U)      // Software reset.
 #define ST7789_CMD_SLPIN            (0x10U)      // Sleep in.
@@ -41,15 +46,67 @@
 #define ST7789_SLPOUT_DELAY_MS      (120U)       // Delay after sleep out.
 
 #define ST7789_LINE_BUF_SIZE        (ST7789_SCREEN_WIDTH * 2U)
-/* typedef ------------------------------------------------------------------*/
 
+/* typedef ------------------------------------------------------------------*/
 /* variables ----------------------------------------------------------------*/
- // Line buffer for fill ops.
+// line buffer the ram_dma_buffers from .ld file
 __attribute__((section(".ram_dma_buffers"))) \
 uint8_t sg_line_buf[ST7789_LINE_BUF_SIZE];
-// __attribute__((section(".ram_dma_buffers"))) uint16_t sg_line_buf[ST7789_LINE_BUF_SIZE];
-
 /* private  functions  ------------------------------------------------------*/
+/**
+ * @brief            :  [color24bit_to_rgb565
+                         24bit color to rgb565]
+ * @retval           :  [ uint16_t rgb 565]
+ * @param[in]        :  [(uint32_t Color)]
+ */
+ST7789_NOT_USE_FUNCTION \
+uint16_t color24bit_to_rgb565(uint32_t color)
+{
+    uint16_t r = 0, g = 0, b = 0,rgb565=0; 
+
+    r = (uint16_t)((color & 0x00F80000) >> 8);
+    g = (uint16_t)((color & 0x0000FC00) >> 5);
+    b = (uint16_t)((color & 0x000000F8) >> 3);
+    rgb565 = (uint16_t)(r | g | b);
+    return rgb565;
+}
+
+/**
+  * @brief            :  [st7789_set_forward_color]
+                          set forward color
+  * @retval           :  [ST7789_OK              = 0x00U,
+                          ST7789_ERROR           = 0x01U,]
+  * @param[in]        :  [st7789_driver_t *p_drv , \
+                          uint8_t cmd]
+  */
+ST7789_NOT_USE_FUNCTION \
+static st7789_state_t st7789_set_forward_color(st7789_driver_t *p_drv, \
+                                        uint32_t f_color)
+{
+    if(NULL == p_drv) return ST7789_INVALID_PARAM; 
+    ST7789_NOT_USE_VARIABLE(f_color);
+    // p_drv->f_color = color24bit_to_rgb565(f_color);
+    return ST7789_OK;
+}
+
+/**
+  * @brief            :  [st7789_set_back_color]
+                          set forward color
+  * @retval           :  [ST7789_OK              = 0x00U,
+                          ST7789_ERROR           = 0x01U,]
+  * @param[in]        :  [st7789_driver_t *p_drv , \
+                          uint8_t cmd]
+  */
+ST7789_NOT_USE_FUNCTION \
+static st7789_state_t st7789_set_back_color(st7789_driver_t *p_drv, \
+                                            uint32_t b_color)
+{
+    if(NULL == p_drv) return ST7789_INVALID_PARAM; 
+    ST7789_NOT_USE_VARIABLE(b_color);
+    // p_drv->b_color = color24bit_to_rgb565(b_color);
+    return ST7789_OK;
+}
+
 /**
   * @brief            :  [st7789_write_cmd]
                          DC pin → command mode, then SPI transmit 1 byte.
@@ -76,7 +133,7 @@ static st7789_state_t st7789_write_cmd(st7789_driver_t *p_drv,
 
 /**
   * @brief            :  [st7789_write_data]
-                         DC pin → data mode, then SPI transmit 1 byte.
+                         DC pin -> data mode, then SPI transmit 1 byte.
   * @retval           :  [   ST7789_OK              = 0x00U,
                              ST7789_ERROR           = 0x01U,]
   * @param[in]        :  [st7789_driver_t *p_drv , \
@@ -124,10 +181,10 @@ static st7789_state_t st7789_write_buf(st7789_driver_t *p_drv,
     {
         return ret;
     }
-    /* SPI transmit data buffer */
+    /* SPI transmit data buffer dma or cpu*/
     while(data_len>0)
     {
-        uint16_t check_len = data_len>=65535U?65535U:data_len;
+        uint16_t check_len = data_len>=0xFFFFU?0xFFFFU:data_len;
         if(check_len>16)
         {
             ret = p_drv->p_spi_ops->pf_spi_transmit_with_dma(p_data, \
@@ -135,9 +192,9 @@ static st7789_state_t st7789_write_buf(st7789_driver_t *p_drv,
             if (ST7789_OK != ret)
             {
                 return ret;
-            } 
+            }
         }
-        else 
+        else
         {
             ret = p_drv->p_spi_ops->pf_spi_transmit(p_data, check_len);
             if (ST7789_OK != ret)
@@ -164,7 +221,6 @@ static st7789_state_t st7789_write_cmd_data(st7789_driver_t *p_drv,
                                             uint8_t          data)
 {
     st7789_state_t ret = ST7789_OK;
-
     ret = st7789_write_cmd(p_drv, cmd);
     if (ST7789_OK != ret)
     {
@@ -189,7 +245,7 @@ static st7789_state_t st7789_write_reg(st7789_driver_t *p_drv,
                                         uint32_t        data_len)
 {
     st7789_state_t ret = ST7789_OK;
-    if(NULL == p_data || NULL == p_drv || 0==data_len)
+    if(NULL == p_data || NULL == p_drv || 0U == data_len)
     {
         return ST7789_INVALID_PARAM;
     }
@@ -212,7 +268,7 @@ static st7789_state_t st7789_write_reg(st7789_driver_t *p_drv,
 static st7789_state_t st7789_init(st7789_driver_t *p_drv)
 {
     st7789_state_t ret = ST7789_OK;
-
+    memset(sg_line_buf, 0,sizeof(sg_line_buf));
     /* Step 1: Software reset */
     ret = st7789_write_cmd(p_drv, ST7789_CMD_SWRESET);
     if (ST7789_OK != ret)
@@ -521,11 +577,6 @@ static st7789_state_t st7789_fill_screen(st7789_driver_t *p_drv,
     }
     /* Send line buffer row by row */
     /* DC pin = data mode */
-    // ret = p_drv->p_spi_ops->pf_dc_pin(0U);
-    // if (ST7789_OK != ret)
-    // {
-    //     return ret;
-    // }
     /* SPI transmit data buffer */
     for(row =0U;row<ST7789_SCREEN_HEIGHT;row++)
     {
@@ -569,8 +620,10 @@ static st7789_state_t st7789_clear_screen(st7789_driver_t *p_drv)
                              ST7789_BUSY            = 0x02U,
                              ST7789_TIMEOUT         = 0x03U,
                              ST7789_INVALID_PARAM   = 0x04U,]
-  * @param[in]        :  [st7789_driver_t         *p_drv , \
-                          const st7789_spi_ops_t  *p_ops ]
+  * @param[in]        :  [st7789_driver_t        *p_drv,
+                            const st7789_spi_ops_t *p_ops,
+                            uint32_t f_color             ,
+                            uint32_t b_color              ]
   */
 st7789_state_t st7789_driver_instruct(st7789_driver_t        *p_drv,
                                       const st7789_spi_ops_t *p_ops)
@@ -592,16 +645,14 @@ st7789_state_t st7789_driver_instruct(st7789_driver_t        *p_drv,
 
     /* Bind driver function pointers */
     p_drv->pf_deinit       = st7789_deinit;
-    p_drv->pf_set_window   = st7789_set_window;
     p_drv->pf_fill_screen  = st7789_fill_screen;
     p_drv->pf_clear_screen = st7789_clear_screen;
 
     /* Execute hardware init sequence */
-    st7789_init(p_drv);
+    ret = st7789_init(p_drv);
     if (ST7789_OK != ret)
     {
         p_drv->p_spi_ops       = NULL;
-        p_drv->pf_set_window   = NULL;
         p_drv->pf_fill_screen  = NULL;
         p_drv->pf_clear_screen = NULL;
         return ret;
