@@ -67,8 +67,7 @@ static st7789_state_t st_spi_transmit(uint8_t  *p_data,
     {
         return ST7789_INVALID_PARAM;
     }
-
-    hal_ret = HAL_SPI_Transmit(&hspi4, p_data, (uint16_t)lenth, 5000U);
+    hal_ret = HAL_SPI_Transmit(&hspi4, p_data, (uint16_t)lenth, 10U);
     if (HAL_OK != hal_ret)
     {
         return ST7789_ERROR;
@@ -93,18 +92,20 @@ static st7789_state_t st_spi_transmit_with_dma(uint8_t  *p_data,
         return ST7789_INVALID_PARAM;
     }
     SCB_CleanDCache_by_Addr(p_data,lenth);
-    // while(HAL_SPI_STATE_BUSY_TX == HAL_SPI_GetState(&hspi4) ) 
-    // {
-    // }
-    while(HAL_SPI_STATE_READY != HAL_SPI_GetState(&hspi4) ) 
+    if(HAL_SPI_STATE_READY != HAL_SPI_GetState(&hspi4))
     {
+        while(HAL_SPI_STATE_READY != HAL_SPI_GetState(&hspi4) ) 
+        {
+        }
     }
     hal_ret = HAL_SPI_Transmit_DMA(&hspi4, p_data, lenth);
     if (HAL_OK != hal_ret)
     {
         return ST7789_ERROR;
     }
-
+    while(HAL_SPI_STATE_READY != HAL_SPI_GetState(&hspi4) ) 
+    {
+    }
     return ST7789_OK;
 }
 
@@ -129,6 +130,7 @@ static st7789_state_t st_backlight_pin(uint8_t on)
   */
 static st7789_state_t st_dc_pin(uint8_t on)
 {
+
     GPIO_PinState pin_state = (0U != on) ? GPIO_PIN_RESET : GPIO_PIN_SET;
     HAL_GPIO_WritePin(SPI4_DC_GPIO_Port, SPI4_DC_Pin, pin_state);
     return ST7789_OK;

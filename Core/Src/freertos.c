@@ -40,6 +40,7 @@
 #include "led_handle.h"                       /* led_handle lib header file. */
 #include "st_lcd_spi.h"                       /* st_lcd_spi lib header file. */
 #include "bsp_drv_st7789.h"               /* bsp_drv_st7789 lib header file. */
+#include "front.h"                                 /* front lib header file. */
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -65,7 +66,7 @@
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
-  .stack_size = 256 * 4,
+  .stack_size = 512 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 
@@ -154,6 +155,8 @@ void StartDefaultTask(void *argument)
   /* USER CODE BEGIN StartDefaultTask */
   ((void)argument);
   /* ST7789 LCD test */
+  st7789_state_t st7789_ret = st7789_driver_instruct(&g_st7789_drv, \
+                                                     &g_st7789_spi_ops);
   storage_handle_instruct(&g_storage_handle, \
                           &g_storage_ops, \
                           &g_at24c02_drv, \
@@ -162,9 +165,9 @@ void StartDefaultTask(void *argument)
                           0xA0U);
   led_handle_instruct(&g_led1_handle,&g_led1_adapter_ops, \
                         (void*)&g_led1_drv ,  (void*)&g_led1_ops);
-  st7789_state_t st7789_ret = st7789_driver_instruct(&g_st7789_drv, \
-                                                     &g_st7789_spi_ops);
+
   logInfo("st7789 instruct ret: %d", st7789_ret);
+  g_st7789_drv.pf_clear_screen(&g_st7789_drv);
   kfifo_init(&g_kfifo, k_fifo_buffer, sizeof(k_fifo_buffer));
   logInfo("kfifo len %d" , kfifo_len(&g_kfifo));
   logInfo("kfifo avail %d" , kfifo_avail(&g_kfifo));
@@ -190,26 +193,36 @@ void StartDefaultTask(void *argument)
   logInfo("kfifo_get ret %d" , ret);
   logInfo("kfifo len %d" , kfifo_len(&g_kfifo));
   logInfo("kfifo avail %d" , kfifo_avail(&g_kfifo));
-  uint8_t color_idx = 0U;
   logInfo("StartDefaultTask is running...");
   /* Infinite loop */
+  /* Clear to black, then draw static header strings */
+//   g_st7789_drv.pf_draw_string(&g_st7789_drv, &g_f8x16,
+//                                 10U, 10U,"FreeV10.6",
+//                                 0xFFFFU, 0x0000U);
+
+//   g_st7789_drv.pf_draw_string(&g_st7789_drv, &g_f6x8,
+//                                 10U, 40U, "FreeRTOS v10.6",
+//                                 0x07E0U, 0x0000U);
+
   for(;;)
   {
-    /* R/G/B cycle */
-    if (0U == color_idx)
-    {
-        g_st7789_drv.pf_fill_screen(&g_st7789_drv, 0xF800U);  // Red
-    }
-    else if (1U == color_idx)
-    {
-        g_st7789_drv.pf_fill_screen(&g_st7789_drv, 0x07E0U);  // Green
-    }
-    else
-    {
-        g_st7789_drv.pf_fill_screen(&g_st7789_drv, 0x001FU);  // Blue
-    }
-    color_idx = (color_idx + 1U) % 3U;
-    osDelay(1000);
+    // uint32_t t_start = HAL_GetTick();
+
+    // /* Cycle color label at row 80 — same-length strings overwrite cleanly */
+    g_st7789_drv.pf_draw_string(&g_st7789_drv, &g_f8x16,
+                                  10U, 80U, "RED  ",
+                                  0xF800U, 0x0000U);
+    osDelay(600U);
+    g_st7789_drv.pf_draw_string(&g_st7789_drv, &g_f8x16,
+                                  10U, 80U, "GREEN",
+                                  0x07E0U, 0x0000U);
+    osDelay(600U);
+    g_st7789_drv.pf_draw_string(&g_st7789_drv, &g_f8x16,
+                                  10U, 80U, "BLUE ",
+                                  0x001FU, 0x0000U);
+    osDelay(600U);
+
+    logInfo("loop  ms");
   }
   
   /* USER CODE END StartDefaultTask */

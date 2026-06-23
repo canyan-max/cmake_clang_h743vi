@@ -22,6 +22,7 @@
 #include <string.h>                               /* string lib header file. */
 #include <stddef.h>                               /* stddef lib header file. */
 #include "bsp_drv_st7789.h"               /* bsp_drv_st7789 lib header file. */
+#include "front.h"                                 /* font table header file. */
 
 /* define   -----------------------------------------------------------------*/
 /* To avoid gcc/g++ warnings */
@@ -46,6 +47,9 @@
 #define ST7789_SLPOUT_DELAY_MS      (120U)       // Delay after sleep out.
 
 #define ST7789_LINE_BUF_SIZE        (ST7789_SCREEN_WIDTH * 2U)
+
+#define ST7789_FONT_CHAR_HEIGHT     (8U)         // Pixel rows per glyph.
+#define ST7789_FONT_CHAR_OFFSET     (0x20U)      // ASCII offset: space.
 
 /* typedef ------------------------------------------------------------------*/
 /* variables ----------------------------------------------------------------*/
@@ -109,7 +113,7 @@ static st7789_state_t st7789_set_back_color(st7789_driver_t *p_drv, \
 
 /**
   * @brief            :  [st7789_write_cmd]
-                         DC pin → command mode, then SPI transmit 1 byte.
+                         DC pin -> command mode, then SPI transmit 1 byte.
   * @retval           :  [ST7789_OK              = 0x00U,
                           ST7789_ERROR           = 0x01U,]
   * @param[in]        :  [st7789_driver_t *p_drv , \
@@ -609,6 +613,242 @@ static st7789_state_t st7789_clear_screen(st7789_driver_t *p_drv)
     return st7789_fill_screen(p_drv, 0x0000U);
 }
 
+/**
+  * @brief            :  [st7789_fill_rect]
+                         Fill a rectangular region with a single RGB565 color.
+                         Sends one row at a time via the DMA line buffer,
+                         so only the row width (w*2 bytes) is transmitted
+                         per row — much faster than clearing the full screen.
+  * @retval           :  [ST7789_OK              = 0x00U,
+                          ST7789_ERROR           = 0x01U,
+                          ST7789_INVALID_PARAM   = 0x04U,]
+  * @param[in]        :  [st7789_driver_t *p_drv,
+                          uint16_t x, uint16_t y,
+                          uint16_t w, uint16_t h,
+                          uint16_t color]
+  */
+static st7789_state_t st7789_fill_rect(st7789_driver_t *p_drv,
+                                       uint16_t         x,
+                                       uint16_t         y,
+                                       uint16_t         w,
+                                       uint16_t         h,
+                                       uint16_t         color)
+{
+    st7789_state_t ret       = ST7789_OK;
+    uint32_t       row_bytes = 0U;
+    uint32_t       i         = 0U;
+    uint16_t       row       = 0U;
+
+    if (NULL == p_drv)
+    {
+        return ST7789_INVALID_PARAM;
+    }
+
+    if (ST7789_DRIVER_NOT_INIT == p_drv->is_init)
+    {
+        return ST7789_ERROR;
+    }
+
+    if ((0U == w) || (0U == h) ||
+        ((uint32_t)x + w > ST7789_SCREEN_WIDTH) ||
+        ((uint32_t)y + h > ST7789_SCREEN_HEIGHT))
+    {
+        return ST7789_INVALID_PARAM;
+    }
+
+    ret = st7789_set_window(p_drv, x, y,
+                            (uint16_t)(x + w - 1U),
+                            (uint16_t)(y + h - 1U));
+    if (ST7789_OK != ret)
+    {
+        return ret;
+    }
+
+    ret = st7789_write_cmd(p_drv, ST7789_CMD_RAMWR);
+    if (ST7789_OK != ret)
+    {
+        return ret;
+    }
+
+    /* Pre-fill one row of pixels into the line buffer */
+    row_bytes = (uint32_t)w * 2U;
+    for (i = 0U; i < row_bytes; i += 2U)
+    {
+        sg_line_buf[i]      = (uint8_t)(color >> 8U);
+        sg_line_buf[i + 1U] = (uint8_t)(color & 0x00FFU);
+    }
+
+    /* Send the same row buffer h times */
+    for (row = 0U; row < h; row++)
+    {
+        ret = st7789_write_buf(p_drv, sg_line_buf, row_bytes);
+        if (ST7789_OK != ret)
+        {
+            return ret;
+        }
+    }
+
+    return ST7789_OK;
+}
+
+/**
+  * @brief            :  [st7789_draw_char]
+                         Draw a single printable ASCII character at pixel
+                         position (x, y). Supports variable-height fonts
+                         (e.g. 6x8, 8x16). Pixels rendered row-major in
+                         RGB565 big-endian order via the DMA line buffer.
+                         Font layout: column-major, each column stored as
+                         ceil(char_h/8) bytes (LSB = top pixel per byte).
+  * @retval           :  [ST7789_OK              = 0x00U,
+                          ST7789_ERROR           = 0x01U,
+                          ST7789_INVALID_PARAM   = 0x04U,]
+  * @param[in]        :  [st7789_driver_t *p_drv, const front_def_t *p_font,
+                          uint16_t x, uint16_t y, char ch,
+                          uint16_t f_color, uint16_t b_color]
+  */
+static st7789_state_t st7789_draw_char(st7789_driver_t   *p_drv,
+                                       const front_def_t *p_font,
+                                       uint16_t           x,
+                                       uint16_t           y,
+                                       char               ch,
+                                       uint16_t           f_color,
+                                       uint16_t           b_color)
+{
+    st7789_state_t    ret             = ST7789_OK;
+    uint8_t           idx             = 0U;
+    uint8_t           col             = 0U;
+    uint8_t           row             = 0U;
+    uint32_t          buf_i           = 0U;
+    uint16_t          pixel           = 0U;
+    uint8_t           bytes_per_col   = 0U;
+    uint8_t           bytes_per_char  = 0U;
+    const uint8_t    *char_data       = NULL;
+
+    if ((NULL == p_drv) || (NULL == p_font) || (NULL == p_font->p_data))
+    {
+        return ST7789_INVALID_PARAM;
+    }
+
+    if (ST7789_DRIVER_NOT_INIT == p_drv->is_init)
+    {
+        return ST7789_ERROR;
+    }
+
+    /* Printable ASCII range: 0x20 (space) to 0x20 + char_count - 1 */
+    if (((uint8_t)ch < ST7789_FONT_CHAR_OFFSET) ||
+        ((uint8_t)ch >= (uint8_t)(ST7789_FONT_CHAR_OFFSET + p_font->char_count)))
+    {
+        return ST7789_INVALID_PARAM;
+    }
+
+    /* Character bounding box must fit within screen */
+    if (((uint16_t)(x + p_font->char_w - 1U) >= ST7789_SCREEN_WIDTH) ||
+        ((uint16_t)(y + p_font->char_h - 1U)  >= ST7789_SCREEN_HEIGHT))
+    {
+        return ST7789_INVALID_PARAM;
+    }
+
+    /* bytes_per_col = char_h / 8 (char_h must be a multiple of 8) */
+    bytes_per_col  = (uint8_t)(p_font->char_h / 8U);
+    bytes_per_char = (uint8_t)(p_font->char_w * bytes_per_col);
+
+    /* Guard: pixel buffer must fit in sg_line_buf */
+    if (((uint32_t)p_font->char_w * p_font->char_h * 2U) > ST7789_LINE_BUF_SIZE)
+    {
+        return ST7789_INVALID_PARAM;
+    }
+
+    idx       = (uint8_t)ch - (uint8_t)ST7789_FONT_CHAR_OFFSET;
+    char_data = &p_font->p_data[(uint16_t)idx * bytes_per_char];
+
+    ret = st7789_set_window(p_drv, x, y,
+                            (uint16_t)(x + p_font->char_w - 1U),
+                            (uint16_t)(y + p_font->char_h - 1U));
+    if (ST7789_OK != ret)
+    {
+        return ret;
+    }
+
+    ret = st7789_write_cmd(p_drv, ST7789_CMD_RAMWR);
+    if (ST7789_OK != ret)
+    {
+        return ret;
+    }
+
+    /* Build pixel buffer: row-major, RGB565 big-endian.
+       For column c, row r: byte = char_data[(r/8)*char_w + c], bit = r%8. */
+    buf_i = 0U;
+    for (row = 0U; row < p_font->char_h; row++)
+    {
+        uint8_t row_byte = row / 8U;
+        uint8_t row_bit  = row % 8U;
+        for (col = 0U; col < p_font->char_w; col++)
+        {
+            pixel = ((char_data[(uint8_t)(row_byte * p_font->char_w) + col] >> row_bit) & 1U) ?
+                    f_color : b_color;
+            sg_line_buf[buf_i]      = (uint8_t)(pixel >> 8U);
+            sg_line_buf[buf_i + 1U] = (uint8_t)(pixel & 0x00FFU);
+            buf_i += 2U;
+        }
+    }
+
+    return st7789_write_buf(p_drv, sg_line_buf, buf_i);
+}
+
+/**
+  * @brief            :  [st7789_draw_string]
+  *                       Draw a null-terminated printable ASCII string
+  *                       starting at (x, y). Characters are placed
+  *                       left-to-right; drawing stops when the next
+  *                       character would exceed the screen width.
+  * @retval           :  [ST7789_OK              = 0x00U,
+  *                        ST7789_ERROR           = 0x01U,
+  *                        ST7789_INVALID_PARAM   = 0x04U,]
+  * @param[in]        :  [st7789_driver_t *p_drv, const front_def_t *p_font,
+  *                        uint16_t x, uint16_t y, const char *p_str,
+  *                        uint16_t f_color, uint16_t b_color]
+  */
+static st7789_state_t st7789_draw_string(st7789_driver_t   *p_drv,
+                                          const front_def_t *p_font,
+                                          uint16_t           x,
+                                          uint16_t           y,
+                                          const char        *p_str,
+                                          uint16_t           f_color,
+                                          uint16_t           b_color)
+{
+    st7789_state_t ret = ST7789_OK;
+    uint16_t       cx  = x;
+
+    if ((NULL == p_drv) || (NULL == p_font) || (NULL == p_str))
+    {
+        return ST7789_INVALID_PARAM;
+    }
+
+    if (ST7789_DRIVER_NOT_INIT == p_drv->is_init)
+    {
+        return ST7789_ERROR;
+    }
+
+    while (*p_str)
+    {
+        if (((uint32_t)cx + p_font->char_w) > ST7789_SCREEN_WIDTH)
+        {
+            break;
+        }
+
+        ret = st7789_draw_char(p_drv, p_font, cx, y, *p_str, f_color, b_color);
+        if (ST7789_OK != ret)
+        {
+            return ret;
+        }
+
+        cx = (uint16_t)(cx + p_font->char_w);
+        p_str++;
+    }
+
+    return ST7789_OK;
+}
+
 /* exported functions -------------------------------------------------------*/
 /**
   * @brief            :  [st7789_driver_instruct]
@@ -647,6 +887,9 @@ st7789_state_t st7789_driver_instruct(st7789_driver_t        *p_drv,
     p_drv->pf_deinit       = st7789_deinit;
     p_drv->pf_fill_screen  = st7789_fill_screen;
     p_drv->pf_clear_screen = st7789_clear_screen;
+    p_drv->pf_fill_rect    = st7789_fill_rect;
+    p_drv->pf_draw_char    = st7789_draw_char;
+    p_drv->pf_draw_string  = st7789_draw_string;
 
     /* Execute hardware init sequence */
     ret = st7789_init(p_drv);
@@ -655,6 +898,9 @@ st7789_state_t st7789_driver_instruct(st7789_driver_t        *p_drv,
         p_drv->p_spi_ops       = NULL;
         p_drv->pf_fill_screen  = NULL;
         p_drv->pf_clear_screen = NULL;
+        p_drv->pf_fill_rect    = NULL;
+        p_drv->pf_draw_char    = NULL;
+        p_drv->pf_draw_string  = NULL;
         return ret;
     }
     p_drv->is_init = ST7789_DRIVER_IS_INIT;

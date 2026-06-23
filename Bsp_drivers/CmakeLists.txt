@@ -7,7 +7,7 @@ set(BSP_DRIVERS_SRC
 
 set(BSP_DRIVERS_DEPEND_LIB
     letter_shell
-
+    front
 )
 
 

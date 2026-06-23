@@ -25,6 +25,9 @@
 /* Includes -----------------------------------------------------------------*/
 #include <stdint.h>                               /* stdint lib header file. */
 
+/* forward declarations -----------------------------------------------------*/
+typedef struct FRONT_DEF_T front_def_t;
+
 /* define -------------------------------------------------------------------*/
 #define ST7789_DRIVER_IS_INIT       (0x01U)
 #define ST7789_DRIVER_NOT_INIT      (0x00U)
@@ -70,7 +73,30 @@ typedef struct ST7789_DRIVER_T
     st7789_state_t (*pf_fill_screen)(st7789_driver_t *p_drv,                 
                                      uint16_t         color);
     // Clear screen (fill black).
-    st7789_state_t (*pf_clear_screen)(st7789_driver_t *p_drv);    
+    st7789_state_t (*pf_clear_screen)(st7789_driver_t *p_drv);
+    // Fill an arbitrary rectangle with a single RGB565 color.
+    st7789_state_t (*pf_fill_rect)(st7789_driver_t *p_drv,
+                                   uint16_t         x,
+                                   uint16_t         y,
+                                   uint16_t         w,
+                                   uint16_t         h,
+                                   uint16_t         color);
+    // Draw a single ASCII character.
+    st7789_state_t (*pf_draw_char)(st7789_driver_t   *p_drv,
+                                   const front_def_t *p_font,
+                                   uint16_t           x,
+                                   uint16_t           y,
+                                   char               ch,
+                                   uint16_t           f_color,
+                                   uint16_t           b_color);
+    // Draw a null-terminated ASCII string (stops at screen edge).
+    st7789_state_t (*pf_draw_string)(st7789_driver_t   *p_drv,
+                                     const front_def_t *p_font,
+                                     uint16_t           x,
+                                     uint16_t           y,
+                                     const char        *p_str,
+                                     uint16_t           f_color,
+                                     uint16_t           b_color);
     uint8_t                  is_init;
 } st7789_driver_t;
 
@@ -93,6 +119,6 @@ typedef struct ST7789_DRIVER_T
                             const st7789_spi_ops_t *p_ops]
   */
 st7789_state_t st7789_driver_instruct(st7789_driver_t        *p_drv,
-                                      const st7789_spi_ops_t *p_ops);;
+                                      const st7789_spi_ops_t *p_ops);
 
 #endif /* BSP_DRV_ST7789_H */

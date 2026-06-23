@@ -92,6 +92,13 @@
 - 栈大小：每个任务建议 1024 字 (4KB)，中断栈使用 `configISR_STACK_SIZE_WORDS`
 - 禁止动态内存分配（`pvPortMalloc` 除外，但必须经过 FreeRTOS 堆，且注意碎片）
 - 关键时序：UART 中断响应 < 10us；控制环路周期 1kHz
+### 脚本文件
+
+- 脚本名称：runbuid_and_flash.sh
+- 位置：当前项目根目录
+- 作用：使用./runbuid_and_flash.sh -b 可以编译文件
+- 其他参数请使用./runbuid_and_flash.sh -h 可以查看其他信息
+- 每次改动完成建议使用编译确保无警告和错误
 
 ## 3. 编码规范
 
