@@ -435,11 +435,12 @@ static void soc_display(float current_i ,float soc , \
             g_init_soc = 0.0f;
         }
     }
-    
+
     if( g_init_soc >= 1 && 0 != g_empty_flg)
     {
         g_empty_flg = 0;
     }
+
     // init soc limit 
     if(g_init_soc > 100.0f)
     {
@@ -529,10 +530,10 @@ static void soc_display(float current_i ,float soc , \
                 }
             }
         }
-        if(g_init_soc == 0.0f || g_init_soc == 100.0f)
-        {
-            g_soc = g_init_soc;
-        }
+        // if(g_init_soc == 0.0f || g_init_soc == 100.0f)
+        // {
+        //     g_soc = g_init_soc;
+        // }
     }
     else
     {
