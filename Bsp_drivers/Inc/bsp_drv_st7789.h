@@ -97,6 +97,38 @@ typedef struct ST7789_DRIVER_T
                                      const char        *p_str,
                                      uint16_t           f_color,
                                      uint16_t           b_color);
+    // Draw a w*h RGB565 big-endian image at (x, y).
+    st7789_state_t (*pf_draw_image)(st7789_driver_t *p_drv,
+                                    uint16_t         x,
+                                    uint16_t         y,
+                                    uint16_t         w,
+                                    uint16_t         h,
+                                    const uint8_t   *p_pixels);
+    // Display a signed decimal integer.
+    st7789_state_t (*pf_draw_dec)(st7789_driver_t   *p_drv,
+                                   const front_def_t *p_font,
+                                   uint16_t           x,
+                                   uint16_t           y,
+                                   int32_t            value,
+                                   uint16_t           f_color,
+                                   uint16_t           b_color);
+    // Display an unsigned hex integer (e.g. "0xFF").
+    st7789_state_t (*pf_draw_hex)(st7789_driver_t   *p_drv,
+                                   const front_def_t *p_font,
+                                   uint16_t           x,
+                                   uint16_t           y,
+                                   uint32_t           value,
+                                   uint16_t           f_color,
+                                   uint16_t           b_color);
+    // Display a float with `decimals` decimal places.
+    st7789_state_t (*pf_draw_float)(st7789_driver_t   *p_drv,
+                                     const front_def_t *p_font,
+                                     uint16_t           x,
+                                     uint16_t           y,
+                                     float              value,
+                                     uint8_t            decimals,
+                                     uint16_t           f_color,
+                                     uint16_t           b_color);
     uint8_t                  is_init;
 } st7789_driver_t;
 

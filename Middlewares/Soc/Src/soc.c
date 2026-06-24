@@ -530,10 +530,10 @@ static void soc_display(float current_i ,float soc , \
                 }
             }
         }
-        // if(g_init_soc == 0.0f || g_init_soc == 100.0f)
-        // {
-        //     g_soc = g_init_soc;
-        // }
+        if((1 == g_empty_flg && g_init_soc == 0.0f) || g_init_soc == 100.0f)
+        {
+            g_soc = g_init_soc;
+        }
     }
     else
     {

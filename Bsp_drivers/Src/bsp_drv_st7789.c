@@ -50,6 +50,7 @@
 
 #define ST7789_FONT_CHAR_HEIGHT     (8U)         // Pixel rows per glyph.
 #define ST7789_FONT_CHAR_OFFSET     (0x20U)      // ASCII offset: space.
+#define ST7789_NUM_BUF_SIZE         (20U)        // Scratch buffer for number strings.
 
 /* typedef ------------------------------------------------------------------*/
 /* variables ----------------------------------------------------------------*/
@@ -849,6 +850,305 @@ static st7789_state_t st7789_draw_string(st7789_driver_t   *p_drv,
     return ST7789_OK;
 }
 
+/**
+  * @brief            :  [st7789_draw_image]
+  *                       Blit a w×h RGB565 big-endian pixel buffer at (x, y).
+  *                       p_pixels must point to w*h*2 bytes in DMA-accessible
+  *                       memory (e.g. .ram_dma_buffers or AXI SRAM).
+  * @retval           :  [ST7789_OK              = 0x00U,
+  *                        ST7789_ERROR           = 0x01U,
+  *                        ST7789_INVALID_PARAM   = 0x04U,]
+  * @param[in]        :  [st7789_driver_t *p_drv,
+  *                        uint16_t x, uint16_t y, uint16_t w, uint16_t h,
+  *                        const uint8_t *p_pixels]
+  */
+static st7789_state_t st7789_draw_image(st7789_driver_t *p_drv,
+                                         uint16_t         x,
+                                         uint16_t         y,
+                                         uint16_t         w,
+                                         uint16_t         h,
+                                         const uint8_t   *p_pixels)
+{
+    st7789_state_t ret = ST7789_OK;
+
+    if ((NULL == p_drv) || (NULL == p_pixels))
+    {
+        return ST7789_INVALID_PARAM;
+    }
+
+    if (ST7789_DRIVER_NOT_INIT == p_drv->is_init)
+    {
+        return ST7789_ERROR;
+    }
+
+    if ((0U == w) || (0U == h) ||
+        ((uint32_t)x + w > ST7789_SCREEN_WIDTH) ||
+        ((uint32_t)y + h > ST7789_SCREEN_HEIGHT))
+    {
+        return ST7789_INVALID_PARAM;
+    }
+
+    ret = st7789_set_window(p_drv, x, y,
+                            (uint16_t)(x + w - 1U),
+                            (uint16_t)(y + h - 1U));
+    if (ST7789_OK != ret)
+    {
+        return ret;
+    }
+
+    ret = st7789_write_cmd(p_drv, ST7789_CMD_RAMWR);
+    if (ST7789_OK != ret)
+    {
+        return ret;
+    }
+
+    /* Send row by row through sg_line_buf so p_pixels can reside anywhere
+       (Flash, DTCM, non-DMA SRAM) — no DMA-accessible requirement on caller. */
+    {
+        uint32_t row_bytes = (uint32_t)w * 2U;
+        uint16_t row;
+        for (row = 0U; row < h; row++)
+        {
+            memcpy(sg_line_buf,
+                   p_pixels + (uint32_t)row * row_bytes,
+                   row_bytes);
+            ret = st7789_write_buf(p_drv, sg_line_buf, row_bytes);
+            if (ST7789_OK != ret)
+            {
+                return ret;
+            }
+        }
+    }
+    return ST7789_OK;
+}
+
+/**
+  * @brief            :  [st7789_dec_to_str]
+  *                       Convert int32_t to null-terminated decimal string.
+  *                       Uses two's-complement negation — safe for INT32_MIN.
+  * @param[in]        :  [int32_t val, char *buf, uint8_t bufsz]
+  */
+static void st7789_dec_to_str(int32_t val, char *buf, uint8_t bufsz)
+{
+    uint8_t  pos  = 0U;
+    char     tmp[11U];
+    uint8_t  ti   = 0U;
+    uint32_t uval;
+
+    if (bufsz < 2U) { buf[0U] = '\0'; return; }
+
+    if (val < 0)
+    {
+        buf[pos++] = '-';
+        uval = (~(uint32_t)val) + 1U;   /* two's-complement: avoids UB on INT32_MIN */
+    }
+    else
+    {
+        uval = (uint32_t)val;
+    }
+
+    if (0U == uval)
+    {
+        tmp[ti++] = '0';
+    }
+    else
+    {
+        while ((uval > 0U) && (ti < (uint8_t)sizeof(tmp)))
+        {
+            tmp[ti++] = (char)('0' + (uint8_t)(uval % 10U));
+            uval /= 10U;
+        }
+    }
+    for (uint8_t a = 0U, b = (uint8_t)(ti - 1U); a < b; a++, b--)
+    {
+        char t = tmp[a]; tmp[a] = tmp[b]; tmp[b] = t;
+    }
+    for (uint8_t i = 0U; i < ti && pos < (bufsz - 1U); i++)
+    {
+        buf[pos++] = tmp[i];
+    }
+    buf[pos] = '\0';
+}
+
+/**
+  * @brief            :  [st7789_draw_dec]
+  *                       Display a signed decimal integer at (x, y).
+  * @retval           :  [ST7789_OK / ST7789_ERROR / ST7789_INVALID_PARAM]
+  * @param[in]        :  [st7789_driver_t *p_drv, const front_def_t *p_font,
+  *                        uint16_t x, uint16_t y, int32_t value,
+  *                        uint16_t f_color, uint16_t b_color]
+  */
+static st7789_state_t st7789_draw_dec(st7789_driver_t   *p_drv,
+                                       const front_def_t *p_font,
+                                       uint16_t           x,
+                                       uint16_t           y,
+                                       int32_t            value,
+                                       uint16_t           f_color,
+                                       uint16_t           b_color)
+{
+    char buf[ST7789_NUM_BUF_SIZE];
+
+    if ((NULL == p_drv) || (NULL == p_font))
+    {
+        return ST7789_INVALID_PARAM;
+    }
+
+    st7789_dec_to_str(value, buf, (uint8_t)sizeof(buf));
+    return st7789_draw_string(p_drv, p_font, x, y, buf, f_color, b_color);
+}
+
+/**
+  * @brief            :  [st7789_hex_to_str]
+  *                       Convert uint32_t to uppercase hex string with "0x" prefix.
+  *                       Nibble computed inline — no lookup table.
+  * @param[in]        :  [uint32_t val, char *buf, uint8_t bufsz]
+  */
+static void st7789_hex_to_str(uint32_t val, char *buf, uint8_t bufsz)
+{
+    uint8_t pos = 0U;
+    char    tmp[8U];
+    uint8_t ti  = 0U;
+    uint8_t nib;
+
+    if (bufsz < 3U) { buf[0U] = '\0'; return; }
+
+    buf[pos++] = '0';
+    if (pos < (bufsz - 1U)) { buf[pos++] = 'x'; }
+
+    if (0U == val)
+    {
+        if (pos < (bufsz - 1U)) { buf[pos++] = '0'; }
+    }
+    else
+    {
+        while ((val > 0U) && (ti < (uint8_t)sizeof(tmp)))
+        {
+            nib       = (uint8_t)(val & 0xFU);
+            tmp[ti++] = (nib < 10U) ? (char)('0' + nib)
+                                     : (char)('A' + nib - 10U);
+            val >>= 4U;
+        }
+        for (uint8_t a = 0U, b = (uint8_t)(ti - 1U); a < b; a++, b--)
+        {
+            char t = tmp[a]; tmp[a] = tmp[b]; tmp[b] = t;
+        }
+        for (uint8_t i = 0U; i < ti && pos < (bufsz - 1U); i++)
+        {
+            buf[pos++] = tmp[i];
+        }
+    }
+    buf[pos] = '\0';
+}
+
+/**
+  * @brief            :  [st7789_draw_hex]
+  *                       Display an unsigned 32-bit value in hex at (x, y).
+  * @retval           :  [ST7789_OK / ST7789_ERROR / ST7789_INVALID_PARAM]
+  * @param[in]        :  [st7789_driver_t *p_drv, const front_def_t *p_font,
+  *                        uint16_t x, uint16_t y, uint32_t value,
+  *                        uint16_t f_color, uint16_t b_color]
+  */
+static st7789_state_t st7789_draw_hex(st7789_driver_t   *p_drv,
+                                       const front_def_t *p_font,
+                                       uint16_t           x,
+                                       uint16_t           y,
+                                       uint32_t           value,
+                                       uint16_t           f_color,
+                                       uint16_t           b_color)
+{
+    char buf[ST7789_NUM_BUF_SIZE];
+
+    if ((NULL == p_drv) || (NULL == p_font))
+    {
+        return ST7789_INVALID_PARAM;
+    }
+
+    st7789_hex_to_str(value, buf, (uint8_t)sizeof(buf));
+    return st7789_draw_string(p_drv, p_font, x, y, buf, f_color, b_color);
+}
+
+/**
+  * @brief            :  [st7789_float_to_str]
+  *                       Manual float→string; avoids float-printf dependency.
+  * @param[in]        :  [float val, uint8_t dec, char *buf, uint8_t bufsz]
+  */
+static void st7789_float_to_str(float val, uint8_t dec,
+                                  char *buf, uint8_t bufsz)
+{
+    uint8_t  pos   = 0U;
+    uint32_t scale = 1U;
+    uint8_t  d;
+    char     tmp[12];
+    uint8_t  ti    = 0U;
+    uint32_t total, ipart, fpart;
+
+    if (bufsz < 2U) { buf[0] = '\0'; return; }
+
+    if (val < 0.0f) {
+        if (pos < (bufsz - 1U)) { buf[pos++] = '-'; }
+        val = -val;
+    }
+
+    for (d = 0U; d < dec; d++) { scale *= 10U; }
+    total  = (uint32_t)(val * (float)scale + 0.5f);
+    ipart  = total / scale;
+    fpart  = total % scale;
+
+    if (0U == ipart) {
+        tmp[ti++] = '0';
+    } else {
+        uint32_t v = ipart;
+        while (v > 0U && ti < (uint8_t)sizeof(tmp)) {
+            tmp[ti++] = (char)('0' + (uint8_t)(v % 10U));
+            v /= 10U;
+        }
+        for (uint8_t a = 0U, b = (uint8_t)(ti - 1U); a < b; a++, b--) {
+            char t = tmp[a]; tmp[a] = tmp[b]; tmp[b] = t;
+        }
+    }
+    for (uint8_t i = 0U; i < ti && pos < (bufsz - 1U); i++) {
+        buf[pos++] = tmp[i];
+    }
+
+    if (dec > 0U && pos < (bufsz - 1U)) {
+        buf[pos++] = '.';
+        uint32_t s = scale / 10U;
+        for (d = 0U; d < dec && pos < (bufsz - 1U); d++) {
+            buf[pos++] = (char)('0' + (uint8_t)((s > 0U ? fpart / s : fpart) % 10U));
+            if (s > 1U) { s /= 10U; }
+        }
+    }
+    buf[pos] = '\0';
+}
+
+/**
+  * @brief            :  [st7789_draw_float]
+  *                       Display a float with `decimals` decimal places at (x, y).
+  * @retval           :  [ST7789_OK / ST7789_ERROR / ST7789_INVALID_PARAM]
+  * @param[in]        :  [st7789_driver_t *p_drv, const front_def_t *p_font,
+  *                        uint16_t x, uint16_t y, float value, uint8_t decimals,
+  *                        uint16_t f_color, uint16_t b_color]
+  */
+static st7789_state_t st7789_draw_float(st7789_driver_t   *p_drv,
+                                         const front_def_t *p_font,
+                                         uint16_t           x,
+                                         uint16_t           y,
+                                         float              value,
+                                         uint8_t            decimals,
+                                         uint16_t           f_color,
+                                         uint16_t           b_color)
+{
+    char buf[ST7789_NUM_BUF_SIZE];
+
+    if ((NULL == p_drv) || (NULL == p_font))
+    {
+        return ST7789_INVALID_PARAM;
+    }
+
+    st7789_float_to_str(value, decimals, buf, (uint8_t)sizeof(buf));
+    return st7789_draw_string(p_drv, p_font, x, y, buf, f_color, b_color);
+}
+
 /* exported functions -------------------------------------------------------*/
 /**
   * @brief            :  [st7789_driver_instruct]
@@ -890,6 +1190,10 @@ st7789_state_t st7789_driver_instruct(st7789_driver_t        *p_drv,
     p_drv->pf_fill_rect    = st7789_fill_rect;
     p_drv->pf_draw_char    = st7789_draw_char;
     p_drv->pf_draw_string  = st7789_draw_string;
+    p_drv->pf_draw_image   = st7789_draw_image;
+    p_drv->pf_draw_dec     = st7789_draw_dec;
+    p_drv->pf_draw_hex     = st7789_draw_hex;
+    p_drv->pf_draw_float   = st7789_draw_float;
 
     /* Execute hardware init sequence */
     ret = st7789_init(p_drv);
@@ -901,6 +1205,10 @@ st7789_state_t st7789_driver_instruct(st7789_driver_t        *p_drv,
         p_drv->pf_fill_rect    = NULL;
         p_drv->pf_draw_char    = NULL;
         p_drv->pf_draw_string  = NULL;
+        p_drv->pf_draw_image   = NULL;
+        p_drv->pf_draw_dec     = NULL;
+        p_drv->pf_draw_hex     = NULL;
+        p_drv->pf_draw_float   = NULL;
         return ret;
     }
     p_drv->is_init = ST7789_DRIVER_IS_INIT;

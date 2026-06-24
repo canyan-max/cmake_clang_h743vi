@@ -21,7 +21,6 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
-#include "FreeRTOS.h"
 #include "cmsis_os2.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -41,6 +40,7 @@
 #include "st_lcd_spi.h"                       /* st_lcd_spi lib header file. */
 #include "bsp_drv_st7789.h"               /* bsp_drv_st7789 lib header file. */
 #include "front.h"                                 /* front lib header file. */
+#include "direct_cur_resistan.h"     /* direct_cur_resistan lib header file. */
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -60,7 +60,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-
+/* 32x32 RGB565 test image */
+static uint8_t sg_test_img[32U * 32U * 2U];
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -194,35 +195,70 @@ void StartDefaultTask(void *argument)
   logInfo("kfifo len %d" , kfifo_len(&g_kfifo));
   logInfo("kfifo avail %d" , kfifo_avail(&g_kfifo));
   logInfo("StartDefaultTask is running...");
-  /* Infinite loop */
-  /* Clear to black, then draw static header strings */
-//   g_st7789_drv.pf_draw_string(&g_st7789_drv, &g_f8x16,
-//                                 10U, 10U,"FreeV10.6",
-//                                 0xFFFFU, 0x0000U);
 
-//   g_st7789_drv.pf_draw_string(&g_st7789_drv, &g_f6x8,
-//                                 10U, 40U, "FreeRTOS v10.6",
-//                                 0x07E0U, 0x0000U);
+  /* Title drawn once */
+  g_st7789_drv.pf_draw_string(&g_st7789_drv, &g_f8x16,
+                                10U, 10U, "ST7789 TEST",
+                                0xFFFFU, 0x0000U);
+
+  /* Each frame rotates quadrant colors: TL/TR/BL/BR */
+  static const uint16_t sc_pal[4U][4U] = {
+      {0xF800U, 0x07E0U, 0x001FU, 0xFFFFU},   /* R lead */
+      {0x07E0U, 0x001FU, 0xFFFFU, 0xF800U},   /* G lead */
+      {0x001FU, 0xFFFFU, 0xF800U, 0x07E0U},   /* B lead */
+      {0xFFFFU, 0xF800U, 0x07E0U, 0x001FU},   /* W lead */
+  };
+  static const char * const sc_labels[4U] = {
+      "RED  ", "GREEN", "BLUE ", "WHITE"
+  };
+  static uint8_t  s_fi  = 0U;
+  static int32_t  s_dec = 0;
+  static uint32_t s_hex = 0U;
+  static float    s_flt = 0;
 
   for(;;)
   {
-    // uint32_t t_start = HAL_GetTick();
+    /* Rebuild image with current frame's palette */
+    s_flt = update_bat_resistance(25,5.00f,60);
+    for (uint16_t r = 0U; r < 32U; r++)
+    {
+      for (uint16_t c = 0U; c < 32U; c++)
+      {
+        uint8_t  q  = (uint8_t)((r / 16U) * 2U + (c / 16U));
+        uint16_t px = sc_pal[s_fi][q];
+        uint32_t i  = ((uint32_t)r * 32U + c) * 2U;
+        sg_test_img[i]      = (uint8_t)(px >> 8U);
+        sg_test_img[i + 1U] = (uint8_t)(px & 0x00FFU);
+      }
+    }
+    g_st7789_drv.pf_draw_image(&g_st7789_drv, 10U, 50U, 32U, 32U, sg_test_img);
+    g_st7789_drv.pf_draw_string(&g_st7789_drv, &g_f8x16,
+                                  10U, 100U, sc_labels[s_fi],
+                                  sc_pal[s_fi][0U], 0x0000U);
 
-    // /* Cycle color label at row 80 — same-length strings overwrite cleanly */
-    g_st7789_drv.pf_draw_string(&g_st7789_drv, &g_f8x16,
-                                  10U, 80U, "RED  ",
-                                  0xF800U, 0x0000U);
-    osDelay(600U);
-    g_st7789_drv.pf_draw_string(&g_st7789_drv, &g_f8x16,
-                                  10U, 80U, "GREEN",
-                                  0x07E0U, 0x0000U);
-    osDelay(600U);
-    g_st7789_drv.pf_draw_string(&g_st7789_drv, &g_f8x16,
-                                  10U, 80U, "BLUE ",
-                                  0x001FU, 0x0000U);
-    osDelay(600U);
+    /* Decimal — clear 160px wide area then draw */
+    g_st7789_drv.pf_fill_rect(&g_st7789_drv, 10U, 130U, 160U, 16U, 0x0000U);
+    g_st7789_drv.pf_draw_dec(&g_st7789_drv, &g_f8x16,
+                               10U, 130U, s_dec, 0xFFFFU, 0x0000U);
 
-    logInfo("loop  ms");
+    /* Hex — yellow */
+    g_st7789_drv.pf_fill_rect(&g_st7789_drv, 10U, 150U, 160U, 16U, 0x0000U);
+    g_st7789_drv.pf_draw_hex(&g_st7789_drv, &g_f8x16,
+                               10U, 150U, s_hex, 0xFFE0U, 0x0000U);
+
+    /* Float — cyan */
+    g_st7789_drv.pf_fill_rect(&g_st7789_drv, 10U, 170U, 160U, 16U, 0x0000U);
+    g_st7789_drv.pf_draw_float(&g_st7789_drv, &g_f8x16,
+                                 10U, 170U, s_flt, 2U, 0x07FFU, 0x0000U);
+
+    /* Advance state */
+    s_fi  = (uint8_t)((s_fi  + 1U) % 4U);
+    s_dec += 137;
+    s_hex += 0x1111U;
+    
+
+    osDelay(1000U);
+    logInfo("dec=%ld hex=0x%lX", (long)s_dec, (unsigned long)s_hex);
   }
   
   /* USER CODE END StartDefaultTask */
