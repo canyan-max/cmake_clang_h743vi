@@ -166,7 +166,6 @@ void StartDefaultTask(void *argument)
                           0xA0U);
   led_handle_instruct(&g_led1_handle,&g_led1_adapter_ops, \
                         (void*)&g_led1_drv ,  (void*)&g_led1_ops);
-
   logInfo("st7789 instruct ret: %d", st7789_ret);
   g_st7789_drv.pf_clear_screen(&g_st7789_drv);
   kfifo_init(&g_kfifo, k_fifo_buffer, sizeof(k_fifo_buffer));
@@ -214,12 +213,12 @@ void StartDefaultTask(void *argument)
   static uint8_t  s_fi  = 0U;
   static int32_t  s_dec = 0;
   static uint32_t s_hex = 0U;
-  static float    s_flt = 0;
+  static float    s_flt = 0.0f;
 
   for(;;)
   {
     /* Rebuild image with current frame's palette */
-    s_flt = update_bat_resistance(25,5.00f,60);
+    s_flt = update_bat_resistance(25,1.32f,15);
     for (uint16_t r = 0U; r < 32U; r++)
     {
       for (uint16_t c = 0U; c < 32U; c++)
@@ -237,17 +236,17 @@ void StartDefaultTask(void *argument)
                                   sc_pal[s_fi][0U], 0x0000U);
 
     /* Decimal — clear 160px wide area then draw */
-    g_st7789_drv.pf_fill_rect(&g_st7789_drv, 10U, 130U, 160U, 16U, 0x0000U);
+    // g_st7789_drv.pf_fill_rect(&g_st7789_drv, 10U, 130U, 160U, 16U, 0x0000U);
     g_st7789_drv.pf_draw_dec(&g_st7789_drv, &g_f8x16,
                                10U, 130U, s_dec, 0xFFFFU, 0x0000U);
 
     /* Hex — yellow */
-    g_st7789_drv.pf_fill_rect(&g_st7789_drv, 10U, 150U, 160U, 16U, 0x0000U);
+    // g_st7789_drv.pf_fill_rect(&g_st7789_drv, 10U, 150U, 160U, 16U, 0x0000U);
     g_st7789_drv.pf_draw_hex(&g_st7789_drv, &g_f8x16,
                                10U, 150U, s_hex, 0xFFE0U, 0x0000U);
 
     /* Float — cyan */
-    g_st7789_drv.pf_fill_rect(&g_st7789_drv, 10U, 170U, 160U, 16U, 0x0000U);
+    // g_st7789_drv.pf_fill_rect(&g_st7789_drv, 10U, 170U, 160U, 16U, 0x0000U);
     g_st7789_drv.pf_draw_float(&g_st7789_drv, &g_f8x16,
                                  10U, 170U, s_flt, 2U, 0x07FFU, 0x0000U);
 

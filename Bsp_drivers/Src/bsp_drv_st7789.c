@@ -42,13 +42,10 @@
 #define ST7789_CMD_RASET            (0x2BU)      // Row address set.
 #define ST7789_CMD_RAMWR            (0x2CU)      // Memory write.
 #define ST7789_CMD_COLMOD           (0x3AU)      // Interface pixel format.
-
 #define ST7789_SWRESET_DELAY_MS     (150U)       // Delay after SW reset.
 #define ST7789_SLPOUT_DELAY_MS      (120U)       // Delay after sleep out.
-
 #define ST7789_LINE_BUF_SIZE        (ST7789_SCREEN_WIDTH * 2U)
 
-#define ST7789_FONT_CHAR_HEIGHT     (8U)         // Pixel rows per glyph.
 #define ST7789_FONT_CHAR_OFFSET     (0x20U)      // ASCII offset: space.
 #define ST7789_NUM_BUF_SIZE         (20U)        // Scratch buffer for number strings.
 
@@ -587,10 +584,6 @@ static st7789_state_t st7789_fill_screen(st7789_driver_t *p_drv,
     {
         ret = st7789_write_buf(p_drv, (uint8_t*)sg_line_buf, \
                               ST7789_LINE_BUF_SIZE);
-        // ret = p_drv->p_spi_ops->pf_spi_transmit((uint8_t*)sg_line_buf, \
-        //                       ST7789_LINE_BUF_SIZE);
-        // ret =  p_drv->p_spi_ops->pf_spi_transmit_with_dma((uint8_t*)sg_line_buf, \
-        //                       ST7789_LINE_BUF_SIZE);
         if(ST7789_OK!=ret)
         {
             return ret ;
