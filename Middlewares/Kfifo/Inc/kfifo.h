@@ -3,18 +3,18 @@
  *@Copyright          :   (C), Inc.(Gmbh) or its affiliates.AllRights Reserved.
  *                        2026
  *@file               :   kfifo.h
- * 
+ *
  *@pardependencies    :
  *                        kfifo.h
- *                        xxx.h   
+ *                        xxx.h
  *                        xxxx.h
- * 
+ *
  *@author             :   null
- * 
+ *
  *@brief              :   Provide the HAL APIs of description.
- * 
- *@version            :   V1.0 
- * 
+ *
+ *@version            :   V1.0
+ *
  *@note               :   1 tab == 4 spaces!
  ******************************************************************************
  */
@@ -23,19 +23,19 @@
 #define KFIFO_H
 
 /* Includes -----------------------------------------------------------------*/
-#include <stdint.h>                               /* stdint lib header file. */
-#include <stddef.h>                               /* stdint lib header file. */
+#include <stdint.h> /* stdint lib header file. */
+#include <stddef.h> /* stdint lib header file. */
 
 /* define -------------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/
 typedef struct KFIFO_T
 {
-    uint8_t*    buffer;
-    uint32_t    size;
-    uint32_t    in;    
-    uint32_t    out;   
-}kfifo_t;
+    uint8_t *buffer;
+    uint32_t size;
+    uint32_t in;
+    uint32_t out;
+} kfifo_t;
 /* Exported types -----------------------------------------------------------*/
 
 /* variables ----------------------------------------------------------------*/
@@ -46,21 +46,21 @@ typedef struct KFIFO_T
  * @retval           :  [0 - success, 1 - error]
  * @param[in]        :  [kfifo_t* fifo,uint8_t* buffer,uint32_t size]
  */
-uint8_t kfifo_init(kfifo_t* fifo,uint8_t* buffer,uint32_t size);
+uint8_t kfifo_init(kfifo_t *fifo, uint8_t *buffer, uint32_t size);
 
 /**
  * @brief            :  [kfifo_put]
  * @retval           :  [number of bytes written]
  * @param[in]        :  [kfifo_t* fifo,const uint8_t* data,uint32_t len]
  */
-uint32_t kfifo_put(kfifo_t* fifo,const uint8_t* data,uint32_t len);
+uint32_t kfifo_put(kfifo_t *fifo, const uint8_t *data, uint32_t len);
 
 /**
  * @brief            :  [kfifo_get]
  * @retval           :  [number of bytes read]
  * @param[in]        :  [kfifo_t* fifo,uint8_t* data,uint32_t len]
  */
-uint32_t kfifo_get(kfifo_t* fifo,uint8_t* data,uint32_t len);
+uint32_t kfifo_get(kfifo_t *fifo, uint8_t *data, uint32_t len);
 /**
  * @brief            :  [kfifo_len]
  * @retval           :  [number of bytes in the fifo]

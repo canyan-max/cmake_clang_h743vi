@@ -3,26 +3,26 @@
  *@Copyright          :   (C), Inc.(Gmbh) or its affiliates.AllRights Reserved.
  *                        2026
  *@file               :   kfifo.c
- * 
+ *
  *@pardependencies    :
  *                        kfifo.c
- *                        xxx.h   
+ *                        xxx.h
  *                        xxxx.h
- * 
+ *
  *@author             :   null
- * 
+ *
  *@brief              :   Provide the HAL APIs of description.
- * 
- *@version            :   V1.0 
- * 
+ *
+ *@version            :   V1.0
+ *
  *@note               :   1 tab == 4 spaces!
  ******************************************************************************
  */
 
 /* Includes -----------------------------------------------------------------*/
 #include <stdbool.h>
-#include <string.h>                               /* stdint lib header file. */
-#include "kfifo.h"                                 /* kfifo lib header file. */
+#include <string.h> /* stdint lib header file. */
+#include "kfifo.h"  /* kfifo lib header file. */
 /* define   -----------------------------------------------------------------*/
 // #define MIN(a, b) \
 //     ({ typeof(a) _a = (a); typeof(b) _b = (b); _a < _b ? _a : _b; })
@@ -59,16 +59,16 @@ static inline uint32_t min_u32(uint32_t a, uint32_t b)
  * @retval           :  [0 - success, 1 - error]
  * @param[in]        :  [kfifo_t* fifo,uint8_t* buffer,uint32_t size]
  */
-uint8_t kfifo_init(kfifo_t* fifo,uint8_t* buffer,uint32_t size)
+uint8_t kfifo_init(kfifo_t *fifo, uint8_t *buffer, uint32_t size)
 {
-    if (!check_fifo_size_pow_of_two(size))
+    if(!check_fifo_size_pow_of_two(size))
     {
         return 1; /* Error: size is not a pow of 2 */
     }
-    fifo->buffer =   buffer;
-    fifo->size   =     size;
-    fifo->in     =       0U;
-    fifo->out    =       0U;
+    fifo->buffer = buffer;
+    fifo->size   = size;
+    fifo->in     = 0U;
+    fifo->out    = 0U;
     return 0;
 }
 
@@ -77,13 +77,11 @@ uint8_t kfifo_init(kfifo_t* fifo,uint8_t* buffer,uint32_t size)
  * @retval           :  [number of bytes written]
  * @param[in]        :  [kfifo_t* fifo,const uint8_t* data,uint32_t len]
  */
-uint32_t kfifo_put(kfifo_t* fifo,const uint8_t* data,uint32_t len)
+uint32_t kfifo_put(kfifo_t *fifo, const uint8_t *data, uint32_t len)
 {
-    uint32_t l ; 
-    len = min_u32(len, \
-                  fifo->size - fifo->in+fifo->out); 
-    l   = min_u32(len, \
-                  fifo->size - (fifo->in & (fifo->size - 1)));
+    uint32_t l;
+    len = min_u32(len, fifo->size - fifo->in + fifo->out);
+    l   = min_u32(len, fifo->size - (fifo->in & (fifo->size - 1)));
 
     memcpy(fifo->buffer + (fifo->in & (fifo->size - 1)), data, l);
     memcpy(fifo->buffer, data + l, len - l);
@@ -96,12 +94,12 @@ uint32_t kfifo_put(kfifo_t* fifo,const uint8_t* data,uint32_t len)
  * @retval           :  [number of bytes read]
  * @param[in]        :  [kfifo_t* fifo,uint8_t* data,uint32_t len]
  */
-uint32_t kfifo_get(kfifo_t* fifo,uint8_t* data,uint32_t len)
+uint32_t kfifo_get(kfifo_t *fifo, uint8_t *data, uint32_t len)
 {
-    uint32_t l ;
+    uint32_t l;
 
-    len= min_u32(len, fifo->in - fifo->out);
-    l  = min_u32(len, fifo->size - (fifo->out & (fifo->size - 1)));
+    len = min_u32(len, fifo->in - fifo->out);
+    l   = min_u32(len, fifo->size - (fifo->out & (fifo->size - 1)));
 
     memcpy(data, fifo->buffer + (fifo->out & (fifo->size - 1)), l);
     memcpy(data + l, fifo->buffer, len - l);
@@ -109,6 +107,5 @@ uint32_t kfifo_get(kfifo_t* fifo,uint8_t* data,uint32_t len)
     fifo->out += len;
     return len;
 }
-
 
 /* end of  file -------------------------------------------------------------*/

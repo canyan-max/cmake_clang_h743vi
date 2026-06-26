@@ -3,22 +3,22 @@
  *@Copyright          :   (C), Inc.(Gmbh) or its affiliates.AllRights Reserved.
  *
  *@file               :   ocv_calc.h
- * 
+ *
  *@pardependencies    :
  *                        ocv_calc.h
- *                        xxx.h   
+ *                        xxx.h
  *                        xxxx.h
- * 
+ *
  *@author             :   null
- * 
+ *
  *@brief              :   Provide the HAL APIs of .
- * 
+ *
  *@Processingflow     :
- * 
+ *
  *@calldirectly       :
- * 
- *@version            :   V1.0 
- * 
+ *
+ *@version            :   V1.0
+ *
  *@note               :   1 tab == 4 spaces!
  ******************************************************************************
  */
@@ -28,7 +28,7 @@
 #define OCV_CALC_H
 
 /* Includes -----------------------------------------------------------------*/
-#include <stdint.h>                                /* stdint lib header file */
+#include <stdint.h> /* stdint lib header file */
 /* define -------------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/
@@ -51,5 +51,4 @@ float ocv_table_startup_soc(float temp_v, int16_t tempera);
 float ocv_table_calc_chg_soc(float temp_v, int16_t tempera);
 
 #endif
-                    /*end of ocv_calc.h*/
-
+/*end of ocv_calc.h*/

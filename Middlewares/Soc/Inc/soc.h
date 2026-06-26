@@ -3,26 +3,26 @@
  *@Copyright          :   (C), Inc.(Gmbh) or its affiliates.AllRights Reserved.
  *
  *@file               :   soc.c
- * 
+ *
  *@pardependencies    :
  *                        soc.c
- *                        xxx.h   
+ *                        xxx.h
  *                        xxxx.h
- * 
+ *
  *@author             :   null
- * 
+ *
  *@brief              :   Provide the HAL APIs of description.
- * 
+ *
  *@Processingflow     :
- * 
+ *
  *@calldirectly       :
- * 
- *@version            :   V1.0 
+ *
+ *@version            :   V1.0
  *
  *@note               :   1 tab == 4 spaces!
  ******************************************************************************
  */
- 
+
 /* Define to prevent recursive inclusion ------------------------------------*/
 #ifndef SOC_H
 #define SOC_H
@@ -92,13 +92,13 @@ void set_soh_value(uint16_t value);
  * @retval           :  [g_soh]
  * @param[in]        :  [uint16_t value]
  */
-void set_cycle_count (uint16_t value );
+void set_cycle_count(uint16_t value);
 
 /**
  * @brief            :  [get_cycle_count]
  * @retval           :  [g_cycle_count]
  */
-uint16_t get_cycle_count (void);
+uint16_t get_cycle_count(void);
 /**
  * @brief            :  [get_soc_value]
  * @retval           :  [g_soc]
@@ -109,18 +109,25 @@ uint8_t get_soc_value(void);
  * @retval           :  [g_soc]
  * @param[in]        :  [uint16_t volt, int16_t tempera ,uint16_t bat_capcity]
  */
-void soc_init (uint8_t pre_soc , uint16_t volt, int16_t tempera ,uint16_t bat_capcity);
+void soc_init(uint8_t  pre_soc,
+              uint16_t volt,
+              int16_t  tempera,
+              uint16_t bat_capcity);
 
 /**
  * @brief            :  [soc_soh_calc]
  * @param[in]        :  [uint16_t volt, float i_current, int16_t tempera]
  */
 
-void soc_soh_calc(uint16_t volt_max, uint16_t volt_min, float i_current, int16_t tempera );
+void soc_soh_calc(uint16_t volt_max,
+                  uint16_t volt_min,
+                  float    i_current,
+                  int16_t  tempera);
 /**
  * @brief            :  [soc_max_or_min_calibration]
  * @param[in]        :  [uint8_t ov_flg,uint8_t uv_flg]
  */
-void soc_max_or_min_calibration(uint8_t ov_flg,uint8_t uv_flg ,uint16_t volt_diff);
+void soc_max_or_min_calibration(uint8_t  ov_flg,
+                                uint8_t  uv_flg,
+                                uint16_t volt_diff);
 #endif /*__SOC_H*/
-

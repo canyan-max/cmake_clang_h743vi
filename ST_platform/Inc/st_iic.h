@@ -3,17 +3,17 @@
  *@Copyright          :   (C), Inc.(Gmbh) or its affiliates.AllRights Reserved.
  *                        2026
  *@file               :   st_iic.h
- * 
+ *
  *@pardependencies    :
  *                        st_iic.h
- *                        xxx.h   
+ *                        xxx.h
  *                        xxxx.h
- * 
+ *
  *@author             :   null
- * 
+ *
  *@brief              :   Provide the HAL APIs of description.
- * 
- *@version            :   V1.0 
+ *
+ *@version            :   V1.0
  *
  *@note               :   1 tab == 4 spaces!
  ******************************************************************************
@@ -23,8 +23,8 @@
 #define ST_IIC_H
 
 /* Includes -----------------------------------------------------------------*/
-#include <stdint.h>                               /* stdint lib header file. */
-#include <stddef.h>                               /* stdint lib header file. */
+#include <stdint.h> /* stdint lib header file. */
+#include <stddef.h> /* stdint lib header file. */
 
 /* define -------------------------------------------------------------------*/
 

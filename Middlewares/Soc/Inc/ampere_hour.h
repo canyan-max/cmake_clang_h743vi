@@ -3,22 +3,22 @@
  *@Copyright          :   (C), Inc.(Gmbh) or its affiliates.AllRights Reserved.
  *
  *@file               :   ampere_hour.h
- * 
+ *
  *@pardependencies    :
  *                        ampere_hour.h
- *                        xxx.h   
+ *                        xxx.h
  *                        xxxx.h
- * 
+ *
  *@author             :   null
- * 
+ *
  *@brief              :   Provide the HAL APIs of .
- * 
+ *
  *@Processingflow     :
- * 
+ *
  *@calldirectly       :
- * 
- *@version            :   V1.0 
- * 
+ *
+ *@version            :   V1.0
+ *
  *@note               :   1 tab == 4 spaces!
  ******************************************************************************
  */
@@ -27,9 +27,8 @@
 #ifndef AMPERE_HOUR_H
 #define AMPERE_HOUR_H
 
-
 /* Includes -----------------------------------------------------------------*/
-#include <stdint.h>                                /* stdint lib header file */
+#include <stdint.h> /* stdint lib header file */
 /* define -------------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/
@@ -42,7 +41,6 @@
  * @retval           :  [float detal_cap]
  * @param[in]        :  [float current , float bat_cap_max , int16_t bat_temp]
  */
-float get_detal_capacity (float current, float bat_cap_max, int16_t bat_temp);
+float get_detal_capacity(float current, float bat_cap_max, int16_t bat_temp);
 #endif
-                    /*end of ampere_hour.h*/
-
+/*end of ampere_hour.h*/

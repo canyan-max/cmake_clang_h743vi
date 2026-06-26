@@ -23,7 +23,7 @@
 #define ST_LCD_SPI_H
 
 /* Includes -----------------------------------------------------------------*/
-#include <stdint.h>                               /* stdint lib header file. */
+#include <stdint.h> /* stdint lib header file. */
 
 /* define -------------------------------------------------------------------*/
 

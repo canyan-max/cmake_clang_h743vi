@@ -3,17 +3,17 @@
  *@Copyright          :   (C), Inc.(Gmbh) or its affiliates.AllRights Reserved.
  *                        2026
  *@file               :   st_led.h
- * 
+ *
  *@pardependencies    :
  *                        st_led.h
- *                        xxx.h   
+ *                        xxx.h
  *                        xxxx.h
- * 
+ *
  *@author             :   null
- * 
+ *
  *@brief              :   Provide the HAL APIs of description.
- * 
- *@version            :   V1.0 
+ *
+ *@version            :   V1.0
  *
  *@note               :   1 tab == 4 spaces!
  ******************************************************************************
@@ -23,7 +23,7 @@
 #define ST_LED_H
 
 /* Includes -----------------------------------------------------------------*/
-#include <stdint.h>                               /* stdint lib header file. */
+#include <stdint.h> /* stdint lib header file. */
 
 /* define -------------------------------------------------------------------*/
 

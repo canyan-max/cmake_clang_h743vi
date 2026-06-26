@@ -23,7 +23,7 @@
 #define BSP_DRV_ST7789_H
 
 /* Includes -----------------------------------------------------------------*/
-#include <stdint.h>                               /* stdint lib header file. */
+#include <stdint.h> /* stdint lib header file. */
 
 /* forward declarations -----------------------------------------------------*/
 typedef struct FRONT_DEF_T front_def_t;
@@ -42,26 +42,24 @@ typedef struct ST7789_DRIVER_T  st7789_driver_t;
 
 typedef enum ST7789_STATE_T
 {
-    ST7789_OK               = 0x00U,    // Operation is OK.
-    ST7789_ERROR            = 0x01U,    // Operation is error.
-    ST7789_BUSY             = 0x02U,    // Operation is busy.
-    ST7789_TIMEOUT          = 0x03U,    // Operation is timeout.
-    ST7789_INVALID_PARAM    = 0x04U,    // Operation is invalid parameter.
+    ST7789_OK            = 0x00U, // Operation is OK.
+    ST7789_ERROR         = 0x01U, // Operation is error.
+    ST7789_BUSY          = 0x02U, // Operation is busy.
+    ST7789_TIMEOUT       = 0x03U, // Operation is timeout.
+    ST7789_INVALID_PARAM = 0x04U, // Operation is invalid parameter.
 } st7789_state_t;
 
 typedef struct ST7789_SPI_OPS_T
 {
     // SPI transmit raw bytes.
-    st7789_state_t (*pf_spi_transmit)  (uint8_t  *p_data,                       
-                                        uint32_t  lenth);
-    st7789_state_t (*pf_spi_transmit_with_dma)  (uint8_t  *p_data,                       
-                                            uint32_t  lenth);
+    st7789_state_t (*pf_spi_transmit)(uint8_t *p_data, uint32_t lenth);
+    st7789_state_t (*pf_spi_transmit_with_dma)(uint8_t *p_data, uint32_t lenth);
     // Backlight pin: 1=on, 0=off.
-    st7789_state_t (*pf_backlight_pin) (uint8_t   on); 
+    st7789_state_t (*pf_backlight_pin)(uint8_t on);
     // DC pin: 1=command, 0=data.
-    st7789_state_t (*pf_dc_pin) (uint8_t   on);    
-    // Delay milliseconds.                    
-    void           (*pf_delay_ms)      (uint32_t ms);                                
+    st7789_state_t (*pf_dc_pin)(uint8_t on);
+    // Delay milliseconds.
+    void (*pf_delay_ms)(uint32_t ms);
 } st7789_spi_ops_t;
 
 typedef struct ST7789_DRIVER_T
@@ -70,8 +68,7 @@ typedef struct ST7789_DRIVER_T
     const st7789_spi_ops_t *p_spi_ops;
     // Set column/row address window.
     st7789_state_t (*pf_deinit)(st7789_driver_t *p_drv);
-    st7789_state_t (*pf_fill_screen)(st7789_driver_t *p_drv,                 
-                                     uint16_t         color);
+    st7789_state_t (*pf_fill_screen)(st7789_driver_t *p_drv, uint16_t color);
     // Clear screen (fill black).
     st7789_state_t (*pf_clear_screen)(st7789_driver_t *p_drv);
     // Fill an arbitrary rectangle with a single RGB565 color.
@@ -106,30 +103,37 @@ typedef struct ST7789_DRIVER_T
                                     const uint8_t   *p_pixels);
     // Display a signed decimal integer.
     st7789_state_t (*pf_draw_dec)(st7789_driver_t   *p_drv,
-                                   const front_def_t *p_font,
-                                   uint16_t           x,
-                                   uint16_t           y,
-                                   int32_t            value,
-                                   uint16_t           f_color,
-                                   uint16_t           b_color);
+                                  const front_def_t *p_font,
+                                  uint16_t           x,
+                                  uint16_t           y,
+                                  int32_t            value,
+                                  uint16_t           f_color,
+                                  uint16_t           b_color);
     // Display an unsigned hex integer (e.g. "0xFF").
     st7789_state_t (*pf_draw_hex)(st7789_driver_t   *p_drv,
-                                   const front_def_t *p_font,
-                                   uint16_t           x,
-                                   uint16_t           y,
-                                   uint32_t           value,
-                                   uint16_t           f_color,
-                                   uint16_t           b_color);
+                                  const front_def_t *p_font,
+                                  uint16_t           x,
+                                  uint16_t           y,
+                                  uint32_t           value,
+                                  uint16_t           f_color,
+                                  uint16_t           b_color);
     // Display a float with `decimals` decimal places.
     st7789_state_t (*pf_draw_float)(st7789_driver_t   *p_drv,
-                                     const front_def_t *p_font,
-                                     uint16_t           x,
-                                     uint16_t           y,
-                                     float              value,
-                                     uint8_t            decimals,
-                                     uint16_t           f_color,
-                                     uint16_t           b_color);
-    uint8_t                  is_init;
+                                    const front_def_t *p_font,
+                                    uint16_t           x,
+                                    uint16_t           y,
+                                    float              value,
+                                    uint8_t            decimals,
+                                    uint16_t           f_color,
+                                    uint16_t           b_color);
+    // Draw a line from (x0, y0) to (x1, y1) in RGB565 color.
+    st7789_state_t (*pf_draw_line)(st7789_driver_t *p_drv,
+                                   uint16_t         x0,
+                                   uint16_t         y0,
+                                   uint16_t         x1,
+                                   uint16_t         y1,
+                                   uint16_t         color);
+    uint8_t is_init;
 } st7789_driver_t;
 
 /* Exported types -----------------------------------------------------------*/
