@@ -76,6 +76,7 @@ const osThreadAttr_t defaultTask_attributes = {
     .name       = "defaultTask",
     .stack_size = 512 * 4,
     .priority   = (osPriority_t)osPriorityNormal,
+
 };
 osThreadId_t defaultTaskHandle;
 
@@ -241,7 +242,7 @@ void StartDefaultTask(void *argument)
     /* 12 endpoints around center (120,210) r=25, step=30 deg */
     static const uint16_t sc_line_pts[12U][2U] = {
         {145U, 210U}, {142U, 223U}, {133U, 232U}, {120U, 235U},
-        {107U, 232U}, {98U, 223U},  {95U, 210U},  {98U, 197U},
+        {107U, 232U}, {98U, 223U },  {95U, 210U}, {98U, 197U },
         {107U, 188U}, {120U, 185U}, {133U, 188U}, {142U, 197U},
     };
     static uint8_t  s_fi  = 0U;

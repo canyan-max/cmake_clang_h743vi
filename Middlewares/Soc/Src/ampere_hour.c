@@ -193,8 +193,8 @@ static float calculate_availcap(float temp_value, float dsg_ratio)
     float low_dsg_ratio      = 0.0;
     float low_temp_avai_cap  = 0.0;
     float high_temp_avai_cap = 0.0;
-    if(calculate_ranks(temp_value, dsg_ratio, avai_cap_value, temp_dsg_ratio) ==
-       0)
+    if(0 ==
+       calculate_ranks(temp_value, dsg_ratio, avai_cap_value, temp_dsg_ratio))
     {
         return 0.0;
     }
