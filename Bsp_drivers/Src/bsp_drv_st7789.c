@@ -570,6 +570,7 @@ static st7789_state_t st7789_fill_screen(st7789_driver_t *p_drv, uint16_t color)
                              ST7789_INVALID_PARAM   = 0x04U,]
   * @param[in]        :  [st7789_driver_t *p_drv]
   */
+ST7789_NOT_USE_FUNCTION
 static st7789_state_t st7789_clear_screen(st7789_driver_t *p_drv)
 {
     return st7789_fill_screen(p_drv, 0x0000U);
@@ -1325,33 +1326,33 @@ st7789_state_t st7789_driver_instruct(st7789_driver_t        *p_drv,
     p_drv->p_spi_ops = p_ops;
 
     /* Bind driver function pointers */
-    p_drv->pf_deinit       = st7789_deinit;
-    p_drv->pf_fill_screen  = st7789_fill_screen;
-    p_drv->pf_clear_screen = st7789_clear_screen;
-    p_drv->pf_fill_rect    = st7789_fill_rect;
-    p_drv->pf_draw_char    = st7789_draw_char;
-    p_drv->pf_draw_string  = st7789_draw_string;
-    p_drv->pf_draw_image   = st7789_draw_image;
-    p_drv->pf_draw_dec     = st7789_draw_dec;
-    p_drv->pf_draw_hex     = st7789_draw_hex;
-    p_drv->pf_draw_float   = st7789_draw_float;
-    p_drv->pf_draw_line    = st7789_draw_line;
+    p_drv->pf_deinit      = st7789_deinit;
+    p_drv->pf_fill_screen = st7789_fill_screen;
+    // p_drv->pf_clear_screen = st7789_clear_screen;
+    p_drv->pf_fill_rect   = st7789_fill_rect;
+    p_drv->pf_draw_char   = st7789_draw_char;
+    p_drv->pf_draw_string = st7789_draw_string;
+    p_drv->pf_draw_image  = st7789_draw_image;
+    p_drv->pf_draw_dec    = st7789_draw_dec;
+    p_drv->pf_draw_hex    = st7789_draw_hex;
+    p_drv->pf_draw_float  = st7789_draw_float;
+    p_drv->pf_draw_line   = st7789_draw_line;
 
     /* Execute hardware init sequence */
     ret = st7789_init(p_drv);
     if(ST7789_OK != ret)
     {
-        p_drv->p_spi_ops       = NULL;
-        p_drv->pf_fill_screen  = NULL;
-        p_drv->pf_clear_screen = NULL;
-        p_drv->pf_fill_rect    = NULL;
-        p_drv->pf_draw_char    = NULL;
-        p_drv->pf_draw_string  = NULL;
-        p_drv->pf_draw_image   = NULL;
-        p_drv->pf_draw_dec     = NULL;
-        p_drv->pf_draw_hex     = NULL;
-        p_drv->pf_draw_float   = NULL;
-        p_drv->pf_draw_line    = NULL;
+        p_drv->p_spi_ops      = NULL;
+        p_drv->pf_fill_screen = NULL;
+        // p_drv->pf_clear_screen = NULL;
+        p_drv->pf_fill_rect   = NULL;
+        p_drv->pf_draw_char   = NULL;
+        p_drv->pf_draw_string = NULL;
+        p_drv->pf_draw_image  = NULL;
+        p_drv->pf_draw_dec    = NULL;
+        p_drv->pf_draw_hex    = NULL;
+        p_drv->pf_draw_float  = NULL;
+        p_drv->pf_draw_line   = NULL;
         return ret;
     }
     p_drv->is_init = ST7789_DRIVER_IS_INIT;

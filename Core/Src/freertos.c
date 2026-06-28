@@ -24,6 +24,7 @@
 #include "cmsis_os2.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include "shell_port.h"
@@ -40,6 +41,8 @@
 #include "bsp_drv_st7789.h"      /* bsp_drv_st7789 lib header file. */
 #include "front.h"               /* front lib header file. */
 #include "direct_cur_resistan.h" /* direct_cur_resistan lib header file. */
+#include "draw_adapter.h"        /* draw_adapter lib header file. */
+#include "draw_handle.h"         /* draw_handle lib header file. */
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -60,7 +63,6 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
 /* 32x32 RGB565 test image */
-static uint8_t sg_test_img[32U * 32U * 2U];
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 const storage_ops_t g_storage_ops = {
@@ -103,6 +105,22 @@ extern const led_operation_t g_led2_ops;
 st7789_driver_t              g_st7789_drv;
 led_driver_t                 g_led1_drv;
 led_handle_t                 g_led1_handle;
+
+/* draw handle */
+const draw_handle_ops_t g_draw_adapter_ops = {
+
+    .pf_drv_init    = drv_draw_init,
+    .pf_fill_screen = drv_draw_fill_screen,
+    .pf_fill_rect   = drv_draw_fill_rect,
+    .pf_draw_line   = drv_draw_line,
+    .pf_draw_string = drv_draw_string,
+    .pf_draw_image  = drv_draw_image,
+    .pf_draw_dec    = drv_draw_dec,
+    .pf_draw_hex    = drv_draw_hex,
+    .pf_draw_float  = drv_draw_float
+
+};
+draw_handle_t g_draw_handle;
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -118,7 +136,6 @@ void MX_FREERTOS_Init(void)
 {
     /* USER CODE BEGIN Init */
     dwt_init();
-
     /* USER CODE END Init */
 
     /* USER CODE BEGIN RTOS_MUTEX */
@@ -164,147 +181,24 @@ void StartDefaultTask(void *argument)
 {
     /* USER CODE BEGIN StartDefaultTask */
     ((void)argument);
-    /* ST7789 LCD test */
-    st7789_state_t st7789_ret = st7789_driver_instruct(&g_st7789_drv,
-                                                       &g_st7789_spi_ops);
-    storage_handle_instruct(&g_storage_handle, &g_storage_ops, &g_at24c02_drv,
-                            0xffU, 8U, AT24_MEMADD_SIZE_8BIT, 0xA0U);
-    led_handle_instruct(&g_led1_handle, &g_led1_adapter_ops,
-                        (void *)&g_led1_drv, (void *)&g_led1_ops);
-    logInfo("st7789 instruct ret: %d", st7789_ret);
-    g_st7789_drv.pf_clear_screen(&g_st7789_drv);
-    kfifo_init(&g_kfifo, k_fifo_buffer, sizeof(k_fifo_buffer));
-    logInfo("kfifo len %d", kfifo_len(&g_kfifo));
-    logInfo("kfifo avail %d", kfifo_avail(&g_kfifo));
-    uint8_t  wdata1[] = {0x01, 0x02, 0x03, 0x04, 0x05};
-    uint32_t ret      = kfifo_put(&g_kfifo, wdata1, 5);
-    logInfo("kfifo_put ret %d", ret);
-    logInfo("kfifo len %d", kfifo_len(&g_kfifo));
-    logInfo("kfifo avail %d", kfifo_avail(&g_kfifo));
-    uint8_t rdata1[5] = {0};
-    ret               = kfifo_get(&g_kfifo, rdata1, 5);
-    logInfo("kfifo_get ret %d", ret);
-    logInfo("kfifo len %d", kfifo_len(&g_kfifo));
-    logInfo("kfifo avail %d", kfifo_avail(&g_kfifo));
-    // write 12 bytes, which is more than the fifo size, to test the boundary
-    // condition.
 
-    uint8_t wdata2[] = {0x11, 0x12, 0x13, 0x14, 0x15, 0x16,
-                        0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C};
-
-    ret = kfifo_put(&g_kfifo, wdata2, 12);
-    logInfo("kfifo_put ret %d", ret);
-    logInfo("kfifo len %d", kfifo_len(&g_kfifo));
-    logInfo("kfifo avail %d", kfifo_avail(&g_kfifo));
-    uint8_t rdata[16] = {0};
-    ret               = kfifo_get(&g_kfifo, rdata, 14);
-    logInfo("kfifo_get ret %d", ret);
-    logInfo("kfifo len %d", kfifo_len(&g_kfifo));
-    logInfo("kfifo avail %d", kfifo_avail(&g_kfifo));
-    logInfo("StartDefaultTask is running...");
-
-    /* Claude icon: 8-ray starburst, center=(17,17), inner=4, outer=12, amber */
+    /* draw handle init (replaces direct st7789_driver_instruct) */
     {
-        uint16_t const ic = 0xFD20U;
-        /* 4 cardinal rays */
-        g_st7789_drv.pf_draw_line(&g_st7789_drv, 21U, 17U, 29U, 17U, ic);
-        g_st7789_drv.pf_draw_line(&g_st7789_drv, 13U, 17U, 5U, 17U, ic);
-        g_st7789_drv.pf_draw_line(&g_st7789_drv, 17U, 21U, 17U, 29U, ic);
-        g_st7789_drv.pf_draw_line(&g_st7789_drv, 17U, 13U, 17U, 5U, ic);
-        /* 4 diagonal rays */
-        g_st7789_drv.pf_draw_line(&g_st7789_drv, 20U, 20U, 26U, 26U, ic);
-        g_st7789_drv.pf_draw_line(&g_st7789_drv, 14U, 14U, 8U, 8U, ic);
-        g_st7789_drv.pf_draw_line(&g_st7789_drv, 14U, 20U, 8U, 26U, ic);
-        g_st7789_drv.pf_draw_line(&g_st7789_drv, 20U, 14U, 26U, 8U, ic);
-        /* center dot */
-        g_st7789_drv.pf_fill_rect(&g_st7789_drv, 16U, 16U, 3U, 3U, ic);
+        uint8_t draw_ret = draw_handle_instruct(&g_draw_handle,
+                                                &g_draw_adapter_ops,
+                                                (void *)&g_st7789_drv,
+                                                (void *)&g_st7789_spi_ops);
+        logInfo("draw_handle instruct ret: %d", draw_ret);
     }
-
-    /* Title drawn once */
-    g_st7789_drv.pf_draw_string(&g_st7789_drv, &g_f8x16, 36U, 10U,
-                                "ST7789 TEST", 0xFFFFU, 0x0000U);
-
-    /* Draw line test: horizontal / vertical / diagonal (drawn once) */
-    g_st7789_drv.pf_draw_line(&g_st7789_drv, 0U, 35U, 239U, 35U,
-                              0xF800U); /* H red   */
-    g_st7789_drv.pf_draw_line(&g_st7789_drv, 180U, 50U, 180U, 239U,
-                              0x07E0U); /* V green */
-
-    /* Each frame rotates quadrant colors: TL/TR/BL/BR */
-    static const uint16_t sc_pal[4U][4U] = {
-        {0xF800U, 0x07E0U, 0x001FU, 0xFFFFU}, /* R lead */
-        {0x07E0U, 0x001FU, 0xFFFFU, 0xF800U}, /* G lead */
-        {0x001FU, 0xFFFFU, 0xF800U, 0x07E0U}, /* B lead */
-        {0xFFFFU, 0xF800U, 0x07E0U, 0x001FU}, /* W lead */
-    };
-    static const char *const sc_labels[4U] = {"RED  ", "GREEN", "BLUE ",
-                                              "WHITE"};
-    /* 12 endpoints around center (120,210) r=25, step=30 deg */
-    static const uint16_t sc_line_pts[12U][2U] = {
-        {145U, 210U}, {142U, 223U}, {133U, 232U}, {120U, 235U},
-        {107U, 232U}, {98U, 223U },  {95U, 210U}, {98U, 197U },
-        {107U, 188U}, {120U, 185U}, {133U, 188U}, {142U, 197U},
-    };
-    static uint8_t  s_fi  = 0U;
-    static int32_t  s_dec = 0;
-    static uint32_t s_hex = 0U;
-    static float    s_flt = 0.0f;
-    static uint8_t  s_la  = 0U;
-
+    draw_handle_fill_screen(&g_draw_handle, 0x0000U);
+    /* Build DeepSeek whale icon: 32x32 @ (0,0), head right, tail left */
+    /* Idle loop */
     for(;;)
     {
-        /* Rebuild image with current frame's palette */
-        s_flt = update_bat_resistance(25, 5.21f, 15);
-        for(uint16_t r = 0U; r < 32U; r++)
-        {
-            for(uint16_t c = 0U; c < 32U; c++)
-            {
-                uint8_t  q          = (uint8_t)((r / 16U) * 2U + (c / 16U));
-                uint16_t px         = sc_pal[s_fi][q];
-                uint32_t i          = ((uint32_t)r * 32U + c) * 2U;
-                sg_test_img[i]      = (uint8_t)(px >> 8U);
-                sg_test_img[i + 1U] = (uint8_t)(px & 0x00FFU);
-            }
-        }
-        g_st7789_drv.pf_draw_image(&g_st7789_drv, 10U, 50U, 32U, 32U,
-                                   sg_test_img);
-
-        g_st7789_drv.pf_draw_string(&g_st7789_drv, &g_f8x16, 10U, 100U,
-                                    sc_labels[s_fi], sc_pal[s_fi][0U], 0x0000U);
-
-        /* Decimal — clear 160px wide area then draw */
-        // g_st7789_drv.pf_fill_rect(&g_st7789_drv, 10U, 130U, 160U, 16U,
-        // 0x0000U);
-        g_st7789_drv.pf_draw_dec(&g_st7789_drv, &g_f8x16, 10U, 130U, s_dec,
-                                 0xFFFFU, 0x0000U);
-
-        /* Hex — yellow */
-        g_st7789_drv.pf_draw_hex(&g_st7789_drv, &g_f8x16, 10U, 150U, s_hex,
-                                 0xFFE0U, 0x0000U);
-
-        /* Float — cyan */
-        g_st7789_drv.pf_draw_float(&g_st7789_drv, &g_f8x16, 10U, 170U, s_flt,
-                                   2U, 0x07FFU, 0x0000U);
-
-        /* Advance state */
-        s_fi = (uint8_t)((s_fi + 1U) % 4U);
-        s_dec += 137;
-        s_hex += 0x1111U;
-
-        /* Rotating line: erase previous, draw next (yellow, center=120,210,
-         * r=25) */
-        {
-            uint8_t next_la = (uint8_t)((s_la + 1U) % 12U);
-            g_st7789_drv.pf_draw_line(&g_st7789_drv, 120U, 210U,
-                                      sc_line_pts[s_la][0U],
-                                      sc_line_pts[s_la][1U], 0x0000U);
-            g_st7789_drv.pf_draw_line(&g_st7789_drv, 120U, 210U,
-                                      sc_line_pts[next_la][0U],
-                                      sc_line_pts[next_la][1U], 0xFFE0U);
-            s_la = next_la;
-        }
-        osDelay(200U);
-        logInfo("dec=%ld hex=0x%lX", (long)s_dec, (unsigned long)s_hex);
+        float internal_re = 0.0f;
+        internal_re       = update_bat_resistance(25, 5.21f, 15);
+        draw_handle_draw_float(&g_draw_handle, &g_f8x16, 20, 20, internal_re, 2,
+                               RGB565_GREEN, RGB565_BLACK);
     }
 
     /* USER CODE END StartDefaultTask */

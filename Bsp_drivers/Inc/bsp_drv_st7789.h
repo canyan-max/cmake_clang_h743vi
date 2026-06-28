@@ -69,8 +69,8 @@ typedef struct ST7789_DRIVER_T
     // Set column/row address window.
     st7789_state_t (*pf_deinit)(st7789_driver_t *p_drv);
     st7789_state_t (*pf_fill_screen)(st7789_driver_t *p_drv, uint16_t color);
-    // Clear screen (fill black).
-    st7789_state_t (*pf_clear_screen)(st7789_driver_t *p_drv);
+    // // Clear screen (fill black).
+    // st7789_state_t (*pf_clear_screen)(st7789_driver_t *p_drv);
     // Fill an arbitrary rectangle with a single RGB565 color.
     st7789_state_t (*pf_fill_rect)(st7789_driver_t *p_drv,
                                    uint16_t         x,

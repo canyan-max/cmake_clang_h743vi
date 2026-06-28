@@ -24,6 +24,7 @@
 #include <stddef.h> /* stdint lib header file. */
 
 /* define -------------------------------------------------------------------*/
+// rgb 565 color  define
 #define RGB565_BLACK  (0x0000U)
 #define RGB565_WHITE  (0xFFFFU)
 #define RGB565_RED    (0xF800U)
