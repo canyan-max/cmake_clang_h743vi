@@ -21,7 +21,9 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
+#include "FreeRTOS.h"
 #include "cmsis_os2.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <math.h>
@@ -65,22 +67,12 @@
 /* 32x32 RGB565 test image */
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
-const storage_ops_t g_storage_ops = {
-
-    .pf_drv_init         = drv_init,
-    .pf_write_page       = drv_write_page,
-    .pf_write_cross_page = drv_write_bytes_cross,
-    .pf_read_bytes       = drv_read_bytes
-
-};
+osThreadId_t         defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
-
     .name       = "defaultTask",
-    .stack_size = 512 * 4,
+    .stack_size = 128 * 4,
     .priority   = (osPriority_t)osPriorityNormal,
-
 };
-osThreadId_t defaultTaskHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -157,9 +149,9 @@ void MX_FREERTOS_Init(void)
 
     /* Create the thread(s) */
     /* creation of defaultTask */
-
     defaultTaskHandle = osThreadNew(StartDefaultTask, NULL,
                                     &defaultTask_attributes);
+
     /* USER CODE BEGIN RTOS_THREADS */
     /* add threads, ... */
     userShellInit();

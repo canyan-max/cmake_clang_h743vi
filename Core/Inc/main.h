@@ -65,6 +65,8 @@ void Error_Handler(void);
 #define BACK_LIGHT_GPIO_Port GPIOE
 #define SPI4_DC_Pin GPIO_PIN_15
 #define SPI4_DC_GPIO_Port GPIOE
+#define DCMI_PWDN_Pin GPIO_PIN_4
+#define DCMI_PWDN_GPIO_Port GPIOD
 
 /* USER CODE BEGIN Private defines */
 

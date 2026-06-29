@@ -20,11 +20,15 @@
 #include "main.h"
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
+#include "dcmi.h"
 #include "dma.h"
 #include "i2c.h"
+#include "stm32h7xx_hal.h"
+#include "stm32h7xx_hal_def.h"
 #include "usart.h"
 #include "spi.h"
 #include "gpio.h"
+#include <stdint.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -57,7 +61,37 @@ void        SystemClock_Config(void);
 static void MPU_Config(void);
 void        MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
+#define OV2640_I2C_ADDR    0x60    // OV2640的7位I2C地址
+#define I2C_TIMEOUT        2
+HAL_StatusTypeDef OV2640_WriteReg(uint8_t reg_addr, uint8_t reg_val)
+{
+    // 1. 发送设备地址和寄存器地址（写操作）
+    // 注意：发送完寄存器地址后，SCCB协议不需要等待ACK，但HAL库会等待。
+    // 如果卡住，可以考虑用模拟I2C。
+    HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(&hi2c1, OV2640_I2C_ADDR,
+                                                       &reg_addr, 1,
+                                                       I2C_TIMEOUT);
+    if(status != HAL_OK)
+        return status;
 
+    // 2. 发送要写入寄存器的值
+    return HAL_I2C_Master_Transmit(&hi2c1, OV2640_I2C_ADDR, &reg_val, 1,
+                                   I2C_TIMEOUT);
+}
+
+HAL_StatusTypeDef OV2640_ReadReg(uint8_t reg_addr, uint8_t *p_reg_val)
+{
+    // 1. 执行"伪写"操作：发送设备地址和寄存器地址，指定要读取的寄存器
+    HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(&hi2c1, OV2640_I2C_ADDR,
+                                                       &reg_addr, 1,
+                                                       I2C_TIMEOUT);
+    if(status != HAL_OK)
+        return status;
+
+    // 2. 执行读操作：重新发送设备地址（读位=1），然后读取一个字节的数据
+    return HAL_I2C_Master_Receive(&hi2c1, OV2640_I2C_ADDR, p_reg_val, 1,
+                                  I2C_TIMEOUT);
+}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -104,8 +138,30 @@ int main(void)
     MX_DMA_Init();
     MX_LPUART1_UART_Init();
     MX_SPI4_Init();
+    MX_DCMI_Init();
     MX_I2C1_Init();
     /* USER CODE BEGIN 2 */
+    HAL_GPIO_WritePin(DCMI_PWDN_GPIO_Port, DCMI_PWDN_Pin, GPIO_PIN_RESET);
+    HAL_Delay(10);
+    HAL_StatusTypeDef ret = OV2640_WriteReg(0xffU, 0x01);
+    ret                   = OV2640_WriteReg(0x12U, 0x80U);
+    HAL_Delay(10);
+
+    uint8_t id_l = 0x20, id_h = 0x22;
+    ret = OV2640_WriteReg(0xffU, 0x01);
+    if(OV2640_ReadReg(0x0A, &id_l) == HAL_OK)
+    {
+        if(OV2640_ReadReg(0x0b, &id_h) == HAL_OK)
+        {
+        }
+    }
+    uint16_t ov2640_id = (id_l << 8) | (id_h);
+    if(0x2642 != ov2640_id)
+    {
+        while(1)
+        {
+        }
+    }
     /* USER CODE END 2 */
 
     /* Init scheduler */
