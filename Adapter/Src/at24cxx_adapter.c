@@ -49,7 +49,7 @@ uint8_t drv_write_page(void    *p_drv,
                        uint32_t timeout)
 {
     at24_driver_t *p_at24 = (at24_driver_t *)p_drv;
-    if(NULL == p_at24 || NULL == p_data || 0 == size)
+    if(NULL == p_at24 || NULL == p_data || 0U == size)
     {
         return 1;
     }

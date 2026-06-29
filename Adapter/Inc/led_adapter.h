@@ -24,6 +24,9 @@
 #include <stddef.h> /* stdint lib header file. */
 
 /* define -------------------------------------------------------------------*/
+#define DRV_LED_OK              (0U)
+#define DRV_LED_ERR_PARAM       (1U)
+#define DRV_LED_ERR_HW          (2U)
 
 /* typedef ------------------------------------------------------------------*/
 
