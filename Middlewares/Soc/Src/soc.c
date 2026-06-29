@@ -18,17 +18,18 @@
  *@calldirectly       :
  *
  *@version            :   V1.0
- *
  *@note               :   1 tab == 4 spaces!
  ******************************************************************************
  */
 
 /* Includes -----------------------------------------------------------------*/
-#include <stddef.h> /* stdint lib header file */
-#include "soc.h"    /* self lib header file */
-#include <math.h>
-#include "ocv_calc.h"
-#include "ampere_hour.h"
+#include "soc.h"                 /* self lib header file */
+#include <math.h>                /* math lib header file. */
+#include "ocv_calc.h"            /* ocv_calc lib header file. */
+#include "ampere_hour.h"         /* ampere_hour lib header file. */
+#include "direct_cur_resistan.h" /* direct_cur_resistan lib header file. */
+#include <stddef.h>              /* stdint lib header file */
+
 /* define   -----------------------------------------------------------------*/
 #define CAPS_LOST           (g_normal_cap*10)
 #define CAPS_REATED         (g_normal_cap*1000)
@@ -37,7 +38,7 @@
 /* variables ----------------------------------------------------------------*/
 // capacity
 // soc = g_remain_capacity / g_full_max_capacity
-float    g_remain_capacity    = 0.0f; //
+float    g_remain_capacity    = 0.0f; // RemainCap
 float    g_full_max_capacity  = 0.0f; // RealCap_CHG
 float    g_full_real_capacity = 0.0f; // CellRealCap_CHG
 float    g_current_soc        = 0.0f; // current soc 0.0 ~ 1.0
@@ -49,9 +50,11 @@ uint16_t g_cycle_count        = 0; // cycle count
 uint16_t g_normal_cap         = 0; // NORMAL CAP
 uint16_t g_old_normal_cap     = 0; // NORMAL CAP
 uint8_t  g_empty_flg          = 0;
+uint8_t  g_full_flg           = 0;
 uint16_t g_cells_full_volt    = 3600; // mv
 uint16_t g_cells_empty_volt   = 0;    // mv
 uint16_t g_volt_max_diff      = 1000; // mv
+uint8_t  g_soc_frist_calib    = 0;
 // static float    g_remain_capacity       = 0.0f; //
 // static float    g_full_max_capacity     = 0.0f; // RealCap_CHG
 // static float    g_full_real_capacity    = 0.0f; // CellRealCap_CHG
@@ -149,6 +152,7 @@ static void check_caps_change(void)
         g_full_max_capacity  = get_real_full_cap(cap_lost_tatol);
         g_remain_capacity    = g_current_soc * g_full_max_capacity;
         g_full_real_capacity = g_full_max_capacity;
+        g_soc_frist_calib    = 0;
     }
 }
 
@@ -160,10 +164,11 @@ static void cycle_count_calculate(float dsg_caps)
 {
     g_dsg_capcity += dsg_caps;
     float avg_dsg_caps = fabsf(g_dsg_capcity);
-    float caps_lost    = 0;
+    //    float caps_lost    = 0;
     if(avg_dsg_caps > g_full_max_capacity * 0.9f)
     {
-        g_dsg_capcity = 0;
+        float caps_lost = 0;
+        g_dsg_capcity   = 0;
         g_cycle_count += 1;
         caps_lost            = get_cap_lost_tatol(g_cycle_count);
         g_soh                = (1 - (caps_lost / CAPS_REATED)) * 1000;
@@ -179,8 +184,7 @@ static void cycle_count_calculate(float dsg_caps)
 static uint8_t compare_capcity(float caps_new)
 {
     float result = 0;
-
-    result = caps_new / g_full_max_capacity;
+    result       = caps_new / g_full_max_capacity;
     if(result >= 0.95f && result <= 1.0f)
         return 1;
     return 0;
@@ -241,12 +245,14 @@ uint8_t bat_volatge_empty_check(uint16_t v_min, float i_current)
  */
 static void soc_init_voltage_not_updata_capsoc(float    i_current,
                                                uint16_t vol_min,
-                                               int16_t  T_average)
+                                               int16_t  T_average,
+                                               float    r_sistance)
 {
     float        soc_min       = 0;
     float        soc_show_temp = 0;
     static float socLast       = 0;
-    float        volt_min_f    = (vol_min / 1000.0f);
+
+    float volt_min_f = (vol_min - (i_current / 1000.0f) * r_sistance) / 1000.0f;
     if(i_current >= 0)
         return;
 
@@ -267,6 +273,15 @@ static void soc_init_voltage_not_updata_capsoc(float    i_current,
 
         if((soc_min >= 0.20f)) // ocv_soc>=20
         {
+            //            if((g_soc >= 20))
+            //            {
+            //                 soc_min  = g_soc / 100.0f;
+            //            }
+            //            else
+            //            {
+            //                soc_min = 0.20f;
+            //            }
+            //             soc_min  = g_soc / 100.0f;
             return;
         }
         else // ocv_soc<20
@@ -294,17 +309,20 @@ static void soc_init_voltage_not_updata_capsoc(float    i_current,
                                         int16_t T_average]
  */
 static void soc_init_voltage_not_updata_capsoc_chg(float    i_current,
-                                                   uint16_t vol_min,
-                                                   int16_t  T_average)
+                                                   uint16_t vol_max,
+                                                   int16_t  T_average,
+                                                   float    r_sistance)
 {
-    float soc_max    = 0;
-    float volt_max_f = (vol_min / 1000.0f);
+    float soc_max = 0;
     if(i_current <= 0)
         return;
-
+    //    ((void)r_sistance);
+    //    float volt_max_f = (vol_max)/1000.0f;
+    // in chg mode v_ocv = vmax - (i*r_sistance)*0.4; 3.3328
+    float volt_max_f = (vol_max - ((i_current / 1000.0f) * r_sistance) * 0.4f) /
+                       1000.0f;
     if(g_soc > 0 && g_soc < 100)
     {
-
         soc_max = ocv_table_calc_chg_soc(volt_max_f, T_average);
         if(soc_max <= 0.8)
         {
@@ -331,17 +349,14 @@ static void soc_init_voltage_not_updata_capsoc_chg(float    i_current,
  * @brief            :  [soc_init_value_though_input_value_upload]
  * @param[in]        :  [float socinput]
  */
-static void soc_init_value_though_input_value_upload(float socinput)
+void soc_init_value_though_input_value_upload(float socinput)
 {
     g_soc = socinput;
-    if(g_soc < 0)
-    {
-        g_soc = 0;
-    }
-    else if(g_soc > 100)
-    {
-        g_soc = 100;
-    }
+
+    if(g_soc < 0.0f)
+        g_soc = 0.0f;
+    else if(g_soc > 100.0f)
+        g_soc = 100.0f;
 
     g_init_soc        = g_soc;
     g_current_soc     = g_init_soc / 100.0f;
@@ -357,8 +372,10 @@ static void soc_init_value_though_input_value_upload(float socinput)
 static void soc_calibration(float    i_current,
                             uint16_t vol_max,
                             uint16_t vol_min,
-                            int16_t  T_average)
+                            int16_t  T_average,
+                            float    bat_resistance)
 {
+    ((void)(bat_resistance));
     static uint32_t count_dsg = 0, count_chg = 0;
     static uint32_t count_standy = 0;
     if(i_current == 0)
@@ -367,7 +384,7 @@ static void soc_calibration(float    i_current,
         if(count_standy >= 3600)
         {
             count_standy         = 0;
-            float self_use_power = (1.0f * 10.0f) / (g_normal_cap * 10);
+            float self_use_power = (1 * 10) / (g_normal_cap * 10);
             float input_soc      = g_soc - self_use_power;
             soc_init_value_though_input_value_upload(input_soc);
         }
@@ -383,7 +400,8 @@ static void soc_calibration(float    i_current,
         if(count_dsg >= 10)
         {
             count_dsg = 0;
-            soc_init_voltage_not_updata_capsoc(i_current, vol_min, T_average);
+            soc_init_voltage_not_updata_capsoc(i_current, vol_min, T_average,
+                                               bat_resistance);
         }
     }
     else
@@ -398,7 +416,7 @@ static void soc_calibration(float    i_current,
         {
             count_chg = 0;
             soc_init_voltage_not_updata_capsoc_chg(i_current, vol_max,
-                                                   T_average);
+                                                   T_average, bat_resistance);
         }
     }
     else
@@ -412,7 +430,7 @@ static void soc_calibration(float    i_current,
  * @param[in]        :  [float current_i ,float soc , \
                          float detal_cap_mah ,float real_capacity]
  */
-// uint8_t  bat_stasus =0;
+
 static void soc_display(float current_i,
                         float soc,
                         float detal_cap_mah,
@@ -426,11 +444,34 @@ static void soc_display(float current_i,
     {
         if(soc < 1.0f)
         {
-            g_init_soc += detal_cap_mah * 120.0f / real_capacity; // 105 110 120
+            if(g_init_soc < (soc * 100.0f))
+            {
+                g_init_soc += detal_cap_mah * 120.0f /
+                              real_capacity; // 105 110 120
+                // limit init soc value
+                if(g_init_soc > (soc * 100.0f))
+                {
+                    g_init_soc = soc * 100.0f;
+                }
+            }
+            else // fix the code  add more infomation
+            {
+                g_init_soc += detal_cap_mah * 110.0f /
+                              real_capacity; // 105 110 120
+            }
         }
         else
         {
-            g_init_soc = 100.0f;
+            if(1 == g_full_flg)
+            {
+
+                g_init_soc = 100.0f;
+            }
+            else
+            {
+                g_init_soc = 99.0f;
+            }
+            //            g_init_soc = 100.0f;
         }
     }
     else if(bat_stasus == 2) // discharging
@@ -438,18 +479,60 @@ static void soc_display(float current_i,
         if(soc > 0.0f)
         {
             g_init_soc += detal_cap_mah * 105.0f / real_capacity; // 110
+            // limit init soc value
+            if(g_init_soc < (soc * 100.0f))
+            {
+                g_init_soc = soc * 100.0f;
+            }
         }
         else
         {
-            g_init_soc = 0.0f;
+            if(1 == g_empty_flg)
+            {
+                g_init_soc = 0.0f;
+            }
+            else
+            {
+                g_init_soc = 1.0f;
+            }
+            // g_init_soc = 0.0f;
         }
     }
 
-    if(g_init_soc >= 1 && 0 != g_empty_flg)
+    if(g_init_soc >= 1.0f && 0 != g_empty_flg)
     {
         g_empty_flg = 0;
     }
+    else if(g_init_soc <= 99.0f && 0 != g_full_flg)
+    {
+        g_full_flg = 0;
+    }
 
+    /*
+    //    if(g_init_soc<1.0f)
+    //    {
+    //        if(1==g_empty_flg)
+    //        {
+    //            g_init_soc = 0.0f;
+    //        }
+    //        else
+    //        {
+    //            g_init_soc = 1.0f;
+    //        }
+    //    }
+    //    else if(g_init_soc>99.0f)
+    //    {
+    //        if(1==g_full_flg)
+    //        {
+    //
+    //            g_init_soc = 100.0f;
+    //        }
+    //        else
+    //        {
+    //            g_init_soc = 99.0f;
+    //        }
+    //    }
+    */
     // init soc limit
     if(g_init_soc > 100.0f)
     {
@@ -470,30 +553,32 @@ static void soc_display(float current_i,
         {
             if(g_init_soc == 0.0f || g_init_soc == 100.0f)
             {
-                g_soc = g_init_soc * 0.3f + g_soc * 0.7f;
+                g_soc = g_init_soc * 0.006f + g_soc * 0.994f;
             }
             else if((((g_init_soc <= 3.0f && g_soc >= 6.0f) ||
                       (g_init_soc <= 8.0f && g_soc >= 10.0f) // 10
                       ) &&
                      current_i < 0 &&
-                     (current_i * 0.001f) > (-1 * (current_caps * 0.1f))) ||
+                     (current_i * 0.001f) > (-1 * (current_caps * 0.5f)) //*0.1f
+                     ) ||
                     (((g_init_soc >= 97.0f && g_soc <= 95.0f) ||
                       (g_init_soc >= 92.0f && g_soc <= 90.0f)) &&
                      current_i > 0 &&
-                     (current_i * 0.001f) < (current_caps * 0.1f)))
+                     (current_i * 0.001f) < (current_caps * 0.5f) //*0.1f
+                     ))
             {
                 float detalsoc = fabsf(g_init_soc - g_soc);
                 if(detalsoc >= 10.0f)
                 {
-                    g_soc = g_init_soc * 0.0006f + g_soc * 0.9994f;
+                    g_soc = g_init_soc * 0.006f + g_soc * 0.994f;
                 }
                 else if(detalsoc >= 5.0f)
                 {
-                    g_soc = g_init_soc * 0.0009f + g_soc * 0.9991f;
+                    g_soc = g_init_soc * 0.009f + g_soc * 0.991f;
                 }
                 else
                 {
-                    g_soc = g_init_soc * 0.0015f + g_soc * 0.9985f;
+                    g_soc = g_init_soc * 0.015f + g_soc * 0.985f;
                 }
             }
             else
@@ -510,17 +595,17 @@ static void soc_display(float current_i,
                     {
                         tmeprate = 0.6f; // 0.6
                     }
-                    g_soc += ((110.0f * detal_cap_mah) / real_capacity) *
+                    g_soc += ((120.0f * detal_cap_mah) / real_capacity) *
                              tmeprate; // 100-
                     if(g_soc <= 0.0f)
                     {
-                        g_soc = 1.0f;
+                        g_soc = 0.0f;
                     }
                 }
                 else if(current_i > 0.0f)
                 {
-                    tmeprate = (100.0 - g_soc) / (100.0 - g_init_soc);
-                    if(tmeprate > 10) // 10
+                    tmeprate = (100.0f - g_soc) / (100.0f - g_init_soc); //
+                    if(tmeprate > 10)                                    // 10
                     {
                         tmeprate = 10;
                     }
@@ -528,7 +613,7 @@ static void soc_display(float current_i,
                     {
                         tmeprate = 0.6;
                     }
-                    g_soc += ((120 * detal_cap_mah) / real_capacity) * tmeprate;
+                    g_soc += ((140 * detal_cap_mah) / real_capacity) * tmeprate;
                     if(g_soc >= 100)
                     {
                         g_soc = 100;
@@ -536,10 +621,12 @@ static void soc_display(float current_i,
                 }
             }
         }
-        if((1 == g_empty_flg && g_init_soc == 0.0f) || g_init_soc == 100.0f)
-        {
-            g_soc = g_init_soc;
-        }
+        //        if( ( 1 == g_empty_flg && g_init_soc == 0.0f) || \
+//            ( 1 == g_full_flg  && g_init_soc == 100.0f)
+        //          )
+        //        {
+        //            g_soc = g_init_soc;
+        //        }
     }
     else
     {
@@ -553,12 +640,17 @@ static void soc_display(float current_i,
             g_soc += ((detal_cap_mah * 100.0f / real_capacity) * 0.6f);
         }
 
-        if(g_init_soc == 0.0f || g_init_soc == 100.0f)
-        {
-            g_soc = g_init_soc;
-        }
+        //        if(g_init_soc == 0.0f || g_init_soc == 100.0f)
+        //        {
+        //            g_soc = g_init_soc;
+        //        }
+    }
+    if(g_init_soc == 0.0f || g_init_soc == 100.0f)
+    {
+        g_soc = g_init_soc;
     }
 
+    // Limit the maximum or minimum value of g_soc between 0 and 100 .
     if(g_soc > 100.0f)
     {
         g_soc = 100.0f;
@@ -613,12 +705,30 @@ void  soc_soh_calc(uint16_t volt_max,
     {
         if(1 == bat_volatge_full_check(volt_max, i_current))
         {
-            g_current_soc     = 1.0f;
-            g_init_soc        = 100.0f;
-            g_remain_capacity = g_full_real_capacity;
+            g_current_soc = 1.0f;
+            g_init_soc    = 100.0f;
+            g_full_flg    = 1;
+            if(0 != g_soc_frist_calib)
+            {
+                if(1 == compare_capcity(g_remain_capacity))
+                {
+                    g_full_real_capacity = g_remain_capacity;
+                    g_remain_capacity    = g_current_soc * g_full_real_capacity;
+                }
+                else
+                {
+                    g_remain_capacity = g_full_real_capacity;
+                }
+            }
+            else
+            {
+                g_soc_frist_calib = 1;
+                g_remain_capacity = g_current_soc * g_full_max_capacity;
+            }
         }
         else if(1 == bat_volatge_empty_check(volt_min, i_current))
         {
+            g_soc_frist_calib = 1;
             g_current_soc     = 0.0f;
             g_init_soc        = 0.0f;
             g_remain_capacity = 0.0f;
@@ -647,13 +757,16 @@ void  soc_soh_calc(uint16_t volt_max,
     {
         g_full_real_capacity = g_remain_capacity;
     }
+    // battry internal resistance calc
+    float cur_a      = i_current / 1000.0f;
+    float r_internal = update_bat_resistance(tempera, cur_a, g_normal_cap);
 
     // update soc show
     soc_display(i_current, g_current_soc, detal_cap_mah, g_full_real_capacity);
     // soc-ocv clibrations
     if(temp_diff_volt < g_volt_max_diff) // max cell and min cell volt must
     {
-        soc_calibration(i_current, volt_max, volt_min, tempera);
+        soc_calibration(i_current, volt_max, volt_min, tempera, r_internal);
     }
 }
 
@@ -676,10 +789,11 @@ void soc_max_or_min_calibration(uint8_t  ov_flg,
 
     if((ov_flg) && 0 == max_calib_flg)
     {
+        g_full_flg    = 1;
         g_current_soc = 1.0f;
-        g_init_soc    = 100;
+        g_init_soc    = 100.0f;
         max_calib_flg = 1;
-        if(1 == compare_capcity(g_full_real_capacity))
+        if(1 == compare_capcity(g_remain_capacity))
         {
             g_full_real_capacity = g_remain_capacity;
             g_remain_capacity    = g_current_soc * g_full_real_capacity;
@@ -703,6 +817,7 @@ void soc_max_or_min_calibration(uint8_t  ov_flg,
         g_init_soc        = 0.0f;
         g_soc             = g_init_soc;
         g_empty_flg       = 1;
+        g_soc_frist_calib = 1;
     }
     else if((0x00 == (uv_flg)) && 1 == mix_calib_flg)
     {
@@ -858,7 +973,9 @@ void soc_init(uint8_t  pre_soc,
 
     float detal_soc = fabsf(volt_soc_rate100 - pre_soc);
     if(detal_soc <= 10.0f)
+    {
         soc_temp_value = pre_soc / 100.0f;
+    }
 
     if(soc_temp_value >= 1.0f)
     {
@@ -885,7 +1002,9 @@ void soc_init(uint8_t  pre_soc,
     g_remain_capacity = g_current_soc * g_full_max_capacity; // remain capacity
     //
     if(g_init_soc <= 0.0f)
+    {
         g_empty_flg = 1;
+    }
 }
 
 /* end of file --------------------------------------------------------------*/

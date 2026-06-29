@@ -18,21 +18,20 @@
  *@calldirectly       :
  *
  *@version            :   V1.0
- *
  *@note               :   1 tab == 4 spaces!
  ******************************************************************************
  */
 
 /* Includes -----------------------------------------------------------------*/
-#include <stdio.h>
-#include <math.h>
+#include <stdio.h>       /* stdio lib header file */
+#include <math.h>        /* math lib header file */
 #include <stddef.h>      /* stdint lib header file */
 #include "ampere_hour.h" /* self lib header file */
 /* define   -----------------------------------------------------------------*/
 #define SAMINTERVALTIME         (1000U)
 #define TEMPER_TABLE_SIZE       (6U)
 #define DSG_RATIO_TABLE_SIZE    (5U)
-#define ENABLE_DEBUG_MODE
+// #define ENABLE_DEBUG_MODE
 /* typedef ------------------------------------------------------------------*/
 
 /* variables ----------------------------------------------------------------*/
@@ -40,9 +39,9 @@
 float dsg_ratio      = 0; // mah
 float avail_capacity = 0;
 #endif // end of ENABLE_DEBUG_MODE
-float TemperTable[TEMPER_TABLE_SIZE]      = {-20, -10, 0, 10, 25, 55};
-float DSGRatioTable[DSG_RATIO_TABLE_SIZE] = {0.5, 1, 2, 3, 4};
-float AvailCapTable[TEMPER_TABLE_SIZE][DSG_RATIO_TABLE_SIZE] = {
+static const float TemperTable[TEMPER_TABLE_SIZE] = {-20, -10, 0, 10, 25, 55};
+static const float DSGRatioTable[DSG_RATIO_TABLE_SIZE] = {0.5, 1, 2, 3, 4};
+static const float AvailCapTable[TEMPER_TABLE_SIZE][DSG_RATIO_TABLE_SIZE] = {
     // 80  82  80  80
     {65, 68, 72, 78, 75},    // -20
     {85, 85, 81, 80, 75},    // -10
@@ -81,10 +80,10 @@ static uint8_t calculate_ranks(float  temp_value,
                                float *avaicap_value,
                                float *temp_dsg_ratio)
 {
-    uint8_t i  = 0;
-    uint8_t m1 = 0, m2 = 0, n1 = 0, n2 = 0;
-    float  *temp_table      = TemperTable;
-    float  *dsg_ratio_table = DSGRatioTable;
+    uint8_t      i  = 0;
+    uint8_t      m1 = 0, m2 = 0, n1 = 0, n2 = 0;
+    const float *temp_table      = TemperTable;
+    const float *dsg_ratio_table = DSGRatioTable;
     if(avaicap_value == NULL || temp_dsg_ratio == NULL)
     {
         return 0;
@@ -193,7 +192,7 @@ static float calculate_availcap(float temp_value, float dsg_ratio)
     float low_dsg_ratio      = 0.0;
     float low_temp_avai_cap  = 0.0;
     float high_temp_avai_cap = 0.0;
-    if(0 ==
+    if(0U ==
        calculate_ranks(temp_value, dsg_ratio, avai_cap_value, temp_dsg_ratio))
     {
         return 0.0;

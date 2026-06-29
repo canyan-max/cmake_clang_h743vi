@@ -20,22 +20,22 @@
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>              /* stdint lib header file. */
 #include "direct_cur_resistan.h" /* direct_cur_resistan lib header file. */
-#include "math.h"
+#include <math.h>
 /* define   -----------------------------------------------------------------*/
 #define DIR_CUR_RES_NOT_USE_FUNCTION      __attribute__((unused))
 #define DIR_CUR_RES_NOT_USE_VARIABLE(x)   ((void)(x))
 
-#define COEF_OF_CELL_R	                  (1.1f)
-#define CELL_VOLTAGE_NORM                 (100.0f)
-#define R_MIN_LIMIT_FACTOR                (0.4f)
-#define R_MAX_LIMIT_FACTOR                (20.0f)
+#define COEF_OF_CELL_R	      (1.1f)
+#define CELL_VOLTAGE_NORM     (100.0f)
+#define R_MIN_LIMIT_FACTOR    (0.4f)
+#define R_MAX_LIMIT_FACTOR    (20.0f)
 /* typedef ------------------------------------------------------------------*/
 
 /* variables ----------------------------------------------------------------*/
-static float g_coef_cell_learn = 1.0f; // CoefCellLearn
+static float g_coef_cell_learn = 1; // CoefCellLearn
 // static float g_r_of_cellbase   = 1;    // RofCellBase
-static uint16_t coef_cell_set = 10;   // CoefCellSet
-static float    g_internal_r  = 1.0f; // mohm
+static uint16_t coef_cell_set = 10; // CoefCellSet
+static float    g_internal_r  = 1;  // mohm
 // TempTableofR
 static float g_temp_table_of_r[6] = {-20.0f, -10.0f, 0.0f, 10.0f, 25.0f, 55.0f};
 // g_cell_table_of_r
@@ -97,7 +97,6 @@ float get_resistence_value(void)
 {
     return g_internal_r;
 }
-
 /**
  * @brief            :  [update_bat_resistance]
                         get the battry internal resistance

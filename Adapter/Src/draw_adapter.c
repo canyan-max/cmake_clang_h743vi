@@ -149,7 +149,7 @@ uint8_t drv_draw_string(void              *p_drv,
                         uint16_t           f_color,
                         uint16_t           b_color)
 {
-    if(NULL == p_drv)
+    if(NULL == p_drv || NULL == p_font || NULL == p_str)
     {
         return 1;
     }
@@ -179,7 +179,7 @@ uint8_t drv_draw_image(void          *p_drv,
                        uint16_t       h,
                        const uint8_t *p_pixels)
 {
-    if(NULL == p_drv)
+    if(NULL == p_drv || NULL == p_pixels)
     {
         return 1;
     }
@@ -209,7 +209,7 @@ uint8_t drv_draw_dec(void              *p_drv,
                      uint16_t           f_color,
                      uint16_t           b_color)
 {
-    if(NULL == p_drv)
+    if(NULL == p_drv || NULL == p_font)
     {
         return 1;
     }
@@ -240,7 +240,7 @@ uint8_t drv_draw_hex(void              *p_drv,
                      uint16_t           f_color,
                      uint16_t           b_color)
 {
-    if(NULL == p_drv)
+    if(NULL == p_drv || NULL == p_font)
     {
         return 1;
     }
@@ -272,7 +272,7 @@ uint8_t drv_draw_float(void              *p_drv,
                        uint16_t           f_color,
                        uint16_t           b_color)
 {
-    if(NULL == p_drv)
+    if(NULL == p_drv || NULL == p_font)
     {
         return 1;
     }

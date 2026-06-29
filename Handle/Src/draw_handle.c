@@ -101,7 +101,7 @@ uint8_t draw_handle_draw_string(draw_handle_t     *p_handle,
                                 uint16_t           f_color,
                                 uint16_t           b_color)
 {
-    if(NULL == p_handle)
+    if(NULL == p_handle || NULL == p_font || NULL == p_str)
     {
         return 1;
     }
@@ -122,7 +122,7 @@ uint8_t draw_handle_draw_image(draw_handle_t *p_handle,
                                uint16_t       h,
                                const uint8_t *p_pixels)
 {
-    if(NULL == p_handle)
+    if(NULL == p_handle || NULL == p_pixels)
     {
         return 1;
     }
@@ -135,7 +135,7 @@ uint8_t draw_handle_draw_image(draw_handle_t *p_handle,
   * @retval           :  [0 successful,
                           1 invalid parameter]
   * @param[in]        :  [draw_handle_t *p_handle, p_font, x, y, value, f_color,
-  b_color]
+                          b_color]
   */
 uint8_t draw_handle_draw_dec(draw_handle_t     *p_handle,
                              const front_def_t *p_font,
@@ -145,7 +145,7 @@ uint8_t draw_handle_draw_dec(draw_handle_t     *p_handle,
                              uint16_t           f_color,
                              uint16_t           b_color)
 {
-    if(NULL == p_handle)
+    if(NULL == p_handle || NULL == p_font)
     {
         return 1;
     }
@@ -168,7 +168,7 @@ uint8_t draw_handle_draw_hex(draw_handle_t     *p_handle,
                              uint16_t           f_color,
                              uint16_t           b_color)
 {
-    if(NULL == p_handle)
+    if(NULL == p_handle || NULL == p_font)
     {
         return 1;
     }
@@ -192,7 +192,7 @@ uint8_t draw_handle_draw_float(draw_handle_t     *p_handle,
                                uint16_t           f_color,
                                uint16_t           b_color)
 {
-    if(NULL == p_handle)
+    if(NULL == p_handle || NULL == p_font)
     {
         return 1;
     }
@@ -214,7 +214,7 @@ uint8_t draw_handle_instruct(draw_handle_t           *p_handle,
                              void                    *p_drv,
                              void                    *p_drv_ops)
 {
-    if(NULL == p_handle || NULL == p_drv || NULL == p_ops)
+    if(NULL == p_handle || NULL == p_drv || NULL == p_ops || NULL == p_drv_ops)
     {
         return 1;
     }

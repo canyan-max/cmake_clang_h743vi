@@ -42,5 +42,12 @@
  * @param[in]        :  [float current , float bat_cap_max , int16_t bat_temp]
  */
 float get_detal_capacity(float current, float bat_cap_max, int16_t bat_temp);
+
+/**
+ * @brief            :  [get_cur_ratios]
+ * @retval           :  [float detal_cap]
+ * @param[in]        :  [float current ,float bat_cap_max]
+ */
+
 #endif
 /*end of ampere_hour.h*/

@@ -18,7 +18,6 @@
  *@calldirectly       :
  *
  *@version            :   V1.0
- *
  *@note               :   1 tab == 4 spaces!
  ******************************************************************************
  */
@@ -26,13 +25,13 @@
 /* Define to prevent recursive inclusion ------------------------------------*/
 #ifndef SOC_H
 #define SOC_H
-/*Include--------------------------------------------------------------------*/
+/*Include-----------------------------------------------------------*/
 #include <stdint.h>
-/*Define---------------------------------------------------------------------*/
-#define CELL_CAPS                                                         (15U)
-/*Variable-------------------------------------------------------------------*/
+/*Define------------------------------------------------------------*/
+#define CELL_CAPS                                                (15U)
+/*Variable----------------------------------------------------------*/
 
-/*Declaration----------------------------------------------------------------*/
+/*Declaration-------------------------------------------------------*/
 /**
  * @brief            :  [get_soc_volt_max_diff]
  * @retval           :  [g_volt_max_diff]
@@ -130,4 +129,10 @@ void soc_soh_calc(uint16_t volt_max,
 void soc_max_or_min_calibration(uint8_t  ov_flg,
                                 uint8_t  uv_flg,
                                 uint16_t volt_diff);
+
+/**
+ * @brief            :  [soc_init_value_though_input_value_upload]
+ * @param[in]        :  [float socinput]
+ */
+void soc_init_value_though_input_value_upload(float socinput);
 #endif /*__SOC_H*/
