@@ -32,7 +32,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -61,42 +60,11 @@ void        SystemClock_Config(void);
 static void MPU_Config(void);
 void        MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
-#define OV2640_I2C_ADDR    0x60    // OV2640的7位I2C地址
-#define I2C_TIMEOUT        2
-HAL_StatusTypeDef OV2640_WriteReg(uint8_t reg_addr, uint8_t reg_val)
-{
-    // 1. 发送设备地址和寄存器地址（写操作）
-    // 注意：发送完寄存器地址后，SCCB协议不需要等待ACK，但HAL库会等待。
-    // 如果卡住，可以考虑用模拟I2C。
-    HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(&hi2c1, OV2640_I2C_ADDR,
-                                                       &reg_addr, 1,
-                                                       I2C_TIMEOUT);
-    if(status != HAL_OK)
-        return status;
 
-    // 2. 发送要写入寄存器的值
-    return HAL_I2C_Master_Transmit(&hi2c1, OV2640_I2C_ADDR, &reg_val, 1,
-                                   I2C_TIMEOUT);
-}
-
-HAL_StatusTypeDef OV2640_ReadReg(uint8_t reg_addr, uint8_t *p_reg_val)
-{
-    // 1. 执行"伪写"操作：发送设备地址和寄存器地址，指定要读取的寄存器
-    HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(&hi2c1, OV2640_I2C_ADDR,
-                                                       &reg_addr, 1,
-                                                       I2C_TIMEOUT);
-    if(status != HAL_OK)
-        return status;
-
-    // 2. 执行读操作：重新发送设备地址（读位=1），然后读取一个字节的数据
-    return HAL_I2C_Master_Receive(&hi2c1, OV2640_I2C_ADDR, p_reg_val, 1,
-                                  I2C_TIMEOUT);
-}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
 /* USER CODE END 0 */
 
 /**
@@ -111,12 +79,10 @@ int main(void)
     SCB_EnableDCache();
     /* USER CODE END 1 */
 
-    /* MPU
-     * Configuration--------------------------------------------------------*/
+    /*MPUConfiguration--------------------------------------------------------*/
     MPU_Config();
 
-    /* MCU
-     * Configuration--------------------------------------------------------*/
+    /*MCUConfiguration--------------------------------------------------------*/
 
     /* Reset of all peripherals, Initializes the Flash interface and the
      * Systick. */
@@ -142,26 +108,7 @@ int main(void)
     MX_I2C1_Init();
     /* USER CODE BEGIN 2 */
     HAL_GPIO_WritePin(DCMI_PWDN_GPIO_Port, DCMI_PWDN_Pin, GPIO_PIN_RESET);
-    HAL_Delay(10);
-    HAL_StatusTypeDef ret = OV2640_WriteReg(0xffU, 0x01);
-    ret                   = OV2640_WriteReg(0x12U, 0x80U);
-    HAL_Delay(10);
-
-    uint8_t id_l = 0x20, id_h = 0x22;
-    ret = OV2640_WriteReg(0xffU, 0x01);
-    if(OV2640_ReadReg(0x0A, &id_l) == HAL_OK)
-    {
-        if(OV2640_ReadReg(0x0b, &id_h) == HAL_OK)
-        {
-        }
-    }
-    uint16_t ov2640_id = (id_l << 8) | (id_h);
-    if(0x2642 != ov2640_id)
-    {
-        while(1)
-        {
-        }
-    }
+    HAL_Delay(10U);
     /* USER CODE END 2 */
 
     /* Init scheduler */
@@ -261,18 +208,30 @@ void MPU_Config(void)
 
     /** Initializes and configures the Region and the memory to be protected
      */
-    MPU_InitStruct.Enable           = MPU_REGION_ENABLE;
-    MPU_InitStruct.Number           = MPU_REGION_NUMBER0;
-    MPU_InitStruct.BaseAddress      = 0x0;
-    MPU_InitStruct.Size             = MPU_REGION_SIZE_4GB;
-    MPU_InitStruct.SubRegionDisable = 0x87;
-    MPU_InitStruct.TypeExtField     = MPU_TEX_LEVEL0;
-    MPU_InitStruct.AccessPermission = MPU_REGION_NO_ACCESS;
-    MPU_InitStruct.DisableExec      = MPU_INSTRUCTION_ACCESS_DISABLE;
-    MPU_InitStruct.IsShareable      = MPU_ACCESS_SHAREABLE;
-    MPU_InitStruct.IsCacheable      = MPU_ACCESS_NOT_CACHEABLE;
-    MPU_InitStruct.IsBufferable     = MPU_ACCESS_NOT_BUFFERABLE;
+    // MPU_InitStruct.Enable           = MPU_REGION_ENABLE;
+    // MPU_InitStruct.Number           = MPU_REGION_NUMBER0;
+    // MPU_InitStruct.BaseAddress      = 0x0;
+    // MPU_InitStruct.Size             = MPU_REGION_SIZE_4GB;
+    // MPU_InitStruct.SubRegionDisable = 0x87;
+    // MPU_InitStruct.TypeExtField     = MPU_TEX_LEVEL0;
+    // MPU_InitStruct.AccessPermission = MPU_REGION_NO_ACCESS;
+    // MPU_InitStruct.DisableExec      = MPU_INSTRUCTION_ACCESS_DISABLE;
+    // MPU_InitStruct.IsShareable      = MPU_ACCESS_SHAREABLE;
+    // MPU_InitStruct.IsCacheable      = MPU_ACCESS_NOT_CACHEABLE;
+    // MPU_InitStruct.IsBufferable     = MPU_ACCESS_NOT_BUFFERABLE;
+    // HAL_MPU_ConfigRegion(&MPU_InitStruct);
 
+    MPU_InitStruct.Enable           = MPU_REGION_ENABLE;
+    MPU_InitStruct.Number           = MPU_REGION_NUMBER1;
+    MPU_InitStruct.BaseAddress      = 0x24000000;
+    MPU_InitStruct.Size             = MPU_REGION_SIZE_512KB;
+    MPU_InitStruct.SubRegionDisable = 0x00;
+    MPU_InitStruct.TypeExtField     = MPU_TEX_LEVEL1;
+    MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
+    MPU_InitStruct.DisableExec      = MPU_INSTRUCTION_ACCESS_DISABLE;
+    MPU_InitStruct.IsShareable      = MPU_ACCESS_NOT_SHAREABLE;
+    MPU_InitStruct.IsCacheable      = MPU_ACCESS_CACHEABLE;
+    MPU_InitStruct.IsBufferable     = MPU_ACCESS_BUFFERABLE;
     HAL_MPU_ConfigRegion(&MPU_InitStruct);
     /* Enables the MPU */
     HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);

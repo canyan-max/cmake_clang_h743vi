@@ -58,7 +58,7 @@ void MX_GPIO_Init(void)
                       GPIO_PIN_RESET);
 
     /*Configure GPIO pin Output Level */
-    HAL_GPIO_WritePin(DCMI_PWDN_GPIO_Port, DCMI_PWDN_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(DCMI_PWDN_GPIO_Port, DCMI_PWDN_Pin, GPIO_PIN_SET);
 
     /*Configure GPIO pins : LED1_Pin LED2_Pin BACK_LIGHT_Pin SPI4_DC_Pin */
     GPIO_InitStruct.Pin   = LED1_Pin | LED2_Pin | BACK_LIGHT_Pin | SPI4_DC_Pin;

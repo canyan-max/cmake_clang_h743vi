@@ -52,8 +52,8 @@
 /* typedef ------------------------------------------------------------------*/
 /* variables ----------------------------------------------------------------*/
 // line buffer the ram_dma_buffers from .ld file
-__attribute__((
-    section(".ram_dma_buffers"))) uint8_t sg_line_buf[ST7789_LINE_BUF_SIZE];
+__attribute__((section(".ram_dma_buffers"),
+               aligned(32))) uint8_t sg_line_buf[ST7789_LINE_BUF_SIZE];
 /* private  functions  ------------------------------------------------------*/
 /**
  * @brief            :  [color24bit_to_rgb565

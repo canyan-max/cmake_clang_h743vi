@@ -235,11 +235,11 @@ SECTIONS
   PROVIDE( __bss_start = __tbss_start );
   PROVIDE( __bss_size = __bss_end - __bss_start );
   
-  .ram_dma_buffers (NOLOAD) : ALIGN(4)
+  .ram_dma_buffers (NOLOAD) : ALIGN(32)
   {
     *(.ram_dma_buffers)
     *(.ram_dma_buffers.*)
-    . = ALIGN(4);
+    . = ALIGN(32);
   } >RAM   
 
   /* User_heap_stack section, used to check that there is enough RAM left */
