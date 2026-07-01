@@ -103,7 +103,10 @@ void dwt_delay_us(uint32_t us)
     // calculate the us clock using the system clock
     uint32_t ticks_per_us = SystemCoreClock / 1000000;
     if(ticks_per_us == 0)
+    {
         ticks_per_us = 1;
+    }
+
     uint32_t delay_ticks = us * ticks_per_us;
     uint32_t start_tick  = DWT->CYCCNT;
     uint32_t elapsed_ticks;

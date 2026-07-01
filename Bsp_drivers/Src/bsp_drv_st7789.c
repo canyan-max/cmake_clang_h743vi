@@ -866,7 +866,7 @@ static st7789_state_t st7789_draw_image(st7789_driver_t *p_drv,
        (Flash, DTCM, non-DMA SRAM) — no DMA-accessible requirement on caller. */
     {
         uint32_t row_bytes = (uint32_t)w * 2U;
-        uint16_t row;
+        uint16_t row       = 0U;
         for(row = 0U; row < h; row++)
         {
             memcpy(sg_line_buf, p_pixels + (uint32_t)row * row_bytes,

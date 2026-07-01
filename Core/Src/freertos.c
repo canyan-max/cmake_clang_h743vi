@@ -46,6 +46,7 @@
 #include "draw_adapter.h"        /* draw_adapter lib header file. */
 #include "draw_handle.h"         /* draw_handle lib header file. */
 #include "i2c.h"
+#include "dcmi.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -65,24 +66,22 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-/* 32x32 RGB565 test image */
+__attribute__((section(".ram_dma_buffers"),
+               aligned(32))) uint8_t ov2640_buffer[28800];
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t         defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
     .name       = "defaultTask",
-    .stack_size = 128 * 4,
+    .stack_size = 512 * 4,
     .priority   = (osPriority_t)osPriorityNormal,
 };
-
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-
 uint8_t          k_fifo_buffer[16];
 kfifo_t          g_kfifo;
 at24_driver_t    g_at24c02_drv;
 storage_handle_t g_storage_handle;
-
 // led handle
 const led_handle_ops_t g_led1_adapter_ops = {
 
@@ -114,62 +113,7 @@ const draw_handle_ops_t g_draw_adapter_ops = {
 
 };
 draw_handle_t g_draw_handle;
-/* USER CODE END FunctionPrototypes */
 
-void StartDefaultTask(void *argument);
-
-void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
-
-/**
- * @brief  FreeRTOS initialization
- * @param  None
- * @retval None
- */
-void MX_FREERTOS_Init(void)
-{
-    /* USER CODE BEGIN Init */
-    dwt_init();
-    /* USER CODE END Init */
-
-    /* USER CODE BEGIN RTOS_MUTEX */
-    /* add mutexes, ... */
-    /* USER CODE END RTOS_MUTEX */
-
-    /* USER CODE BEGIN RTOS_SEMAPHORES */
-    /* add semaphores, ... */
-    /* USER CODE END RTOS_SEMAPHORES */
-
-    /* USER CODE BEGIN RTOS_TIMERS */
-    /* start timers, add new ones, ... */
-    /* USER CODE END RTOS_TIMERS */
-
-    /* USER CODE BEGIN RTOS_QUEUES */
-    /* add queues, ... */
-
-    /* USER CODE END RTOS_QUEUES */
-
-    /* Create the thread(s) */
-    /* creation of defaultTask */
-    defaultTaskHandle = osThreadNew(StartDefaultTask, NULL,
-                                    &defaultTask_attributes);
-
-    /* USER CODE BEGIN RTOS_THREADS */
-    /* add threads, ... */
-    userShellInit();
-    /* USER CODE END RTOS_THREADS */
-
-    /* USER CODE BEGIN RTOS_EVENTS */
-    /* add events, ... */
-    /* USER CODE END RTOS_EVENTS */
-}
-
-/* USER CODE BEGIN Header_StartDefaultTask */
-/**
- * @brief  Function implementing the defaultTask thread.
- * @param  argument: Not used
- * @retval None
- */
-/* USER CODE END Header_StartDefaultTask */
 #define OV2640_I2C_ADDR    (0x60U)
 #define I2C_TIMEOUT        (100U)
 
@@ -259,7 +203,7 @@ const uint8_t OV2640_SVGA_Config[][2] = {
     // 0x01,代码的解释是解决垃圾像素的问题。
     // 在笔者实际的测试中,如果配置成0x00,发现在图像垂直翻转的时候会有一行显示不对,应该就是openMV所说的垃圾像素
     // 因此这里也直接配置成 0x01,问题解决
-    {0x19, 0x01}, // VSTRT,垂直窗口起始行（高8位）
+    {0x19, 0x00}, // 0x01VSTRT,垂直窗口起始行（高8位）
     {0x1a, 0x97}, // VEND, 垂直窗口结束行（高8位）,默认值 0x97
 
     // 以下5个寄存器，共同决定了光带滤除的效果（室内照明灯具开关频率是50HZ，对于传感器而言，会捕捉到明暗交错的光带）
@@ -365,7 +309,7 @@ const uint8_t OV2640_SVGA_Config[][2] = {
     {0xc2, 0x0e}, // CTRL0,使能YUV422、YUV_EN、RGB_EN
     {0x86, 0x3d}, // CTRL2,使能芯片内部的指定的模块
     // 图像输出模式,可设置JPEG输出、RGB565等,可设置是否翻转DVP接口的输出
-    {0xda, 0x09},
+    {0xda, 0x08}, // 0x09
 
     // 此处设置的是传感器的图像尺寸,与配置的模式有关,例如SVGA需要设置成800*480,XVGA要设置成1600*1200
     {0xc0, 0x64}, // 图像的水平尺寸,10~3 bit
@@ -445,19 +389,186 @@ HAL_StatusTypeDef ov2640_read_reg(uint8_t reg_addr, uint8_t *p_reg_val)
 uint8_t ov2640_Config(const uint8_t (*ConfigData)[2])
 {
     uint32_t i;
+    uint8_t  read_val;
+    uint8_t  current_bank = 0xFF; // 跟踪当前 bank
 
     for(i = 0; ConfigData[i][0]; i++)
     {
+        // 写入
         HAL_StatusTypeDef ret = ov2640_write_reg(ConfigData[i][0],
                                                  ConfigData[i][1]);
-        if(HAL_OK != ret)
-        {
+        if(ret != HAL_OK)
             return 1;
+
+        // 如果是切换 bank 命令，记录当前 bank，并等待 2ms
+        if(ConfigData[i][0] == 0xFF)
+        {
+            current_bank = ConfigData[i][1];
+            HAL_Delay(2);
+            continue;
+        }
+
+        // 仅对 Sensor 组 (bank=0x01) 进行读回验证（DSP 组已验证通过，可跳过）
+        if(current_bank == 0x01)
+        {
+            // 特殊：如果是复位命令 0x12=0x80，等待 50ms
+            if(ConfigData[i][0] == 0x12 && ConfigData[i][1] == 0x80)
+            {
+                HAL_Delay(50);
+            }
+            // 读回验证
+            if(ov2640_read_reg(ConfigData[i][0], &read_val) == HAL_OK)
+            {
+                if(read_val != ConfigData[i][1])
+                {
+                    logInfo("[DEBUG] FAIL: Reg 0x%02X, written 0x%02X, read "
+                            "0x%02X\n",
+                            ConfigData[i][0], ConfigData[i][1], read_val);
+                    // 可选：尝试重写一次
+                    ov2640_write_reg(ConfigData[i][0], ConfigData[i][1]);
+                    HAL_Delay(1);
+                }
+                else
+                {
+                    logInfo("[DEBUG] OK: Reg 0x%02X = 0x%02X\n",
+                            ConfigData[i][0], ConfigData[i][1]);
+                }
+            }
         }
     }
     return 0;
 }
-void StartDefaultTask(void *argument)
+// 定义验证结构体：包含 所属Bank、寄存器地址、预期值
+typedef struct
+{
+    uint8_t bank; // 0x00 或 0x01
+    uint8_t reg_addr;
+    uint8_t expect_val;
+} verify_item_t;
+
+const verify_item_t verify_list[] = {
+    // Sensor 组验证 (Bank = 0x01)
+    {0x01, 0x12, 0x40},
+    {0x01, 0x11, 0x00},
+    {0x01, 0x15, 0x00},
+    {0x01, 0x04, 0x28},
+    {0x01, 0x14, 0x48},
+    {0x01, 0x24, 0x40},
+    {0x01, 0x25, 0x38},
+    {0x01, 0x17, 0x11},
+    {0x01, 0x18, 0x43},
+    {0x01, 0x19, 0x01},
+    {0x01, 0x1A, 0x97},
+    {0x01, 0x32, 0x09},
+    {0x01, 0x03, 0x8A},
+
+    // DSP 组验证 (Bank = 0x00)
+    {0x00, 0xDA, 0x09},
+    {0x00, 0xC0, 0x64},
+    {0x00, 0xC1, 0x4B},
+    {0x00, 0xD3, 0x04},
+};
+
+uint8_t verify_ov2640_config(void)
+{
+    uint8_t reg_val;
+    uint8_t err_cnt      = 0;
+    uint8_t current_bank = 0xFF; // 记录当前所在的Bank
+
+    for(size_t i = 0; i < sizeof(verify_list) / sizeof(verify_list[0]); i++)
+    {
+        // 1. 如果当前Bank与目标Bank不同，先切换Bank
+        if(current_bank != verify_list[i].bank)
+        {
+            ov2640_write_reg(0xFF, verify_list[i].bank);
+            HAL_Delay(2); // 切换后稍作延时，确保稳定
+            current_bank = verify_list[i].bank;
+        }
+
+        // 2. 读取寄存器
+        if(ov2640_read_reg(verify_list[i].reg_addr, &reg_val) != HAL_OK)
+        {
+            logInfo("[ERR] Bank 0x%02X, Reg 0x%02X read failed\n",
+                    verify_list[i].bank, verify_list[i].reg_addr);
+            err_cnt++;
+            continue;
+        }
+
+        // 3. 比较
+        if(reg_val != verify_list[i].expect_val)
+        {
+            logInfo(
+                "[ERR] Bank 0x%02X, Reg 0x%02X: expected 0x%02X, got 0x%02X\n",
+                verify_list[i].bank, verify_list[i].reg_addr,
+                verify_list[i].expect_val, reg_val);
+            err_cnt++;
+        }
+        else
+        {
+            logInfo("[OK] Bank 0x%02X, Reg 0x%02X = 0x%02X\n",
+                    verify_list[i].bank, verify_list[i].reg_addr, reg_val);
+        }
+    }
+    return err_cnt;
+}
+/* USER CODE END FunctionPrototypes */
+
+void StartDefaultTask(void *argument);
+
+void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
+
+/**
+ * @brief  FreeRTOS initialization
+ * @param  None
+ * @retval None
+ */
+void MX_FREERTOS_Init(void)
+{
+    /* USER CODE BEGIN Init */
+    dwt_init();
+    /* USER CODE END Init */
+
+    /* USER CODE BEGIN RTOS_MUTEX */
+    /* add mutexes, ... */
+    /* USER CODE END RTOS_MUTEX */
+
+    /* USER CODE BEGIN RTOS_SEMAPHORES */
+    /* add semaphores, ... */
+    /* USER CODE END RTOS_SEMAPHORES */
+
+    /* USER CODE BEGIN RTOS_TIMERS */
+    /* start timers, add new ones, ... */
+    /* USER CODE END RTOS_TIMERS */
+
+    /* USER CODE BEGIN RTOS_QUEUES */
+    /* add queues, ... */
+
+    /* USER CODE END RTOS_QUEUES */
+
+    /* Create the thread(s) */
+    /* creation of defaultTask */
+    defaultTaskHandle = osThreadNew(StartDefaultTask, NULL,
+                                    &defaultTask_attributes);
+
+    /* USER CODE BEGIN RTOS_THREADS */
+    /* add threads, ... */
+    userShellInit();
+    /* USER CODE END RTOS_THREADS */
+
+    /* USER CODE BEGIN RTOS_EVENTS */
+    /* add events, ... */
+    /* USER CODE END RTOS_EVENTS */
+}
+
+/* USER CODE BEGIN Header_StartDefaultTask */
+/**
+ * @brief  Function implementing the defaultTask thread.
+ * @param  argument: Not used
+ * @retval None
+ */
+/* USER CODE END Header_StartDefaultTask */
+uint8_t dcmi_it_flg = 0;
+void    StartDefaultTask(void *argument)
 {
     /* USER CODE BEGIN StartDefaultTask */
     ((void)argument);
@@ -475,11 +586,12 @@ void StartDefaultTask(void *argument)
     ov2640_write_reg(0x12U, 0x80U);
     HAL_Delay(20);
     ov2640_write_reg(0xffU, 0x01U);
-    uint8_t id_l = 0, id_h = 0;
-    ov2640_read_reg(0x0AU, &id_h);
-    ov2640_read_reg(0x0BU, &id_l);
-    uint16_t id = (id_h << 8) | id_l;
-    // ov2640_Config(OV2640_SVGA_Config);
+    // uint8_t id_l = 0, id_h = 0;
+    // ov2640_read_reg(0x0AU, &id_h);
+    // ov2640_read_reg(0x0BU, &id_l);
+    // uint16_t id = (id_h << 8) | id_l;
+    HAL_Delay(50);
+    ov2640_Config(OV2640_SVGA_Config);
     // HAL_StatusTypeDef ret = ov2640_write_reg(0xffU, 0x00U);
     // if(HAL_OK != ret)
     // {
@@ -494,22 +606,62 @@ void StartDefaultTask(void *argument)
     //     {
     //     }
     // }
-    uint8_t d3_reg = 55;
-    ov2640_read_reg(0x2c, &d3_reg);
-    /* Build DeepSeek whale icon: 32x32 @ (0,0), head right, tail left */
+    // uint8_t d3_reg = 55;
+    // d3_reg         = verify_ov2640_config();
+    HAL_Delay(50);
+    ov2640_write_reg(0xFF, 0x00);           // 选择 DSP寄存器组
+    ov2640_write_reg(0X5A, 400 / 4 & 0XFF); // 实际图像输出的宽度（OUTW），7~0
+                                            // bit，寄存器的值等于实际值/4
+    ov2640_write_reg(0X5B, 300 / 4 & 0XFF); // 实际图像输出的高度（OUTH），7~0
+                                            // bit，寄存器的值等于实际值/4
+    ov2640_write_reg(0X5C, (400 / 4 >> 8 & 0X03) |
+                               (300 / 4 >> 6 &
+                                0x04)); // 设置ZMHH的Bit[2:0]，也就是OUTH 的第 8
+                                        // bit，OUTW 的第 9~8 bit，
+    ov2640_write_reg(0xE0, 0X00);       // 复位
+
+    HAL_Delay(50);
+    uint16_t DCMI_X_Offset, DCMI_Y_Offset;
+    uint16_t DCMI_CAPCNT; // 水平有效像素，代表的是像素时钟数（PCLK周期数）
+    uint16_t DCMI_VLINE;  // 垂直有效行数
+    DCMI_X_Offset = 400 - 240;
+    DCMI_Y_Offset = (300 - 240) / 2 - 1;
+    DCMI_CAPCNT   = 240 * 2 - 1;
+    DCMI_VLINE    = 240 - 1;
+    HAL_DCMI_ConfigCrop(&hdcmi, DCMI_X_Offset, DCMI_Y_Offset, DCMI_CAPCNT,
+                        DCMI_VLINE); // 设置裁剪窗口
+    HAL_DCMI_EnableCrop(&hdcmi);     // 使能裁剪
+    HAL_Delay(50);
+    HAL_DCMI_Start_DMA(&hdcmi, DCMI_MODE_CONTINUOUS, (uint32_t)ov2640_buffer,
+                       28800);
+    defaultTaskHandle = xTaskGetCurrentTaskHandle();
     /* Idle loop */
     for(;;)
     {
 
-        float internal_re = 0.0f;
-        internal_re       = update_bat_resistance(25, 5.21f, 15);
-        draw_handle_draw_hex(&g_draw_handle, &g_f8x16, 20, 20, (uint32_t)id,
-                             RGB565_GREEN, RGB565_BLACK);
-        draw_handle_draw_hex(&g_draw_handle, &g_f8x16, 60, 60, (uint32_t)d3_reg,
-                             RGB565_GREEN, RGB565_BLACK);
-        draw_handle_draw_float(&g_draw_handle, &g_f8x16, 40, 40, internal_re, 2,
-                               RGB565_GREEN, RGB565_BLACK);
-        osDelay(500);
+        // float internal_re = 0.0f;
+        // internal_re       = update_bat_resistance(25, 5.21f, 15);
+        // draw_handle_draw_hex(&g_draw_handle, &g_f8x16, 20, 20,
+        // (uint32_t)id,
+        //                      RGB565_GREEN, RGB565_BLACK);
+        // draw_handle_draw_hex(&g_draw_handle, &g_f8x16, 60, 60,
+        // (uint32_t)d3_reg,
+        //                      RGB565_GREEN, RGB565_BLACK);
+        // draw_handle_draw_float(&g_draw_handle, &g_f8x16, 40, 40,
+        // internal_re, 2,
+        //                        RGB565_GREEN, RGB565_BLACK);
+        // logInfo("defuat task %d", dcmi_it_flg);
+        // for(uint8_t i = 0; i < 10; i++)
+        // {
+        //     logInfo("before byte %02X", ov2640_buffer[i]);
+        // }
+
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        // for(uint8_t i = 0; i < 32; i++)
+        // {
+        //     logInfo("indxe = %d  value = %02x", i, ov2640_buffer[i]);
+        // }
+        draw_handle_draw_image(&g_draw_handle, 0, 0, 240, 240, ov2640_buffer);
     }
 
     /* USER CODE END StartDefaultTask */
@@ -518,4 +670,11 @@ void StartDefaultTask(void *argument)
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 
+void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
+{
+    ((void)hdcmi);
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    SCB_InvalidateDCache_by_Addr((uint32_t *)&ov2640_buffer[0], 28800);
+    vTaskNotifyGiveFromISR(defaultTaskHandle, &xHigherPriorityTaskWoken);
+}
 /* USER CODE END Application */
