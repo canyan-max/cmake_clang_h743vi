@@ -70,12 +70,13 @@ __attribute__((section(".ram_dma_buffers"),
                aligned(32))) uint8_t ov2640_buffer[28800];
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
-osThreadId_t         defaultTaskHandle;
+osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
-    .name       = "defaultTask",
-    .stack_size = 512 * 4,
-    .priority   = (osPriority_t)osPriorityNormal,
+  .name = "defaultTask",
+  .stack_size = 512 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
+
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
 uint8_t          k_fifo_buffer[16];
@@ -178,14 +179,14 @@ const uint8_t OV2640_SVGA_Config[][2] = {
     {0x11, 0x00}, // CLKRC,时钟分频控制
 
     {0x09, 0x02}, // COM2,公共控制,输出驱动能力选择
-    {0x04, 0x28}, // REG04,寄存器组4,可设置摄像头扫描方向等
+    {0x04, 0xA8}, // REG04,寄存器组4,可设置摄像头扫描方向等0x28
     // COM7,公共控制,系统复位摄像头分辨率选择、缩放模式、颜色彩条设置
     {0x12, 0x40},
     {0x14, 0x48}, // COM9,公共控制,增益设置
     {0x15, 0x00}, // COM10,公共控制,PCLK、HS、VS输出极性控制
     // REG32,寄存器组32,像素时钟分频以及水平起始、终止像素的（低3位）
     {0x32, 0x09},
-    {0x03, 0x8a}, // COM1,公共控制,无效帧设置、垂直窗口起始、结束行（低2位）
+    {0x03, 0x86}, // COM1,公共控制,无效帧设置、垂直窗口起始、结束行（低2位） 8a
     {0x46, 0x00}, // FLL,帧率长度调整,通过插入空行来降低帧率,也可以通过
                   // 0x2a/0x2b/0x47等寄存器去调整
     {0x24, 0x40}, // AEW,环境平均亮度大于AEW(7:0)时,AEC/AGC值将降低
@@ -343,7 +344,7 @@ const uint8_t OV2640_SVGA_Config[][2] = {
     // MHz,才能满足图像传输的需求,不然会导致花屏  ,
     // 加上OV2640的帧率是可以微调的,因此实际的 PCLK 要稍微大些,此处设置为 12M，
     // 即  PCLK = 48M / Bit[6:0] = 48 / 0x04 = 12M
-    {0xd3, 0x04}, // R_DVP_SP, 设置 PCLK 引脚的时钟
+    {0xd3, 0x02}, // R_DVP_SP, 设置 PCLK 引脚的时钟 0x04
 
     // 手册里没有说明这些寄存器的作用,这里直接保留官方给的设置参数
     {0xe5, 0x1f},
@@ -518,46 +519,45 @@ void StartDefaultTask(void *argument);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
- * @brief  FreeRTOS initialization
- * @param  None
- * @retval None
- */
-void MX_FREERTOS_Init(void)
-{
-    /* USER CODE BEGIN Init */
+  * @brief  FreeRTOS initialization
+  * @param  None
+  * @retval None
+  */
+void MX_FREERTOS_Init(void) {
+  /* USER CODE BEGIN Init */
     dwt_init();
-    /* USER CODE END Init */
+  /* USER CODE END Init */
 
-    /* USER CODE BEGIN RTOS_MUTEX */
+  /* USER CODE BEGIN RTOS_MUTEX */
     /* add mutexes, ... */
-    /* USER CODE END RTOS_MUTEX */
+  /* USER CODE END RTOS_MUTEX */
 
-    /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
     /* add semaphores, ... */
-    /* USER CODE END RTOS_SEMAPHORES */
+  /* USER CODE END RTOS_SEMAPHORES */
 
-    /* USER CODE BEGIN RTOS_TIMERS */
+  /* USER CODE BEGIN RTOS_TIMERS */
     /* start timers, add new ones, ... */
-    /* USER CODE END RTOS_TIMERS */
+  /* USER CODE END RTOS_TIMERS */
 
-    /* USER CODE BEGIN RTOS_QUEUES */
+  /* USER CODE BEGIN RTOS_QUEUES */
     /* add queues, ... */
 
-    /* USER CODE END RTOS_QUEUES */
+  /* USER CODE END RTOS_QUEUES */
 
-    /* Create the thread(s) */
-    /* creation of defaultTask */
-    defaultTaskHandle = osThreadNew(StartDefaultTask, NULL,
-                                    &defaultTask_attributes);
+  /* Create the thread(s) */
+  /* creation of defaultTask */
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-    /* USER CODE BEGIN RTOS_THREADS */
+  /* USER CODE BEGIN RTOS_THREADS */
     /* add threads, ... */
     userShellInit();
-    /* USER CODE END RTOS_THREADS */
+  /* USER CODE END RTOS_THREADS */
 
-    /* USER CODE BEGIN RTOS_EVENTS */
+  /* USER CODE BEGIN RTOS_EVENTS */
     /* add events, ... */
-    /* USER CODE END RTOS_EVENTS */
+  /* USER CODE END RTOS_EVENTS */
+
 }
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -567,10 +567,9 @@ void MX_FREERTOS_Init(void)
  * @retval None
  */
 /* USER CODE END Header_StartDefaultTask */
-uint8_t dcmi_it_flg = 0;
-void    StartDefaultTask(void *argument)
+void StartDefaultTask(void *argument)
 {
-    /* USER CODE BEGIN StartDefaultTask */
+  /* USER CODE BEGIN StartDefaultTask */
     ((void)argument);
 
     /* draw handle init (replaces direct st7789_driver_instruct) */
@@ -664,7 +663,7 @@ void    StartDefaultTask(void *argument)
         draw_handle_draw_image(&g_draw_handle, 0, 0, 240, 240, ov2640_buffer);
     }
 
-    /* USER CODE END StartDefaultTask */
+  /* USER CODE END StartDefaultTask */
 }
 
 /* Private application code --------------------------------------------------*/
@@ -678,3 +677,4 @@ void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
     vTaskNotifyGiveFromISR(defaultTaskHandle, &xHigherPriorityTaskWoken);
 }
 /* USER CODE END Application */
+
