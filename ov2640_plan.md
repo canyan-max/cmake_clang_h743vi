@@ -183,11 +183,11 @@ draw_us = (t1 - t0) / (SystemCoreClock / 1000000U);
 
 | 区域 | 变量 | 大小 |
 |------|------|------|
-| RAM_D2（DMA 缓冲，`.ram_dma_buffers`） | `g_camera_data_buffer` | **112.5 KB** |
+| RAM_D2（DMA 缓冲，`.ram_d2_dma_buffers`） | `g_camera_data_buffer` | **112.5 KB** |
 | Flash | `ov2640_svga_cfg` 配置表 | ~200 字节 |
 | RAM（驱动实例） | `g_ov2640_drv` + handle | < 200 字节 |
 
-112.5 KB 在 RAM_D2（288 KB）中占约 **39%**。链接脚本 `.ram_dma_buffers` 映射到 0x30000000（D2 域）。
+112.5 KB 在 RAM_D2  288K  **39%**。链接脚本 `.ram_d2_dma_buffers` 映射到 0x30000000（D2 域）。
 
 ---
 

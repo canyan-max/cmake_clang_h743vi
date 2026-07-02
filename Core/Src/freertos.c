@@ -69,15 +69,15 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-__attribute__((section(".ram_dma_buffers"),
+__attribute__((section(".ram_d2_dma_buffers"),
                aligned(32))) uint8_t g_camera_data_buffer[115200];
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
-osThreadId_t         defaultTaskHandle;
+osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
-    .name       = "defaultTask",
-    .stack_size = 512 * 4,
-    .priority   = (osPriority_t)osPriorityNormal,
+  .name = "defaultTask",
+  .stack_size = 512 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -130,46 +130,45 @@ void StartDefaultTask(void *argument);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
- * @brief  FreeRTOS initialization
- * @param  None
- * @retval None
- */
-void MX_FREERTOS_Init(void)
-{
-    /* USER CODE BEGIN Init */
+  * @brief  FreeRTOS initialization
+  * @param  None
+  * @retval None
+  */
+void MX_FREERTOS_Init(void) {
+  /* USER CODE BEGIN Init */
     dwt_init();
-    /* USER CODE END Init */
+  /* USER CODE END Init */
 
-    /* USER CODE BEGIN RTOS_MUTEX */
+  /* USER CODE BEGIN RTOS_MUTEX */
     /* add mutexes, ... */
-    /* USER CODE END RTOS_MUTEX */
+  /* USER CODE END RTOS_MUTEX */
 
-    /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
     /* add semaphores, ... */
-    /* USER CODE END RTOS_SEMAPHORES */
+  /* USER CODE END RTOS_SEMAPHORES */
 
-    /* USER CODE BEGIN RTOS_TIMERS */
+  /* USER CODE BEGIN RTOS_TIMERS */
     /* start timers, add new ones, ... */
-    /* USER CODE END RTOS_TIMERS */
+  /* USER CODE END RTOS_TIMERS */
 
-    /* USER CODE BEGIN RTOS_QUEUES */
+  /* USER CODE BEGIN RTOS_QUEUES */
     /* add queues, ... */
 
-    /* USER CODE END RTOS_QUEUES */
+  /* USER CODE END RTOS_QUEUES */
 
-    /* Create the thread(s) */
-    /* creation of defaultTask */
-    defaultTaskHandle = osThreadNew(StartDefaultTask, NULL,
-                                    &defaultTask_attributes);
+  /* Create the thread(s) */
+  /* creation of defaultTask */
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-    /* USER CODE BEGIN RTOS_THREADS */
+  /* USER CODE BEGIN RTOS_THREADS */
     /* add threads, ... */
     userShellInit();
-    /* USER CODE END RTOS_THREADS */
+  /* USER CODE END RTOS_THREADS */
 
-    /* USER CODE BEGIN RTOS_EVENTS */
+  /* USER CODE BEGIN RTOS_EVENTS */
     /* add events, ... */
-    /* USER CODE END RTOS_EVENTS */
+  /* USER CODE END RTOS_EVENTS */
+
 }
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -181,7 +180,7 @@ void MX_FREERTOS_Init(void)
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void *argument)
 {
-    /* USER CODE BEGIN StartDefaultTask */
+  /* USER CODE BEGIN StartDefaultTask */
     ((void)argument);
 
     /* draw handle init */
@@ -214,9 +213,9 @@ void StartDefaultTask(void *argument)
 
     defaultTaskHandle = xTaskGetCurrentTaskHandle();
 
-    uint32_t frame_count = 0U;
-    uint32_t last_tick   = xTaskGetTickCount();
-    uint32_t draw_us_acc = 0U;
+    // uint32_t frame_count = 0U;
+    // uint32_t last_tick   = xTaskGetTickCount();
+    // uint32_t draw_us_acc = 0U;
 
     /* Idle loop */
     for(;;)
@@ -224,28 +223,28 @@ void StartDefaultTask(void *argument)
         // logInfo("start..");
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-        uint32_t t0 = DWT->CYCCNT;
+        // uint32_t t0 = DWT->CYCCNT;
         draw_handle_draw_image(&g_draw_handle, 0U, 0U,
                                OV2640_OUT_W, OV2640_OUT_H, g_camera_data_buffer);
-        uint32_t t1 = DWT->CYCCNT;
-        draw_us_acc += (t1 - t0) / (SystemCoreClock / 1000000U);
+        // uint32_t t1 = DWT->CYCCNT;
+        // draw_us_acc += (t1 - t0) / (SystemCoreClock / 1000000U);
 
-        frame_count++;
-        uint32_t now = xTaskGetTickCount();
-        if((now - last_tick) >= 1000U)
-        {
-            uint32_t fps     = frame_count * 1000U / (now - last_tick);
-            uint32_t draw_us = draw_us_acc / frame_count;
-            logInfo("fps=%lu  draw=%luus", fps, draw_us);
-            draw_handle_draw_dec(&g_draw_handle, &g_f8x16, 0U, 0U,
-                                 (int32_t)fps, RGB565_YELLOW, RGB565_BLACK);
-            frame_count  = 0U;
-            draw_us_acc  = 0U;
-            last_tick    = now;
-        }
+        // frame_count++;
+        // uint32_t now = xTaskGetTickCount();
+        // if((now - last_tick) >= 1000U)
+        // {
+        //     uint32_t fps     = frame_count * 1000U / (now - last_tick);
+        //     uint32_t draw_us = draw_us_acc / frame_count;
+        //     logInfo("fps=%lu  draw=%luus", fps, draw_us);
+        //     draw_handle_draw_dec(&g_draw_handle, &g_f8x16, 0U, 0U,
+        //                          (int32_t)fps, RGB565_YELLOW, RGB565_BLACK);
+        //     frame_count  = 0U;
+        //     draw_us_acc  = 0U;
+        //     last_tick    = now;
+        // }
     }
 
-    /* USER CODE END StartDefaultTask */
+  /* USER CODE END StartDefaultTask */
 }
 
 /* Private application code --------------------------------------------------*/
@@ -260,3 +259,4 @@ void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 /* USER CODE END Application */
+

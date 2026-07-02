@@ -25,7 +25,8 @@ static ov2640_state_t st_write_reg(uint8_t reg, uint8_t val)
 {
     uint8_t           buf[2] = {reg, val};
     HAL_StatusTypeDef ret    = HAL_I2C_Master_Transmit(&hi2c1, OV2640_I2C_ADDR,
-                                                        buf, 2U, OV2640_I2C_TIMEOUT);
+                                                       buf, 2U,
+                                                       OV2640_I2C_TIMEOUT);
     return (ret == HAL_OK) ? OV2640_OK : OV2640_ERROR;
 }
 
@@ -36,7 +37,8 @@ static ov2640_state_t st_read_reg(uint8_t reg, uint8_t *p_val)
         return OV2640_INVALID_PARAM;
     }
     HAL_StatusTypeDef ret = HAL_I2C_Master_Transmit(&hi2c1, OV2640_I2C_ADDR,
-                                                     &reg, 1U, OV2640_I2C_TIMEOUT);
+                                                    &reg, 1U,
+                                                    OV2640_I2C_TIMEOUT);
     if(ret != HAL_OK)
     {
         return OV2640_ERROR;
@@ -46,14 +48,13 @@ static ov2640_state_t st_read_reg(uint8_t reg, uint8_t *p_val)
     return (ret == HAL_OK) ? OV2640_OK : OV2640_ERROR;
 }
 
-static ov2640_state_t st_dcmi_start_dma(uint32_t           *p_buf,
-                                         uint32_t            len_words,
-                                         ov2640_dcmi_mode_t  mode)
+static ov2640_state_t
+st_dcmi_start_dma(uint32_t *p_buf, uint32_t len_words, ov2640_dcmi_mode_t mode)
 {
     uint32_t hal_mode = (mode == OV2640_DCMI_SNAPSHOT) ? DCMI_MODE_SNAPSHOT
-                                                        : DCMI_MODE_CONTINUOUS;
+                                                       : DCMI_MODE_CONTINUOUS;
     HAL_StatusTypeDef ret = HAL_DCMI_Start_DMA(&hdcmi, hal_mode,
-                                                (uint32_t)p_buf, len_words);
+                                               (uint32_t)p_buf, len_words);
     return (ret == HAL_OK) ? OV2640_OK : OV2640_ERROR;
 }
 
@@ -63,10 +64,8 @@ static ov2640_state_t st_dcmi_stop(void)
     return (ret == HAL_OK) ? OV2640_OK : OV2640_ERROR;
 }
 
-static ov2640_state_t st_config_crop(uint32_t x0,
-                                     uint32_t y0,
-                                     uint32_t xcnt,
-                                     uint32_t ycnt)
+static ov2640_state_t
+st_config_crop(uint32_t x0, uint32_t y0, uint32_t xcnt, uint32_t ycnt)
 {
     HAL_StatusTypeDef ret = HAL_DCMI_ConfigCrop(&hdcmi, x0, y0, xcnt, ycnt);
     if(ret != HAL_OK)
@@ -84,12 +83,12 @@ static void st_delay_ms(uint32_t ms)
 
 /* Exported variables -------------------------------------------------------*/
 const ov2640_hw_ops_t g_ov2640_hw_ops = {
-    .pf_write_reg   = st_write_reg,
-    .pf_read_reg    = st_read_reg,
+    .pf_write_reg      = st_write_reg,
+    .pf_read_reg       = st_read_reg,
     .pf_dcmi_start_dma = st_dcmi_start_dma,
-    .pf_dcmi_stop   = st_dcmi_stop,
-    .pf_config_crop = st_config_crop,
-    .pf_delay_ms    = st_delay_ms,
+    .pf_dcmi_stop      = st_dcmi_stop,
+    .pf_config_crop    = st_config_crop,
+    .pf_delay_ms       = st_delay_ms,
 };
 
 /* end of file --------------------------------------------------------------*/
