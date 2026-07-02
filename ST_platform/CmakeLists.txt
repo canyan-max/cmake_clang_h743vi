@@ -3,6 +3,7 @@ set(ST_PLATFORM_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/st_led.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/st_iic.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/st_lcd_spi.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/st_ov2640.c
 )
 set(ST_PLATFORM_DEPEND_LIB
     bsp_drivers

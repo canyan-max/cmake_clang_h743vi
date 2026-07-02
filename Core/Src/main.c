@@ -103,8 +103,8 @@ int main(void)
   MX_DCMI_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
-    HAL_GPIO_WritePin(DCMI_PWDN_GPIO_Port, DCMI_PWDN_Pin, GPIO_PIN_RESET);
-    HAL_Delay(10U);
+  HAL_GPIO_WritePin(DCMI_PWDN_GPIO_Port, DCMI_PWDN_Pin, GPIO_PIN_RESET);
+  HAL_Delay(10U);
   /* USER CODE END 2 */
 
   /* Init scheduler */

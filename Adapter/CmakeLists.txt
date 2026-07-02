@@ -3,6 +3,7 @@ set(ADAPTER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/at24cxx_adapter.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/led_adapter.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/draw_adapter.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/ov2640_adapter.c
 )
 
 set(ADAPTER_DEPEND_LIB

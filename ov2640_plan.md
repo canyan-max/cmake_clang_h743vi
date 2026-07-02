@@ -1,343 +1,227 @@
-# OV2640 RGB565 硬件验证计划
+# OV2640 + ST7789 联动适配计划
 
-> **目标**：在现有 STM32H743 + DCMI + DMA 基础上，驱动 OV2640 以 240×240 RGB565
-> 格式实时预览到 ST7789（240×240）屏幕。
->
-> **策略**：全程平坦代码，跑通后再迁移四层架构。
+> 状态：**已完成（稳定运行 29fps）**
+> 目标：将 `freertos.c` 中的 OV2640 临时代码重构为项目四层架构，并修复已发现的 Bug。
 
 ---
 
-## 当前已知条件
+## 1. 当前状态（最终）
 
-| 项目 | 状态 |
+### 1.1 已实现功能
+
+| 功能 | 状态 |
 |------|------|
-| OV2640 时钟 | 模块板载晶振，无需 STM32 提供 XCLK |
-| I2C / SCCB | 通路通，设备 ID 可读（PID_H=0x26，PID_L=0x42） |
-| DCMI | CubeMX 已配置（8bit，硬件同步，非JPEG） |
-| DMA | DMA2_Stream7，循环模式，字对齐 |
-| 帧缓冲区域 | 链接脚本已有 `.ram_dma_buffers` 段 → AXI SRAM 0x24000000 |
-| 输出目标 | ST7789 240×240，已有 `pf_draw_image` |
+| 四层架构重构（ST_platform / Bsp_drivers / Adapter / Handle） | ✅ 已完成 |
+| OV2640 SCCB（I2C）寄存器读写 | ✅ 已完成 |
+| SVGA 模式初始化（800×600 传感器，400×300 DSP 输出） | ✅ 已完成 |
+| DCMI 裁剪：400×300 → 中心 240×240 | ✅ 已完成 |
+| DCMI + DMA 连续采集 | ✅ 已完成 |
+| `HAL_DCMI_FrameEventCallback` → TaskNotify → `draw_image` | ✅ 已完成 |
+| DWT 帧率 / 绘制耗时测量（logInfo 每秒打印） | ✅ 已完成 |
+
+### 1.2 数据流
+
+```
+OV2640 传感器（SVGA 800×600，CLKRC=0x80 → 24MHz）
+    ↓ DSP 缩放
+  400×300 RGB565 输出
+    ↓ DCMI 硬件裁剪（中心区域）
+  240×240 RGB565（= 115200 字节）
+    ↓ DMA → g_camera_data_buffer (.ram_dma_buffers, 32-byte aligned)
+  HAL_DCMI_FrameEventCallback → vTaskNotifyGiveFromISR
+    ↓
+  defaultTask → draw_handle_draw_image()
+    ↓
+  ST7789 LCD（240×240）
+```
+
+### 1.3 关键寄存器配置（当前稳定值）
+
+| 寄存器 | 地址 | 值 | 说明 |
+|--------|------|----|------|
+| CLKRC  | 0x11 | 0x80 | bit7=1 旁路分频器，传感器时钟 = XVCLK = 24MHz |
+| FLL    | 0x46 | 0x00 | 无额外 dummy 行，帧率最大化 |
+| R_DVP_SP | 0x2A | 0x80 | bit7=1 自动 PCLK |
+| COM7   | 0x12 | 0x40 | bits[6:4]=100 → SVGA 模式 |
+
+**实测帧率：~29fps，LCD 绘制耗时：~17.5ms/帧**
 
 ---
 
-## 新增文件清单
+## 2. 已修复的 Bug
 
-| 文件 | 说明 |
-|------|------|
-| `Core/Inc/ov2640.h` | 寄存器地址宏 + 初始化函数声明 |
-| `Core/Src/ov2640.c` | 三张寄存器表 + `ov2640_init()` 实现 |
-| `Core/Inc/camera.h` | 帧缓冲定义、尺寸宏、标志位声明 |
-| `Core/Src/camera.c` | DCMI 启动、帧回调、缓存处理 |
+### 2.1 ✅ DMA 缓冲区大小溢出（已修复）
 
-已有文件改动：
+`HAL_DCMI_Start_DMA` 第四个参数单位是 **32-bit word**，不是字节。
 
-| 文件 | 改动 |
-|------|------|
-| `Core/Src/main.c` | 调用 `ov2640_init()` + 临时显示循环 |
-| `Core/Src/freertos.c` | 阶段5：新增 camera_task |
+```c
+// 修复后（freertos.c）
+__attribute__((section(".ram_dma_buffers"), aligned(32)))
+uint8_t g_camera_data_buffer[115200];   // 240×240×2 字节
+
+// 驱动调用（OV2640_DMA_LEN_WORDS = 240×240×2/4 = 28800）
+camera_handle_start(&g_cam_handle, (uint32_t *)g_camera_data_buffer, OV2640_DMA_LEN_WORDS);
+```
+
+### 2.2 ✅ DCache 无效化范围错误（已修复）
+
+```c
+// 修复后（freertos.c HAL_DCMI_FrameEventCallback）
+SCB_InvalidateDCache_by_Addr((uint32_t *)g_camera_data_buffer, sizeof(g_camera_data_buffer));
+```
+
+### 2.3 verify_list 不一致（已随重构删除）
+
+重构时已删除原 verify_list，不再保留。
 
 ---
 
-## 阶段 0：写好寄存器初始化代码（纯软件，无需硬件）
+## 3. 架构（已落地）
 
-### 任务
-
-在 `ov2640.c` 中按顺序实现三张寄存器表：
+### 3.1 文件清单
 
 ```
-表 A  传感器初始化（Sensor Bank，0xFF=0x01）
-      把图像传感器内核配置为 SVGA（800×600）工作模式
-      约 90 条寄存器
+ST_platform/
+  Inc/st_ov2640.h        ← g_ov2640_hw_ops 声明
+  Src/st_ov2640.c        ← HAL_I2C_* / HAL_DCMI_* 实现
 
-表 B  DSP + QVGA 输出（DSP Bank，0xFF=0x00）
-      开启 ISP 缩放，将输出降至 320×240
-      约 40 条寄存器
+Bsp_drivers/
+  Inc/bsp_drv_ov2640.h   ← ov2640_driver_t、ov2640_hw_ops_t、模式宏
+  Src/bsp_drv_ov2640.c   ← ov2640_svga_cfg 配置表、ov2640_driver_instruct
 
-表 C  RGB565 格式
-      切换像素格式为 RGB565（大端，高字节先出）
-      约 10 条寄存器
+Adapter/
+  Inc/ov2640_adapter.h
+  Src/ov2640_adapter.c   ← drv_cam_init / drv_cam_start / drv_cam_stop
+
+Handle/
+  Inc/camera_handle.h
+  Src/camera_handle.c    ← camera_handle_instruct / camera_handle_start / stop
 ```
 
-表格条目类型定义：
-
-```c
-/* ov2640.h */
-typedef struct
-{
-    uint8_t reg;
-    uint8_t val;
-} ov2640_reg_t;
-
-void ov2640_init(void);
-```
-
-`ov2640_init()` 执行顺序：
+### 3.2 调用链
 
 ```
-1. 切换到 Sensor Bank（写 0xFF=0x01）
-2. 软件复位（写 0x12=0x80）
-3. HAL_Delay(10)
-4. 逐条写入表 A
-5. 切换到 DSP Bank（写 0xFF=0x00）
-6. 逐条写入表 B
-7. 逐条写入表 C
+camera_handle_start(&g_cam_handle, buf, len)
+  → p_handle->p_ops->pf_start(p_handle->p_drv, buf, len)   [Handle]
+    → drv_cam_start(p_drv, buf, len)                        [Adapter]
+      → p_drv->pf_start(p_drv, buf, len)                   [Bsp_drivers]
+        → p_hw_ops->pf_dcmi_start_dma(buf, len, mode)      [ST_platform]
+          → HAL_DCMI_Start_DMA()
 ```
-
-### 验收标准
-
-- [ ] 代码编译通过，零警告
 
 ---
 
-## 阶段 1：验证 SCCB 写入与摄像头初始化
+## 4. 实施步骤
 
-### 任务
-
-在 `main.c` 的 `MX_I2C1_Init()` 之后、FreeRTOS 启动之前调用：
-
-```c
-/* 确保 PWDN 拉低（设备上电） */
-HAL_GPIO_WritePin(DCMI_PWDN_GPIO_Port, DCMI_PWDN_Pin, GPIO_PIN_RESET);
-HAL_Delay(10U);
-
-ov2640_init();
-
-/* 读回 PID 验证初始化后 Bank 状态 */
-uint8_t pid_h = 0U;
-OV2640_WriteReg(0xFFU, 0x01U);   /* 切回 Sensor Bank */
-HAL_Delay(1U);
-OV2640_ReadReg(0x0AU, &pid_h);   /* 期望值：0x26 */
-```
-
-### 注意点
-
-- 每次切换 Bank 后至少等 1ms 再操作寄存器
-- 软件复位后至少等 10ms
-- `PWDN` 在整个工作期间保持 LOW
-
-### 验收标准
-
-- [ ] `ov2640_init()` 内所有 `OV2640_WriteReg` 返回 `HAL_OK`
-- [ ] 读回 `pid_h == 0x26`
+| 步骤 | 内容 | 状态 |
+|------|------|------|
+| S1 | 修复 Bug 2.1：缓冲区声明为 `uint8_t[115200]` | ✅ 已完成 |
+| S2 | 修复 Bug 2.2：DCache invalidate 范围 115200 字节 | ✅ 已完成 |
+| S3 | 清理 verify_list | ✅ 已完成（重构时删除） |
+| S4 | 提取 `st_ov2640.c/h` | ✅ 已完成 |
+| S5 | 实现 `bsp_drv_ov2640.c/h`（配置表 + instruct） | ✅ 已完成 |
+| S6 | 实现 `ov2640_adapter.c/h` | ✅ 已完成 |
+| S7 | 实现 `camera_handle.c/h` | ✅ 已完成 |
+| S8 | `freertos.c` 改为通过 camera_handle 调用 | ✅ 已完成 |
 
 ---
 
-## 阶段 2：DCMI + DMA 抓取首帧（QVGA 320×240）
+## 5. 帧率优化过程记录
 
-### 2.1 帧缓冲定义（camera.h / camera.c）
+### 5.1 诊断过程
 
-```c
-/* camera.h */
-#define CAM_W          (320U)
-#define CAM_H          (240U)
-#define CAM_BUF_BYTES  (CAM_W * CAM_H * 2U)        /* 153600 字节 */
-#define CAM_BUF_WORDS  (CAM_BUF_BYTES / 4U)         /* 38400  个32bit字 */
+初始现象：14fps。怀疑 LCD SPI 是瓶颈。
 
-extern volatile uint8_t g_frame_ready;
-extern uint8_t          g_frame_buf[CAM_BUF_BYTES];
-
-void camera_start(void);
-```
+用 DWT 周期计数器测量绘制耗时：
 
 ```c
-/* camera.c */
-/* 强制放入 AXI SRAM（链接脚本已有 .ram_dma_buffers → RAM 0x24000000） */
-/* DMA2 可访问；若放 DTCM 则 DMA 无法工作 */
-uint8_t          g_frame_buf[CAM_BUF_BYTES] __attribute__((section(".ram_dma_buffers")));
-volatile uint8_t g_frame_ready = 0U;
+uint32_t t0 = DWT->CYCCNT;
+draw_handle_draw_image(...);
+uint32_t t1 = DWT->CYCCNT;
+draw_us = (t1 - t0) / (SystemCoreClock / 1000000U);
 ```
 
-### 2.2 启动 DCMI
+实测 draw=17555us（约17.5ms），理论上限 1000/17.5 ≈ 57fps，LCD 不是瓶颈。
 
-```c
-/* camera.c */
-void camera_start(void)
-{
-    HAL_DCMI_Start_DMA(&hdcmi, DCMI_MODE_CONTINUOUS,
-                       (uint32_t)g_frame_buf, CAM_BUF_WORDS);
-}
-```
+**根因：CLKRC=0x00 → 传感器 PCLK 分频，实际只有 12MHz，帧率减半。**
 
-DMA 已配置为循环模式（CIRCULAR），DCMI 持续推帧到缓冲区，
-每完成一帧硬件产生 FRAME 中断，HAL 调用下方回调。
+### 5.2 关键寄存器修正
 
-### 2.3 帧完成回调
+| 修改 | 之前 | 之后 | 效果 |
+|------|------|------|------|
+| CLKRC (0x11) | 0x00（分频模式，12MHz） | 0x80（旁路分频，24MHz） | 14fps → 29fps ✅ |
+| FLL (0x46) | 实验 0x3F（增加 dummy 行） | 0x00（无额外行） | 27fps → 29fps（0x3F 是反向操作，FLL 值越大帧率越低）|
 
-```c
-/* camera.c — 重写 HAL 弱函数 */
-void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
-{
-    /* D-Cache 已开启：DMA 写完后 CPU 读之前必须 Invalidate */
-    /* 否则 CPU 读到的是 Cache 里的旧数据（图像静止或花屏） */
-    SCB_InvalidateDCache_by_Addr((uint32_t *)g_frame_buf, (int32_t)CAM_BUF_BYTES);
-    g_frame_ready = 1U;
-}
-```
+### 5.3 CIF 模式探索（已放弃）
 
-### 2.4 在 main.c 中调用
+**尝试目标：** COM7 bits[6:4]=001（CIF 模式）→ 期望提升到 ~60fps。
 
-```c
-/* ov2640_init() 之后 */
-camera_start();
-```
+**尝试过程：**
 
-### 验收标准
+1. 完整 CIF 配置表（含 COM7=0x10）→ DCMI 中断不触发（VEND/REG32 等参数错误导致传感器时序异常）
+2. 修正为与 SVGA 相同的 VEND/HREFEND/REG32 → 中断触发，但图像下半屏黑、帧率反而降至 17fps
+3. 根因分析：SVGA 和 CIF 的传感器扫描窗口寄存器（HREFEND/VEND/REG32）值相同，说明两模式感光阵列扫描范围一致，帧率提升依赖 DSP 内部子采样而非窗口缩小。DSP 尺寸寄存器（0xC0/0xC1/0x51/0x52）组合未能正确收敛。
 
-- [ ] `HAL_DCMI_FrameEventCallback` 断点能被命中（证明 DCMI 在工作）
-- [ ] 调试器查看 `g_frame_buf` 内容不全为 `0x00` 或 `0xFF`
-
-> **如果回调从未触发**，先用示波器量 PA6（PIXCLK），
-> 无信号说明 OV2640 没有正常工作，回阶段 1 排查。
+**结论：放弃 CIF 模式，维持 SVGA 29fps。**
 
 ---
 
-## 阶段 3：ST7789 临时显示 QVGA 图像
+## 6. 待讨论事项
 
-此阶段的目的是**验证图像内容**，不要求显示完整。
-ST7789 是 240×240，QVGA 宽 320，水平方向会超出边界——属正常现象。
-
-### 临时显示循环（main.c while 循环内）
-
-```c
-while (1)
-{
-    if (g_frame_ready)
-    {
-        g_frame_ready = 0U;
-        /* 只取每行前 240 像素（左侧部分），临时验证用 */
-        p_lcd->pf_draw_image(p_lcd, 0, 0, 240U, 240U, g_frame_buf);
-    }
-}
-```
-
-### 验收标准
-
-- [ ] 屏幕有图像，能分辨画面内容（人、物体等）
-- [ ] 颜色基本正确
-
-> **常见问题：红蓝互换（图像偏蓝或偏红）**
-> OV2640 输出的 RGB565 可能字节序与 ST7789 不匹配。
-> 解决：在表 C 格式寄存器中设置字节序翻转位，或在 `pf_draw_image` 显示时逐像素交换。
-> 此阶段记录现象即可，后续统一处理。
+| # | 问题 | 状态 | 决策 |
+|---|------|------|------|
+| Q1 | 缓冲区类型 | ✅ 已定 | `uint8_t[115200]`，section `.ram_dma_buffers` |
+| Q2 | verify_list 去留 | ✅ 已定 | 重构时已删除 |
+| Q3 | 是否支持多分辨率 | ✅ 已定 | 固定 240×240，宏 `OV2640_OUT_W/H` 统一管理 |
+| Q4 | 是否双缓冲（ping-pong） | ✅ 已定 | 单缓冲 |
+| Q5 | camera_handle 与 draw_handle 关系 | ✅ 已定 | 分离，task 层自己调 draw_handle |
+| Q6 | 帧通知机制 | ✅ 已定 | TaskNotify（vTaskNotifyGiveFromISR） |
 
 ---
 
-## 阶段 4：DCMI 硬件裁剪到 240×240
+## 7. 内存占用
 
-### 原理
+| 区域 | 变量 | 大小 |
+|------|------|------|
+| RAM_D2（DMA 缓冲，`.ram_dma_buffers`） | `g_camera_data_buffer` | **112.5 KB** |
+| Flash | `ov2640_svga_cfg` 配置表 | ~200 字节 |
+| RAM（驱动实例） | `g_ov2640_drv` + handle | < 200 字节 |
 
-STM32H7 DCMI 内置裁剪窗口，可在 DMA 传输前丢弃不需要的像素，
-无需 CPU 参与，帧缓冲直接收到裁剪后的数据。
-
-从 QVGA（320×240）中取水平居中的 240 列：
-
-```
-左侧跳过：(320 - 240) / 2 = 40 像素 = 80 字节 = 20 个 32bit 字
-裁剪宽度：240 像素       = 480 字节 = 120 个 32bit 字
-垂直方向：全部 240 行（不裁剪）
-```
-
-> DCMI 裁剪寄存器的水平参数单位是 **32bit 字**（4字节），
-> 因为 DCMI 内部以 32bit 为单位打包 8bit 像素数据。
-
-### 4.1 修改 camera.h 尺寸宏
-
-```c
-#define CAM_W          (240U)          /* 裁剪后宽度 */
-#define CAM_H          (240U)
-#define CAM_BUF_BYTES  (CAM_W * CAM_H * 2U)   /* 115200 字节 */
-#define CAM_BUF_WORDS  (CAM_BUF_BYTES / 4U)   /* 28800  个32bit字 */
-```
-
-### 4.2 在 camera_start() 中添加裁剪配置
-
-```c
-void camera_start(void)
-{
-    HAL_DCMI_ConfigCrop(&hdcmi,
-        20U,    /* X0    : 跳过 20 字 = 40 像素（左侧跳过） */
-        0U,     /* Y0    : 从第 0 行开始 */
-        120U,   /* XSize : 120 字 = 240 像素 */
-        240U);  /* YSize : 240 行 */
-    HAL_DCMI_EnableCrop(&hdcmi);
-
-    HAL_DCMI_Start_DMA(&hdcmi, DCMI_MODE_CONTINUOUS,
-                       (uint32_t)g_frame_buf, CAM_BUF_WORDS);
-}
-```
-
-### 4.3 更新显示调用
-
-```c
-p_lcd->pf_draw_image(p_lcd, 0, 0, 240U, 240U, g_frame_buf);
-```
-
-### 验收标准
-
-- [ ] 屏幕图像铺满 240×240，无黑边
-- [ ] 画面居中（左右各被裁掉约 40 像素）
-
-> **如果图像偏移**：X0 每加减 1 对应平移 2 像素，微调直到居中。
+112.5 KB 在 RAM_D2（288 KB）中占约 **39%**。链接脚本 `.ram_dma_buffers` 映射到 0x30000000（D2 域）。
 
 ---
 
-## 阶段 5：搬入 FreeRTOS 任务
+## 8. 寄存器说明（摘自 OV2640 手册）
 
-### camera_task（freertos.c 或单独 camera_task.c）
+### COM7 (0x12) — Common Control 7
 
-```c
-void camera_task(void *argument)
-{
-    camera_start();
+| Bit | 说明 |
+|-----|------|
+| [7] | SRST：1 = 系统复位，复位后恢复正常运行 |
+| [6:4] | 分辨率选择：000=UXGA，**001=CIF**，**100=SVGA** |
+| [2] | Zoom 模式 |
+| [1] | Color bar 测试图案（0=关，1=开） |
 
-    for (;;)
-    {
-        if (1U == g_frame_ready)
-        {
-            g_frame_ready = 0U;
-            p_lcd->pf_draw_image(p_lcd, 0, 0, 240U, 240U, g_frame_buf);
-        }
-        osDelay(1U);
-    }
-}
-```
+### 窗口寄存器
 
-任务参数：
+| 地址 | 名称 | 默认值 | 说明 |
+|------|------|--------|------|
+| 0x1A | VEND | 0x97 | 垂直窗口结束 MSB 8 位（SVGA 和 CIF 相同） |
+| 0x17 | HREFST | 0x11 | 水平窗口起始 MSB（3 LSB 在 REG32[2:0]） |
+| 0x18 | HREFEND | 0x75(UXGA) / **0x43(SVGA,CIF)** | 水平窗口结束 MSB（SVGA 和 CIF 相同） |
+| 0x32 | REG32 | 0x36(UXGA) / **0x09(SVGA,CIF)** | PCLK 分频 + 窗口位置低位（SVGA 和 CIF 相同） |
 
-| 参数 | 值 | 说明 |
-|------|----|------|
-| 栈大小 | 2048 字（8KB） | 图像处理比普通任务耗栈 |
-| 优先级 | osPriorityNormal | 与其他任务平级 |
+### DSP 尺寸寄存器
 
-### 验收标准
+| 地址 | 名称 | 说明 |
+|------|------|------|
+| 0xC0 | HSIZE8 | Image H Size [10:3]（实际尺寸 / 8） |
+| 0xC1 | VSIZE8 | Image V Size [10:3]（实际尺寸 / 8） |
+| 0x51 | HSIZE | H_SIZE[7:0]（实际尺寸 / 4） |
+| 0x52 | VSIZE | V_SIZE[7:0]（实际尺寸 / 4） |
 
-- [ ] 预览连续，画面流畅更新
-- [ ] 其他 FreeRTOS 任务（LetterShell 等）不受影响
+SVGA DSP 输出 400×300 对应：0xC0=0x32, 0xC1=0x25, 0x51=0x64, 0x52=0x4B
 
 ---
 
-## 快速排查指南
-
-| 现象 | 最可能原因 | 检查 / 解决 |
-|------|-----------|------------|
-| FrameEventCallback 从不触发 | PIXCLK 没有信号 | 示波器量 PA6 |
-| 回调触发但 buf 全 0x00 | 帧缓冲不在 AXI SRAM | 确认 section `.ram_dma_buffers` |
-| 图像花屏 / 静止 | D-Cache 未 Invalidate | 检查 `SCB_InvalidateDCache_by_Addr` |
-| 图像上下滚动 | VSYNC 极性不匹配 | 尝试改为 `DCMI_VSPOLARITY_HIGH` |
-| 颜色红蓝互换 | RGB/BGR 字节序 | 修改 OV2640 表 C 字节序寄存器 |
-| 图像裁剪偏移 | X0 参数偏差 | X0 ±1 步调（对应 ±2 像素）微调 |
-
----
-
-## 后续：迁移四层架构
-
-硬件链路全部跑通后，按以下对应关系拆分：
-
-| 现有平坦代码 | 迁移目标 |
-|-------------|---------|
-| `ov2640.h/c`（寄存器表） | `Bsp_drivers/bsp_drv_ov2640.h/c` |
-| `ov2640.c`（I2C 写寄存器） | `ST_platform/st_ov2640.c` |
-| `camera.h/c`（DCMI 接口） | `Bsp_drivers/bsp_drv_dcmi.h/c` |
-| `camera.c`（HAL 实现） | `ST_platform/st_dcmi.c` |
-| 类型适配 | `Adapter/camera_adapter.c` |
-| 任务层控制 | `Handle/camera_handle.h/c` |
+*最后更新：2026-07-02*

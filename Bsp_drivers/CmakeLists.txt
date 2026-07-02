@@ -3,6 +3,7 @@ set(BSP_DRIVERS_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_drv_led.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_drv_at24.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_drv_st7789.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_drv_ov2640.c
 )
 
 set(BSP_DRIVERS_DEPEND_LIB

@@ -157,10 +157,24 @@ configure_cmake() {
 }
 
 # Build
+# build_firmware() {
+#     local cores=$(get_cores)
+#     log_info "Starting build (parallel: $cores threads)"
+#     if ! cmake --build "$BUILD_DIR" -j "$cores"; then
+#         log_error "Build failed"
+#         exit 1
+#     fi
+#     log_success "Build completed: $HEX_FILE"
+# }
 build_firmware() {
     local cores=$(get_cores)
     log_info "Starting build (parallel: $cores threads)"
-    if ! cmake --build "$BUILD_DIR" -j "$cores"; then
+
+    local RED_ON='\x1b[0;31m'
+    local YELLOW_ON='\x1b[0;33m'
+    local NC='\x1b[0m'
+
+    if ! (set -o pipefail; cmake --build "$BUILD_DIR" -j "$cores" 2>&1 | sed -E "/^FAILED:/ { s/^(.*)/${RED_ON}\1${NC}/; n; d; }; /[[:space:]]*error:/ s/^(.*)/${RED_ON}\1${NC}/; /warning:/ s/^(.*)/${YELLOW_ON}\1${NC}/" ); then
         log_error "Build failed"
         exit 1
     fi
