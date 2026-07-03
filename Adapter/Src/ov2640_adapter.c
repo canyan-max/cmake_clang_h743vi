@@ -24,14 +24,15 @@
 /**
   * @brief            : [drv_cam_init]
   */
-uint8_t drv_cam_init(void *p_drv, void *p_hw_ops)
+uint8_t drv_cam_init(void *p_drv, void *p_hw_ops,uint8_t sensor_mode)
 {
     if(NULL == p_drv || NULL == p_hw_ops)
     {
         return 1U;
     }
     ov2640_state_t ret = ov2640_driver_instruct((ov2640_driver_t *)p_drv,
-                                                (const ov2640_hw_ops_t *)p_hw_ops);
+                                                (const ov2640_hw_ops_t *)p_hw_ops,
+                                                (ov2640_sensor_mode_t)sensor_mode);
     return (ret == OV2640_OK) ? 0U : 2U;
 }
 

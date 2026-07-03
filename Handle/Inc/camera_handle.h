@@ -23,7 +23,7 @@
 /* typedef ------------------------------------------------------------------*/
 typedef struct
 {
-    uint8_t (*pf_drv_init)(void *p_drv, void *p_hw_ops);
+    uint8_t (*pf_drv_init)(void *p_drv, void *p_hw_ops, uint8_t sensor_mode);
     uint8_t (*pf_start)(void *p_drv, uint32_t *p_buf, uint32_t len_words);
     uint8_t (*pf_stop)(void *p_drv);
 } camera_handle_ops_t;
@@ -42,9 +42,10 @@ typedef struct
   * @param[in]        : [p_handle, p_ops, p_drv, p_hw_ops]
   */
 uint8_t camera_handle_instruct(camera_handle_t           *p_handle,
-                                const camera_handle_ops_t *p_ops,
-                                void                      *p_drv,
-                                void                      *p_hw_ops);
+                               const camera_handle_ops_t *p_ops,
+                               void                      *p_drv,
+                               void                      *p_hw_ops,
+                               uint8_t                    sensor_mode);
 
 /**
   * @brief            : [camera_handle_start]

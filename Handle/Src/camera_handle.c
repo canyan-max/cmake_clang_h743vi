@@ -19,12 +19,13 @@
 /* Exported functions -------------------------------------------------------*/
 
 /**
-  * @brief            : [camera_handle_instruct]
-  */
+ * @brief            : [camera_handle_instruct]
+ */
 uint8_t camera_handle_instruct(camera_handle_t           *p_handle,
-                                const camera_handle_ops_t *p_ops,
-                                void                      *p_drv,
-                                void                      *p_hw_ops)
+                               const camera_handle_ops_t *p_ops,
+                               void                      *p_drv,
+                               void                      *p_hw_ops,
+                               uint8_t                    sensor_mode)
 {
     if(NULL == p_handle || NULL == p_ops || NULL == p_drv || NULL == p_hw_ops)
     {
@@ -32,15 +33,15 @@ uint8_t camera_handle_instruct(camera_handle_t           *p_handle,
     }
     p_handle->p_ops = p_ops;
     p_handle->p_drv = p_drv;
-    return p_ops->pf_drv_init(p_drv, p_hw_ops);
+    return p_ops->pf_drv_init(p_drv, p_hw_ops, sensor_mode);
 }
 
 /**
-  * @brief            : [camera_handle_start]
-  */
+ * @brief            : [camera_handle_start]
+ */
 uint8_t camera_handle_start(camera_handle_t *p_handle,
-                             uint32_t        *p_buf,
-                             uint32_t         len_words)
+                            uint32_t        *p_buf,
+                            uint32_t         len_words)
 {
     if(NULL == p_handle || NULL == p_handle->p_ops || NULL == p_buf)
     {
@@ -50,8 +51,8 @@ uint8_t camera_handle_start(camera_handle_t *p_handle,
 }
 
 /**
-  * @brief            : [camera_handle_stop]
-  */
+ * @brief            : [camera_handle_stop]
+ */
 uint8_t camera_handle_stop(camera_handle_t *p_handle)
 {
     if(NULL == p_handle || NULL == p_handle->p_ops)

@@ -76,6 +76,12 @@ st_config_crop(uint32_t x0, uint32_t y0, uint32_t xcnt, uint32_t ycnt)
     return OV2640_OK;
 }
 
+static void st_power_ctrl(uint8_t state)
+{
+    HAL_GPIO_WritePin(DCMI_PWDN_GPIO_Port, DCMI_PWDN_Pin,
+                      (state == 0U) ? GPIO_PIN_RESET : GPIO_PIN_SET);
+}
+
 static void st_delay_ms(uint32_t ms)
 {
     HAL_Delay(ms);
@@ -89,6 +95,7 @@ const ov2640_hw_ops_t g_ov2640_hw_ops = {
     .pf_dcmi_stop      = st_dcmi_stop,
     .pf_config_crop    = st_config_crop,
     .pf_delay_ms       = st_delay_ms,
+    .pf_power_ctrl     = st_power_ctrl,
 };
 
 /* end of file --------------------------------------------------------------*/

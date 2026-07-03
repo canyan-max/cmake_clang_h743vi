@@ -126,8 +126,7 @@ static const uint8_t ov2640_cif_cfg[][2] = {
     {0x12, 0x80}, // 复位全部寄存
 
     {0xff, 0x00}, // 设置 DSP 寄存器组
-    {0x2c, 0xff},
-    {0x2e, 0xdf},
+    {0x2c, 0xff}, {0x2e, 0xdf},
 
     {0xff, 0x01}, // 设置 sensor 寄存器组
 
@@ -248,9 +247,8 @@ static ov2640_state_t ov2640_apply_config(ov2640_driver_t *p_drv,
     return OV2640_OK;
 }
 
-static ov2640_state_t ov2640_drv_set_out_size(ov2640_driver_t *p_drv,
-                                               uint16_t         w,
-                                               uint16_t         h)
+static ov2640_state_t
+ov2640_drv_set_out_size(ov2640_driver_t *p_drv, uint16_t w, uint16_t h)
 {
     if(NULL == p_drv || 0U == w || 0U == h)
     {
@@ -261,7 +259,7 @@ static ov2640_state_t ov2640_drv_set_out_size(ov2640_driver_t *p_drv,
     ops->pf_write_reg(0x5AU, (uint8_t)((w / 4U) & 0xFFU));
     ops->pf_write_reg(0x5BU, (uint8_t)((h / 4U) & 0xFFU));
     ops->pf_write_reg(0x5CU, (uint8_t)(((w / 4U) >> 8U & 0x03U) |
-                                        ((h / 4U) >> 6U & 0x04U)));
+                                       ((h / 4U) >> 6U & 0x04U)));
     ops->pf_write_reg(0xE0U, 0x00U);
     ops->pf_delay_ms(50U);
     return OV2640_OK;
@@ -275,7 +273,7 @@ ov2640_drv_start(ov2640_driver_t *p_drv, uint32_t *p_buf, uint32_t len_words)
         return OV2640_INVALID_PARAM;
     }
     return p_drv->p_hw_ops->pf_dcmi_start_dma(p_buf, len_words,
-                                               OV2640_DCMI_CONTINUOUS);
+                                              OV2640_DCMI_CONTINUOUS);
 }
 
 static ov2640_state_t ov2640_drv_stop(ov2640_driver_t *p_drv)
@@ -292,23 +290,29 @@ static ov2640_state_t ov2640_drv_stop(ov2640_driver_t *p_drv)
 /**
  * @brief            : [ov2640_driver_instruct]
  * @retval           : [OV2640_OK / OV2640_ERROR / OV2640_INVALID_PARAM]
- * @param[in]        : [p_drv, p_hw_ops]
+ * @param[in]        : [(ov2640_driver_t       *p_drv,
+                                      const ov2640_hw_ops_t *p_hw_ops,
+                                      ov2640_sensor_mode_t   sensor_mode]
  */
 ov2640_state_t ov2640_driver_instruct(ov2640_driver_t       *p_drv,
-                                      const ov2640_hw_ops_t *p_hw_ops)
+                                      const ov2640_hw_ops_t *p_hw_ops,
+                                      ov2640_sensor_mode_t   sensor_mode)
 {
     if(NULL == p_drv || NULL == p_hw_ops)
     {
         return OV2640_INVALID_PARAM;
     }
 
-    p_drv->p_hw_ops = p_hw_ops;
-
+    p_drv->p_hw_ops    = p_hw_ops;
+    p_drv->sensor_mode = sensor_mode;
     /* 1. 根据模式选择配置表和 DSP 中间尺寸 */
+    p_hw_ops->pf_power_ctrl(OV2640_POWER_ON);
+    p_hw_ops->pf_delay_ms(10U);
+
     const uint8_t (*cfg)[2];
     uint32_t dsp_w;
     uint32_t dsp_h;
-    if(p_drv->sensor_mode == OV2640_MODE_CIF)
+    if(sensor_mode == OV2640_MODE_CIF)
     {
         cfg   = ov2640_cif_cfg;
         dsp_w = OV2640_CIF_DSP_W;
@@ -324,17 +328,18 @@ ov2640_state_t ov2640_driver_instruct(ov2640_driver_t       *p_drv,
     /* 2. 初始软件复位 */
     p_hw_ops->pf_write_reg(0xFFU, 0x01U);
     p_hw_ops->pf_write_reg(0x12U, 0x80U);
-    p_hw_ops->pf_delay_ms(50U);
+    p_hw_ops->pf_delay_ms(10U);
 
     /* 3. 写入配置表（表内含第二次复位） */
     if(ov2640_apply_config(p_drv, cfg) != OV2640_OK)
     {
         return OV2640_ERROR;
     }
-    p_hw_ops->pf_delay_ms(50U);
+    p_hw_ops->pf_delay_ms(10U);
 
     /* 4. 设置 DSP 输出尺寸 */
-    if(ov2640_drv_set_out_size(p_drv, (uint16_t)dsp_w, (uint16_t)dsp_h) != OV2640_OK)
+    if(ov2640_drv_set_out_size(p_drv, (uint16_t)dsp_w, (uint16_t)dsp_h) !=
+       OV2640_OK)
     {
         return OV2640_ERROR;
     }
@@ -353,7 +358,7 @@ ov2640_state_t ov2640_driver_instruct(ov2640_driver_t       *p_drv,
     p_drv->pf_start        = ov2640_drv_start;
     p_drv->pf_stop         = ov2640_drv_stop;
     p_drv->pf_set_out_size = ov2640_drv_set_out_size;
-    p_drv->is_init  = OV2640_DRIVER_IS_INIT;
+    p_drv->is_init         = OV2640_DRIVER_IS_INIT;
 
     return OV2640_OK;
 }

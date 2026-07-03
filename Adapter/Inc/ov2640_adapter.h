@@ -25,7 +25,7 @@
   * @retval           : [0 OK, 1 invalid param, 2 driver error]
   * @param[in]        : [p_drv → ov2640_driver_t*, p_hw_ops → ov2640_hw_ops_t*]
   */
-uint8_t drv_cam_init(void *p_drv, void *p_hw_ops);
+uint8_t drv_cam_init(void *p_drv, void *p_hw_ops,uint8_t sensor_mode);
 
 /**
   * @brief            : [drv_cam_start] Start DCMI DMA capture.

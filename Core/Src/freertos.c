@@ -194,12 +194,12 @@ void StartDefaultTask(void *argument)
     draw_handle_fill_screen(&g_draw_handle, 0x0000U);
 
     /* camera handle init: sensor config + DCMI crop setup */
-    g_ov2640_drv.sensor_mode = OV2640_MODE_SVGA; 
     {
         uint8_t cam_ret = camera_handle_instruct(&g_cam_handle,
                                                  &g_cam_adapter_ops,
                                                  (void *)&g_ov2640_drv,
-                                                 (void *)&g_ov2640_hw_ops);
+                                                 (void *)&g_ov2640_hw_ops,
+                                                 OV2640_MODE_SVGA);
         logInfo("camera_handle instruct ret: %d", cam_ret);
     }
 
@@ -211,18 +211,16 @@ void StartDefaultTask(void *argument)
         logInfo("camera_handle start ret: %d", cam_ret);
     }
 
-    defaultTaskHandle = xTaskGetCurrentTaskHandle();
 
     // uint32_t frame_count = 0U;
     // uint32_t last_tick   = xTaskGetTickCount();
     // uint32_t draw_us_acc = 0U;
-
+    defaultTaskHandle = xTaskGetCurrentTaskHandle();
     /* Idle loop */
     for(;;)
     {
         // logInfo("start..");
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
         // uint32_t t0 = DWT->CYCCNT;
         draw_handle_draw_image(&g_draw_handle, 0U, 0U,
                                OV2640_OUT_W, OV2640_OUT_H, g_camera_data_buffer);

@@ -206,3 +206,16 @@ led_handle_on(p_handle)
   * @param[out]       : [参数名 参数说明] 没有此项可以不添加
   */
 ```
+### 5.5 函数测量时间
+
+```c
+可以使用 Middlewares/Dwt/下的函数
+需要使用的时候必须在系统初始化之前调用    dwt_init(); 
+目前已经在MX_FREERTOS_Init 内调用了
+void test ()
+{
+    uint32_t time = get_dwt_us();
+    function();
+    time =  get_dwt_us() - time;
+}
+```
