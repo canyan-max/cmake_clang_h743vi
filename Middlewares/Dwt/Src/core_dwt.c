@@ -1,32 +1,16 @@
 /**
-*******************************************************************************
-*Copyright (C), Inc.(Gmbh) or its affiliates.
-*All Rights Reserved.
-*
-*@file               :   core_dwt.c
-*
-*@pardependencies    :
-*                        core_dwt.c
-*                        stdint.h
-*                        stm32h7xx.h
-*
-*@author             :   null
-*
-*@brief              :   Provide the HAL APIs of dwt
-
-                         The content of this source file has been tested.
-                         The coterx-M7 core must write to the register LAR
-                         0xC5ACCE55
-*
-*@Processingflow     :
-*
-*@calldirectly       :
-*
-*@version            :   V1.0
-*
-*@note               :   1 tab == 4 spaces!
-*******************************************************************************
-*/
+ ******************************************************************************
+ *@file               :   core_dwt.c
+ * 
+ *@brief              :   Provide the HAL APIs of description.
+ * 
+ *@version            :   V1.0 
+ * 
+ *@note               :   1 tab == 4 spaces!  2026
+ * 
+ *@pardependencies    :   core_dwt.c
+ ******************************************************************************
+ */
 
 /* Includes -----------------------------------------------------------------*/
 #include "core_dwt.h"

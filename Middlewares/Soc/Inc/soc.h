@@ -1,37 +1,24 @@
 /**
  ******************************************************************************
- *@Copyright          :   (C), Inc.(Gmbh) or its affiliates.AllRights Reserved.
- *
- *@file               :   soc.c
- *
- *@pardependencies    :
- *                        soc.c
- *                        xxx.h
- *                        xxxx.h
- *
- *@author             :   null
+ *@file               :   soc.h
  *
  *@brief              :   Provide the HAL APIs of description.
  *
- *@Processingflow     :
- *
- *@calldirectly       :
- *
  *@version            :   V1.0
- *@note               :   1 tab == 4 spaces!
+ *
+ *@note               :   1 tab == 4 spaces!  2026
  ******************************************************************************
  */
-
 /* Define to prevent recursive inclusion ------------------------------------*/
 #ifndef SOC_H
 #define SOC_H
-/*Include-----------------------------------------------------------*/
+/*Include -------------------------------------------------------------------*/
 #include <stdint.h>
-/*Define------------------------------------------------------------*/
+/*Define --------------------------------------------------------------------*/
 #define CELL_CAPS                                                (15U)
-/*Variable----------------------------------------------------------*/
+/*Variable ------------------------------------------------------------------*/
 
-/*Declaration-------------------------------------------------------*/
+/*Declaration ---------------------------------------------------------------*/
 /**
  * @brief            :  [get_soc_volt_max_diff]
  * @retval           :  [g_volt_max_diff]

@@ -1,35 +1,24 @@
 /**
  ******************************************************************************
- *@Copyright          :   (C), Inc.(Gmbh) or its affiliates.AllRights Reserved.
- *
  *@file               :   soc.c
- *
- *@pardependencies    :
- *                        soc.c
- *                        xxx.h
- *                        xxxx.h
- *
- *@author             :   null
  *
  *@brief              :   Provide the HAL APIs of description.
  *
- *@Processingflow     :
- *
- *@calldirectly       :
- *
  *@version            :   V1.0
- *@note               :   1 tab == 4 spaces!
+ *
+ *@note               :   1 tab == 4 spaces!  2026
+ *
+ *@pardependencies    :   soc.c
  ******************************************************************************
  */
 
 /* Includes -----------------------------------------------------------------*/
-#include "soc.h"                 /* self lib header file */
-#include <math.h>                /* math lib header file. */
-#include "ocv_calc.h"            /* ocv_calc lib header file. */
-#include "ampere_hour.h"         /* ampere_hour lib header file. */
+#include <stddef.h> /* stdint lib header file */
+#include "soc.h"    /* self lib header file */
+#include <math.h>
+#include "ocv_calc.h"
+#include "ampere_hour.h"
 #include "direct_cur_resistan.h" /* direct_cur_resistan lib header file. */
-#include <stddef.h>              /* stdint lib header file */
-
 /* define   -----------------------------------------------------------------*/
 #define CAPS_LOST           (g_normal_cap*10)
 #define CAPS_REATED         (g_normal_cap*1000)
@@ -187,6 +176,7 @@ static uint8_t compare_capcity(float caps_new)
     result       = caps_new / g_full_max_capacity;
     if(result >= 0.95f && result <= 1.0f)
         return 1;
+
     return 0;
 }
 /**
@@ -375,7 +365,7 @@ static void soc_calibration(float    i_current,
                             int16_t  T_average,
                             float    bat_resistance)
 {
-    ((void)(bat_resistance));
+    //    ((void)(bat_resistance));
     static uint32_t count_dsg = 0, count_chg = 0;
     static uint32_t count_standy = 0;
     if(i_current == 0)
@@ -438,8 +428,8 @@ static void soc_display(float current_i,
 {
     uint8_t  bat_stasus   = 0;
     uint16_t current_caps = g_normal_cap;
-    bat_stasus            = check_bat_status(
-        current_i);     // 0 - idle 1 - charging 2 - discharging
+    // 0 - idle 1 - charging 2 - discharging
+    bat_stasus = check_bat_status(current_i);
     if(bat_stasus == 1) // charging
     {
         if(soc < 1.0f)
@@ -507,32 +497,6 @@ static void soc_display(float current_i,
     {
         g_full_flg = 0;
     }
-
-    /*
-    //    if(g_init_soc<1.0f)
-    //    {
-    //        if(1==g_empty_flg)
-    //        {
-    //            g_init_soc = 0.0f;
-    //        }
-    //        else
-    //        {
-    //            g_init_soc = 1.0f;
-    //        }
-    //    }
-    //    else if(g_init_soc>99.0f)
-    //    {
-    //        if(1==g_full_flg)
-    //        {
-    //
-    //            g_init_soc = 100.0f;
-    //        }
-    //        else
-    //        {
-    //            g_init_soc = 99.0f;
-    //        }
-    //    }
-    */
     // init soc limit
     if(g_init_soc > 100.0f)
     {
@@ -621,12 +585,6 @@ static void soc_display(float current_i,
                 }
             }
         }
-        //        if( ( 1 == g_empty_flg && g_init_soc == 0.0f) || \
-//            ( 1 == g_full_flg  && g_init_soc == 100.0f)
-        //          )
-        //        {
-        //            g_soc = g_init_soc;
-        //        }
     }
     else
     {
@@ -639,12 +597,8 @@ static void soc_display(float current_i,
         {
             g_soc += ((detal_cap_mah * 100.0f / real_capacity) * 0.6f);
         }
-
-        //        if(g_init_soc == 0.0f || g_init_soc == 100.0f)
-        //        {
-        //            g_soc = g_init_soc;
-        //        }
     }
+    // at g_init_soc 100 or 0  let g_soc lmit g_init_soc value
     if(g_init_soc == 0.0f || g_init_soc == 100.0f)
     {
         g_soc = g_init_soc;
@@ -690,8 +644,8 @@ void  soc_soh_calc(uint16_t volt_max,
     check_caps_change();
     // calc ah soc
     g_remain_capacity += detal_cap_mah;
-    g_current_soc = g_remain_capacity /
-                    g_full_real_capacity; // current soc 0.0 ~ 1.0
+    // current soc 0.0 ~ 1.0
+    g_current_soc = g_remain_capacity / g_full_real_capacity;
     if(g_current_soc >= 1.0f)
     {
         g_current_soc = 1.0f;
@@ -701,7 +655,8 @@ void  soc_soh_calc(uint16_t volt_max,
         g_current_soc = 0.0f;
     }
 
-    if(temp_diff_volt < g_volt_max_diff) // max cell and min cell volt must
+    // max cell and min cell volt must
+    if(temp_diff_volt < g_volt_max_diff)
     {
         if(1 == bat_volatge_full_check(volt_max, i_current))
         {

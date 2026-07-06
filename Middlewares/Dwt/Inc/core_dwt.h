@@ -1,29 +1,14 @@
 /**
-*******************************************************************************
-*Copyright (C) 2026-01-29 EternalChip, Inc.(Gmbh) or its affiliates.
-*All Rights Reserved.
-*
-*@file               :   core_dwt.h
-*
-*@pardependencies    :
-*                        core_dwt.h
-*                        xxx.h   
-*                        xxxx.h
-*
-*@author             :   null
-*
-*@brief              :   Provide the HAL APIs of .
-*
-*@Processingflow     :
-*
-*@calldirectly       :
-*
-*@version            :   V1.0 
-*
-*@note               :   1 tab == 4 spaces!
-*******************************************************************************
-*/
-
+ ******************************************************************************
+ *@file               :   core_dwt.h
+ * 
+ *@brief              :   Provide the HAL APIs of description.
+ * 
+ *@version            :   V1.0 
+ * 
+ *@note               :   1 tab == 4 spaces!  2026
+ ******************************************************************************
+ */
 /* Define to prevent recursive inclusion ------------------------------------*/
 #ifndef CORE_DWT_H
 #define CORE_DWT_H
