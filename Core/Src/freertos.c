@@ -101,6 +101,7 @@ extern const led_operation_t g_led2_ops;
 
 /* draw handle */
 st7789_driver_t         g_st7789_drv;
+draw_handle_t           g_draw_handle;
 const draw_handle_ops_t g_draw_adapter_ops = {
     .pf_drv_init    = drv_draw_init,
     .pf_fill_screen = drv_draw_fill_screen,
@@ -112,7 +113,7 @@ const draw_handle_ops_t g_draw_adapter_ops = {
     .pf_draw_hex    = drv_draw_hex,
     .pf_draw_float  = drv_draw_float
 };
-draw_handle_t g_draw_handle;
+
 
 /* camera handle */
 ov2640_driver_t           g_ov2640_drv;
