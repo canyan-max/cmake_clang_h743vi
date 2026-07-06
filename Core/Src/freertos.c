@@ -210,36 +210,16 @@ void StartDefaultTask(void *argument)
                                               OV2640_DMA_LEN_WORDS);
         logInfo("camera_handle start ret: %d", cam_ret);
     }
-
-
-    // uint32_t frame_count = 0U;
-    // uint32_t last_tick   = xTaskGetTickCount();
-    // uint32_t draw_us_acc = 0U;
     defaultTaskHandle = xTaskGetCurrentTaskHandle();
+    
     /* Idle loop */
     for(;;)
     {
-        // logInfo("start..");
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-        // uint32_t t0 = DWT->CYCCNT;
-        draw_handle_draw_image(&g_draw_handle, 0U, 0U,
-                               OV2640_OUT_W, OV2640_OUT_H, g_camera_data_buffer);
-        // uint32_t t1 = DWT->CYCCNT;
-        // draw_us_acc += (t1 - t0) / (SystemCoreClock / 1000000U);
 
-        // frame_count++;
-        // uint32_t now = xTaskGetTickCount();
-        // if((now - last_tick) >= 1000U)
-        // {
-        //     uint32_t fps     = frame_count * 1000U / (now - last_tick);
-        //     uint32_t draw_us = draw_us_acc / frame_count;
-        //     logInfo("fps=%lu  draw=%luus", fps, draw_us);
-        //     draw_handle_draw_dec(&g_draw_handle, &g_f8x16, 0U, 0U,
-        //                          (int32_t)fps, RGB565_YELLOW, RGB565_BLACK);
-        //     frame_count  = 0U;
-        //     draw_us_acc  = 0U;
-        //     last_tick    = now;
-        // }
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        draw_handle_draw_image(&g_draw_handle, 0U, 0U,
+                               OV2640_OUT_W, OV2640_OUT_H, g_camera_data_buffer);                             
+        // logInfo("run ..");
     }
 
   /* USER CODE END StartDefaultTask */
@@ -252,7 +232,8 @@ void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
 {
     ((void)hdcmi);
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    SCB_InvalidateDCache_by_Addr((uint32_t *)g_camera_data_buffer, sizeof(g_camera_data_buffer));
+    SCB_InvalidateDCache_by_Addr((uint32_t *)g_camera_data_buffer, 
+                                 sizeof(g_camera_data_buffer));
     vTaskNotifyGiveFromISR(defaultTaskHandle, &xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }

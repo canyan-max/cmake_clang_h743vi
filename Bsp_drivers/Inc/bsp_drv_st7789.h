@@ -1,21 +1,12 @@
 /**
  ******************************************************************************
- *@Copyright          :   (C), Inc.(Gmbh) or its affiliates.AllRights Reserved.
- *                        2026
  *@file               :   bsp_drv_st7789.h
- *
- *@pardependencies    :
- *                        bsp_drv_st7789.h
- *                        xxx.h
- *                        xxxx.h
- *
- *@author             :   null
- *
- *@brief              :   Provide the HAL APIs of ST7789 LCD driver.
- *
- *@version            :   V1.0
- *
- *@note               :   1 tab == 4 spaces!
+ * 
+ *@brief              :   Provide the HAL APIs of description.
+ * 
+ *@version            :   V1.0 
+ * 
+ *@note               :   1 tab == 4 spaces!  2026
  ******************************************************************************
  */
 /* Define to prevent recursive inclusion ------------------------------------*/

@@ -1,24 +1,16 @@
 /**
  ******************************************************************************
- *@Copyright          :   (C), Inc.(Gmbh) or its affiliates.AllRights Reserved.
- *                        2026
  *@file               :   st_led.c
- *
- *@pardependencies    :
- *                        st_led.c
- *                        bsp_drv_led.h
- *                        gpio.h
- *
- *@author             :   null
- *
+ * 
  *@brief              :   Provide the HAL APIs of description.
- *
- *@version            :   V1.0
- *
- *@note               :   1 tab == 4 spaces!
+ * 
+ *@version            :   V1.0 
+ * 
+ *@note               :   1 tab == 4 spaces!  2026
+ * 
+ *@pardependencies    :   st_led.c
  ******************************************************************************
  */
-
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>      /* stdint lib header file. */
 #include "st_led.h"      /* st_led lib header file. */

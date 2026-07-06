@@ -1,16 +1,12 @@
 /**
  ******************************************************************************
  *@file               :   st_ov2640.h
- *
- *@pardependencies    :   bsp_drv_ov2640.h
- *                        i2c.h
- *                        dcmi.h
- *
- *@brief              :   STM32H7 HAL implementation of ov2640_hw_ops_t.
- *
- *@version            :   V1.0
- *
- *@note               :   1 tab == 4 spaces!
+ * 
+ *@brief              :   Provide the HAL APIs of description.
+ * 
+ *@version            :   V1.0 
+ * 
+ *@note               :   1 tab == 4 spaces!  2026
  ******************************************************************************
  */
 /* Define to prevent recursive inclusion ------------------------------------*/

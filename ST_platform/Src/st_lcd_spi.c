@@ -1,24 +1,16 @@
 /**
  ******************************************************************************
- *@Copyright          :   (C), Inc.(Gmbh) or its affiliates.AllRights Reserved.
- *                        2026
  *@file               :   st_lcd_spi.c
- *
- *@pardependencies    :
- *                        st_lcd_spi.c
- *                        spi.h
- *                        bsp_drv_st7789.h
- *
- *@author             :   null
- *
- *@brief              :   Provide the ST7789 SPI platform ops implementation.
- *
- *@version            :   V1.0
- *
- *@note               :   1 tab == 4 spaces!
+ * 
+ *@brief              :   Provide the HAL APIs of description.
+ * 
+ *@version            :   V1.0 
+ * 
+ *@note               :   1 tab == 4 spaces!  2026
+ * 
+ *@pardependencies    :   st_lcd_spi.c
  ******************************************************************************
  */
-
 /* Includes -----------------------------------------------------------------*/
 #include "stdint.h"         /* stdint lib header file. */
 #include "st_lcd_spi.h"     /* st_lcd_spi lib header file. */
@@ -96,9 +88,9 @@ static st7789_state_t st_spi_transmit_with_dma(uint8_t *p_data, uint32_t lenth)
     {
         return ST7789_ERROR;
     }
-    while(HAL_SPI_STATE_READY != HAL_SPI_GetState(&hspi4))
-    {
-    }
+    // while(HAL_SPI_STATE_READY != HAL_SPI_GetState(&hspi4))
+    // {
+    // }
     return ST7789_OK;
 }
 
@@ -139,21 +131,18 @@ static void st_delay_ms(uint32_t ms)
 {
     HAL_Delay(ms);
 }
-uint8_t TX_CODE;
-void    HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
+
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 {
     if(hspi == &hspi4)
     {
-        TX_CODE += 1;
-        g_dma_spi_tx_finish = 0;
     }
 }
-uint8_t ERR_CODE;
-void    HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
+
+void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
 {
     if(hspi == &hspi4)
     {
-        ERR_CODE += 1;
     }
 }
 /* end of  file -------------------------------------------------------------*/

@@ -1,19 +1,16 @@
 /**
  ******************************************************************************
  *@file               :   ov2640_adapter.c
- *
- *@pardependencies    :   ov2640_adapter.h
- *                        bsp_drv_ov2640.h
- *
- *@brief              :   Type-erasing adapter between ov2640_driver_t and
- *                        camera_handle_ops_t (void* interface).
- *
- *@version            :   V1.0
- *
- *@note               :   1 tab == 4 spaces!
+ * 
+ *@brief              :   Provide the HAL APIs of description.
+ * 
+ *@version            :   V1.0 
+ * 
+ *@note               :   1 tab == 4 spaces!  2026
+ * 
+ *@pardependencies    :   ov2640_adapter.c
  ******************************************************************************
  */
-
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>
 #include "ov2640_adapter.h"

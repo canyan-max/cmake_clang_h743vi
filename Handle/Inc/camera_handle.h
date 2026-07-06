@@ -1,16 +1,12 @@
 /**
  ******************************************************************************
  *@file               :   camera_handle.h
- *
- *@pardependencies    :
- *
- *@brief              :   Platform-agnostic camera capture handle.
- *                        Frame-ready notification and display are handled
- *                        by the caller (task layer), not this handle.
- *
- *@version            :   V1.0
- *
- *@note               :   1 tab == 4 spaces!
+ * 
+ *@brief              :   Provide the HAL APIs of description.
+ * 
+ *@version            :   V1.0 
+ * 
+ *@note               :   1 tab == 4 spaces!  2026
  ******************************************************************************
  */
 /* Define to prevent recursive inclusion ------------------------------------*/

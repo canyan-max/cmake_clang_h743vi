@@ -1,21 +1,14 @@
 /**
  ******************************************************************************
- *@Copyright          :   (C), Inc.(Gmbh) or its affiliates.AllRights Reserved.
- *                        2026
- *@file               :   bsp_driver_at24.c
- *
- *@pardependencies    :
- *                        bsp_driver_at24.c
- *                        xxx.h
- *                        xxxx.h
- *
- *@author             :   null
- *
+ *@file               :   bsp_drv_at24.c
+ * 
  *@brief              :   Provide the HAL APIs of description.
- *
- *@version            :   V1.0
- *
- *@note               :   1 tab == 4 spaces!
+ * 
+ *@version            :   V1.0 
+ * 
+ *@note               :   1 tab == 4 spaces!  2026
+ * 
+ *@pardependencies    :   bsp_drv_at24.c
  ******************************************************************************
  */
 

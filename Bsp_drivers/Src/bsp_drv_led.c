@@ -1,23 +1,16 @@
 /**
  ******************************************************************************
- *@Copyright          :   (C), Inc.(Gmbh) or its affiliates.AllRights Reserved.
- *                        2026
  *@file               :   bsp_drv_led.c
- *
- *@pardependencies    :
- *                        bsp_drv_led.c
- *                        xxx.h
- *                        xxxx.h
- *
- *@author             :   null
- *
- *@brief              :   Provide the HAL APIs of led drivers .
- *
- *@version            :   V1.0
- *@note               :   1 tab == 4 spaces!
+ * 
+ *@brief              :   Provide the HAL APIs of description.
+ * 
+ *@version            :   V1.0 
+ * 
+ *@note               :   1 tab == 4 spaces!  2026
+ * 
+ *@pardependencies    :   bsp_drv_led.c
  ******************************************************************************
  */
-
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>      /* stddef lib header file. */
 #include "bsp_drv_led.h" /* bsp_drv_led lib header file. */

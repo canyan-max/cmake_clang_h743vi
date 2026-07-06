@@ -1,17 +1,16 @@
 /**
  ******************************************************************************
  *@file               :   camera_handle.c
- *
+ * 
+ *@brief              :   Provide the HAL APIs of description.
+ * 
+ *@version            :   V1.0 
+ * 
+ *@note               :   1 tab == 4 spaces!  2026
+ * 
  *@pardependencies    :   camera_handle.h
- *
- *@brief              :   Platform-agnostic camera capture handle.
- *
- *@version            :   V1.0
- *
- *@note               :   1 tab == 4 spaces!
  ******************************************************************************
  */
-
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>
 #include "camera_handle.h"

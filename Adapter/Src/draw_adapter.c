@@ -1,22 +1,16 @@
 /**
  ******************************************************************************
- *@Copyright          :   (C), Inc.(Gmbh) or its affiliates.AllRights Reserved.
- *                        2026
  *@file               :   draw_adapter.c
- *
- *@pardependencies    :   draw_adapter.c
- *                        xxxx.h
- *
- *@author             :   null
- *
+ * 
  *@brief              :   Provide the HAL APIs of description.
- *
- *@version            :   V1.0
- *
- *@note               :   1 tab == 4 spaces!
+ * 
+ *@version            :   V1.0 
+ * 
+ *@note               :   1 tab == 4 spaces!  2026
+ * 
+ *@pardependencies    :   draw_adapter.c
  ******************************************************************************
  */
-
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>         /* stdint lib header file. */
 #include "draw_adapter.h"   /* draw_adapter lib header file. */

@@ -1,20 +1,16 @@
 /**
  ******************************************************************************
  *@file               :   st_ov2640.c
- *
- *@pardependencies    :   st_ov2640.h
- *                        i2c.h
- *                        dcmi.h
- *
- *@brief              :   STM32H7 HAL implementation of ov2640_hw_ops_t.
- *                        Uses hi2c1 for SCCB and hdcmi for DCMI DMA.
- *
- *@version            :   V1.0
- *
- *@note               :   1 tab == 4 spaces!
+ * 
+ *@brief              :   Provide the HAL APIs of description.
+ * 
+ *@version            :   V1.0 
+ * 
+ *@note               :   1 tab == 4 spaces!  2026
+ * 
+ *@pardependencies    :   st_ov2640.c
  ******************************************************************************
  */
-
 /* Includes -----------------------------------------------------------------*/
 #include "st_ov2640.h"
 #include "i2c.h"
