@@ -43,6 +43,7 @@ add_subdirectory(Middlewares/Kfifo)
 add_subdirectory(Middlewares/Soc)
 add_subdirectory(Middlewares/Dwt)
 add_subdirectory(Middlewares/Front)
+add_subdirectory(Middlewares/Minimp3)
 # add_subdirectory(Middlewares/SeggerHardFault)
 add_subdirectory(ST_platform)
 add_subdirectory(Bsp_drivers)
@@ -87,6 +88,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     handle
     dwt
     front
+    minimp3
 )
 
 # generate .hex and .bin files from the .elf file after building the executable

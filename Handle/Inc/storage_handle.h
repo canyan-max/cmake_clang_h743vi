@@ -140,4 +140,5 @@ uint8_t storage_handle_instruct(storage_handle_t    *p_handle,
 #ifdef __cplusplus
 }
 #endif
+
 #endif /* STORAGE_HANDLE_H */
