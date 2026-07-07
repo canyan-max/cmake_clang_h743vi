@@ -29,9 +29,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#define MINIMP3_NO_SIMD
-#define MINIMP3_IMPLEMENTATION
-#include "minimp3.h"
+// #define MINIMP3_NO_SIMD
+// #define MINIMP3_IMPLEMENTATION
+// #include "minimp3.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -71,9 +71,13 @@ void MX_FREERTOS_Init(void);
   * @brief  The application entry point.
   * @retval int
   */
-static  mp3dec_t mp3d;
-static  mp3d_sample_t  pcm[MINIMP3_MAX_SAMPLES_PER_FRAME];
-static uint8_t Array[]={
+// #define MINIMP3_NO_SIMD
+// #define MINIMP3_ONLY_MP3
+// #define MINIMP3_IMPLEMENTATION
+// #include "minimp3.h"
+// mp3dec_t mp3d;
+// mp3d_sample_t pcm[MINIMP3_MAX_SAMPLES_PER_FRAME];
+uint8_t Array[]={
 
 0x49,0x44,0x33,0x04,0x00,0x00,0x00,0x00,0x00,0x23,0x54,0x53,0x53,0x45,0x00,0x00,
 
@@ -6586,7 +6590,6 @@ static uint8_t Array[]={
 0x55,0x55,0x55,0x55,0x55,0x55,0x55,0x55,0x55,0x55,0x55,0x55,0x55,0x55,0x55,
 
 };
-uint8_t indxw = 0;
 int main(void)
 {
 
@@ -6622,49 +6625,50 @@ int main(void)
   MX_DCMI_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
+      // mp3dec_init(&mp3d);
+      // mp3dec_frame_info_t info = {0};
+      // const uint8_t *input = Array;
+      // int buf_size = sizeof(Array);
+      // int total_frames = 0;
+      // // taskENTER_CRITICAL();
+      // while (buf_size > 0 ) {
+      //     // __disable_irq();  // 禁用所有中断
+      //     int samples = mp3dec_decode_frame(&mp3d, input, buf_size, pcm, &info);
+      //     // __enable_irq();   // 恢复中断
+      //     if (samples > 0 ) {  
+      //         total_frames++;
+      //         // logInfo("解码成功 帧%d: hz=%d, channels=%d", total_frames, info.hz, info.channels);
+      //         input += info.frame_bytes;
+      //         buf_size -= info.frame_bytes;
+      //         // logInfo("current input=0x%p", (void*)input);
+      //     } else if (info.frame_bytes > 0) {
+      //         // logInfo("跳过 %d 字节", info.frame_bytes);
+      //         input += info.frame_bytes;
+      //         buf_size -= info.frame_bytes;
+      //     } else {
+      //         // logInfo("数据不足或结束，剩余 %d 字节", buf_size);
+      //         break;
+      //     }
+      // }
   /* USER CODE END 2 */
+
   /* Init scheduler */
-//   osKernelInitialize();  /* Call init function for freertos objects (in cmsis_os2.c) */
-//   MX_FREERTOS_Init();
+  osKernelInitialize();  /* Call init function for freertos objects (in cmsis_os2.c) */
+  MX_FREERTOS_Init();
 
   /* Start scheduler */
-//   osKernelStart();
+  osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-mp3dec_init(&mp3d);
-mp3dec_frame_info_t info = {0};
-const uint8_t *input = Array;
-int buf_size = sizeof(Array);
-int total_frames = 0;
-
-while (buf_size > 0) {
-    int samples = mp3dec_decode_frame(&mp3d, input, buf_size, pcm, &info);
-    
-    // ★ 打印关键信息
-
-    
-    if (samples > 0 ) {  
-        total_frames++;
-        input += info.frame_bytes;
-        buf_size -= info.frame_bytes;
-    } else if (info.frame_bytes > 0) {
-
-        input += info.frame_bytes;
-        buf_size -= info.frame_bytes;
-    } else {
-
-        break;
-    }
-}
 
     
     while(1)
     {
     /* USER CODE END WHILE */
-        indxw+=1;
+
     /* USER CODE BEGIN 3 */
     }
   /* USER CODE END 3 */
@@ -6766,8 +6770,7 @@ void MPU_Config(void)
   MPU_InitStruct.SubRegionDisable = 0x0;
   MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL1;
   MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
-  MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
-  MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
+  MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_ENABLE;
   MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
   MPU_InitStruct.IsBufferable = MPU_ACCESS_BUFFERABLE;
 
@@ -6777,14 +6780,7 @@ void MPU_Config(void)
   */
   MPU_InitStruct.Number = MPU_REGION_NUMBER2;
   MPU_InitStruct.BaseAddress = 0x30000000;
-  MPU_InitStruct.Size = MPU_REGION_SIZE_512KB;
-  MPU_InitStruct.SubRegionDisable = 0x0;
-  MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL1;
-  MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
-  MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
-  MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
-  MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
-  MPU_InitStruct.IsBufferable = MPU_ACCESS_BUFFERABLE;
+
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
   /* Enables the MPU */
   HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
