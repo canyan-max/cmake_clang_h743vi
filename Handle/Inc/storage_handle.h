@@ -1,11 +1,11 @@
 /**
  ******************************************************************************
  *@file               :   storage_handle.h
- * 
+ *
  *@brief              :   Provide the HAL APIs of description.
- * 
- *@version            :   V1.0 
- * 
+ *
+ *@version            :   V1.0
+ *
  *@note               :   1 tab == 4 spaces!  2026
  ******************************************************************************
  */
@@ -13,6 +13,10 @@
 #ifndef STORAGE_HANDLE_H
 #define STORAGE_HANDLE_H
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 /* Includes -----------------------------------------------------------------*/
 #include <stdint.h> /* stdint lib header file. */
 #include <stddef.h> /* stdint lib header file. */
@@ -132,4 +136,8 @@ uint8_t storage_handle_instruct(storage_handle_t    *p_handle,
                                 uint32_t             page_size,
                                 uint16_t             adr_size,
                                 uint8_t              dev_adr);
+
+#ifdef __cplusplus
+}
+#endif
 #endif /* STORAGE_HANDLE_H */

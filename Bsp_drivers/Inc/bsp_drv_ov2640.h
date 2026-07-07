@@ -1,11 +1,11 @@
 /**
  ******************************************************************************
  *@file               :   bsp_drv_ov2640.h
- * 
+ *
  *@brief              :   Provide the HAL APIs of description.
- * 
- *@version            :   V1.0 
- * 
+ *
+ *@version            :   V1.0
+ *
  *@note               :   1 tab == 4 spaces!  2026
  ******************************************************************************
  */
@@ -13,6 +13,10 @@
 #ifndef BSP_DRV_OV2640_H
 #define BSP_DRV_OV2640_H
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 /* Includes -----------------------------------------------------------------*/
 #include <stdint.h>
 
@@ -33,7 +37,7 @@
 #define OV2640_OUT_W            (240U)
 #define OV2640_OUT_H            (240U)
 /* DMA transfer length in 32-bit words: OUT_W * OUT_H * 2 bytes / 4 */
-#define OV2640_DMA_LEN_WORDS    (OV2640_OUT_W * OV2640_OUT_H * 2U / 4U)
+#define OV2640_DMA_LEN_WORDS (OV2640_OUT_W * OV2640_OUT_H * 2U / 4U)
 
 #define OV2640_POWER_ON         (0x00U)
 #define OV2640_POWER_OFF        (0x01U)
@@ -113,5 +117,9 @@ typedef struct OV2640_DRIVER_T
 ov2640_state_t ov2640_driver_instruct(ov2640_driver_t       *p_drv,
                                       const ov2640_hw_ops_t *p_hw_ops,
                                       ov2640_sensor_mode_t   sensor_mode);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* BSP_DRV_OV2640_H */

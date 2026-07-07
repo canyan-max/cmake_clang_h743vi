@@ -13,6 +13,12 @@
 #ifndef CAMERA_HANDLE_H
 #define CAMERA_HANDLE_H
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /* Includes -----------------------------------------------------------------*/
 #include <stdint.h>
 
@@ -59,5 +65,9 @@ uint8_t camera_handle_start(camera_handle_t *p_handle,
   * @param[in]        : [p_handle]
   */
 uint8_t camera_handle_stop(camera_handle_t *p_handle);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* CAMERA_HANDLE_H */

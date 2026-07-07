@@ -1,17 +1,22 @@
 /**
  ******************************************************************************
  *@file               :   bsp_drv_led.h
- * 
+ *
  *@brief              :   Provide the HAL APIs of description.
- * 
- *@version            :   V1.0 
- * 
+ *
+ *@version            :   V1.0
+ *
  *@note               :   1 tab == 4 spaces!  2026
  ******************************************************************************
  */
 /* Define to prevent recursive inclusion ------------------------------------*/
 #ifndef BSP_DRV_LED_H
 #define BSP_DRV_LED_H
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 /* Includes -----------------------------------------------------------------*/
 #include <stdint.h> /* stdint lib header file. */
@@ -68,4 +73,9 @@ typedef struct LED_DRIVER_T
  */
 led_driver_state_t bsp_driver_led_init(led_driver_t          *p_drv,
                                        const led_operation_t *p_ops);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* BSP_DRV_LED_H */

@@ -9,9 +9,11 @@ UseTab: Never
 
 # Allman风格：{ 独占一行（函数、if、for、while 等）
 BreakBeforeBraces: Allman
+IndentExternBlock: NoIndent
 
 # 列宽限制
 ColumnLimit: 80
+
 
 # 括号前不加空格：if(x)  for(x)  while(x)
 SpaceBeforeParens: Never
@@ -69,4 +71,4 @@ SpacesInSquareBrackets: false
 
 # 不格式化宏定义体（保留 #define NAME   VALUE 中手工对齐的空白）
 SkipMacroDefinitionBody: true
-...
+

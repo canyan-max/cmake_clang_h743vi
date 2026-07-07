@@ -1,13 +1,13 @@
 /**
  ******************************************************************************
  *@file               :   bsp_drv_st7789.c
- * 
+ *
  *@brief              :   Provide the HAL APIs of description.
- * 
- *@version            :   V1.0 
- * 
+ *
+ *@version            :   V1.0
+ *
  *@note               :   1 tab == 4 spaces!  2026
- * 
+ *
  *@pardependencies    :   bsp_drv_st7789.c
  ******************************************************************************
  */
@@ -79,7 +79,9 @@ static st7789_state_t st7789_set_forward_color(st7789_driver_t *p_drv,
                                                uint32_t         f_color)
 {
     if(NULL == p_drv)
+    {
         return ST7789_INVALID_PARAM;
+    }
     ST7789_NOT_USE_VARIABLE(f_color);
     // p_drv->f_color = color24bit_to_rgb565(f_color);
     return ST7789_OK;

@@ -1,17 +1,22 @@
 /**
  ******************************************************************************
  *@file               :   at24cxx_adapter.h
- * 
+ *
  *@brief              :   Provide the HAL APIs of description.
- * 
- *@version            :   V1.0 
- * 
+ *
+ *@version            :   V1.0
+ *
  *@note               :   1 tab == 4 spaces!  2026
  ******************************************************************************
  */
 /* Define to prevent recursive inclusion ------------------------------------*/
 #ifndef AT24CXX_ADAPTER_H
 #define AT24CXX_ADAPTER_H
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 /* Includes -----------------------------------------------------------------*/
 #include <stdint.h> /* stdint lib header file. */
@@ -87,4 +92,9 @@ uint8_t drv_read_bytes(void    *p_drv,
                        uint8_t *p_data,
                        uint16_t size,
                        uint32_t timeout);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* AT24CXX_ADAPTER_H */

@@ -1,13 +1,13 @@
 /**
  ******************************************************************************
  *@file               :   st_iic.c
- * 
+ *
  *@brief              :   Provide the HAL APIs of description.
- * 
- *@version            :   V1.0 
- * 
+ *
+ *@version            :   V1.0
+ *
  *@note               :   1 tab == 4 spaces!  2026
- * 
+ *
  *@pardependencies    :   st_iic.c
  ******************************************************************************
  */
@@ -35,7 +35,7 @@ static at24_state_t st_mem_write(void    *hi2c,
                                  uint8_t *p_data,
                                  uint16_t size,
                                  uint32_t timeout);
-static at24_state_t \
+static at24_state_t
 st_dev_is_ready(void *hi2c, uint8_t dev_adr, uint32_t tails, uint32_t timeout);
 const iic_ops_t g_at24c02_iic_ops = {
     .p_iic_handle       = (void *)&hi2c1,

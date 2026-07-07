@@ -1,17 +1,22 @@
 /**
  ******************************************************************************
  *@file               :   bsp_drv_st7789.h
- * 
+ *
  *@brief              :   Provide the HAL APIs of description.
- * 
- *@version            :   V1.0 
- * 
+ *
+ *@version            :   V1.0
+ *
  *@note               :   1 tab == 4 spaces!  2026
  ******************************************************************************
  */
 /* Define to prevent recursive inclusion ------------------------------------*/
 #ifndef BSP_DRV_ST7789_H
 #define BSP_DRV_ST7789_H
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 /* Includes -----------------------------------------------------------------*/
 #include <stdint.h> /* stdint lib header file. */
@@ -20,11 +25,11 @@
 typedef struct FRONT_DEF_T front_def_t;
 
 /* define -------------------------------------------------------------------*/
-#define ST7789_DRIVER_IS_INIT       (0x01U)
-#define ST7789_DRIVER_NOT_INIT      (0x00U)
+#define ST7789_DRIVER_IS_INIT (0x01U)
+#define ST7789_DRIVER_NOT_INIT (0x00U)
 
-#define ST7789_SCREEN_WIDTH         (240U)
-#define ST7789_SCREEN_HEIGHT        (240U)
+#define ST7789_SCREEN_WIDTH (240U)
+#define ST7789_SCREEN_HEIGHT (240U)
 
 /* typedef ------------------------------------------------------------------*/
 // befor to declar
@@ -147,5 +152,9 @@ typedef struct ST7789_DRIVER_T
   */
 st7789_state_t st7789_driver_instruct(st7789_driver_t        *p_drv,
                                       const st7789_spi_ops_t *p_ops);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* BSP_DRV_ST7789_H */

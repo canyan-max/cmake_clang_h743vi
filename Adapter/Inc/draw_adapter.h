@@ -1,17 +1,22 @@
 /**
  ******************************************************************************
  *@file               :   draw_adapter.h
- * 
+ *
  *@brief              :   Provide the HAL APIs of description.
- * 
- *@version            :   V1.0 
- * 
+ *
+ *@version            :   V1.0
+ *
  *@note               :   1 tab == 4 spaces!  2026
  ******************************************************************************
  */
 /* Define to prevent recursive inclusion ------------------------------------*/
 #ifndef DRAW_ADAPTER_H
 #define DRAW_ADAPTER_H
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 /* Includes -----------------------------------------------------------------*/
 #include <stdint.h> /* stdint lib header file. */
@@ -55,7 +60,7 @@ uint8_t drv_draw_fill_screen(void *p_drv, uint16_t color);
                          2 driver error]
  * @param[in]        :  [p_drv, x, y, w, h, color]
  */
-uint8_t drv_draw_fill_rect(void     *p_drv,
+uint8_t drv_draw_fill_rect(void    *p_drv,
                            uint16_t x,
                            uint16_t y,
                            uint16_t w,
@@ -69,7 +74,7 @@ uint8_t drv_draw_fill_rect(void     *p_drv,
                          2 driver error]
  * @param[in]        :  [p_drv, x0, y0, x1, y1, color]
  */
-uint8_t drv_draw_line(void     *p_drv,
+uint8_t drv_draw_line(void    *p_drv,
                       uint16_t x0,
                       uint16_t y0,
                       uint16_t x1,
@@ -150,4 +155,8 @@ uint8_t drv_draw_float(void              *p_drv,
                        uint8_t            decimals,
                        uint16_t           f_color,
                        uint16_t           b_color);
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* DRAW_ADAPTER_H */

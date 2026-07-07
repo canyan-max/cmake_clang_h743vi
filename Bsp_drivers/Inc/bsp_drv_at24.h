@@ -1,17 +1,22 @@
 /**
  ******************************************************************************
  *@file               :   bsp_drv_at24.h
- * 
+ *
  *@brief              :   Provide the HAL APIs of description.
- * 
- *@version            :   V1.0 
- * 
+ *
+ *@version            :   V1.0
+ *
  *@note               :   1 tab == 4 spaces!  2026
  ******************************************************************************
  */
 /* Define to prevent recursive inclusion ------------------------------------*/
 #ifndef BSP_DRV_AT24_H
 #define BSP_DRV_AT24_H
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 /* Includes -----------------------------------------------------------------*/
 #include <stdint.h> /* stdint lib header file. */
@@ -128,4 +133,7 @@ at24_state_t at24_driver_instruct(at24_driver_t   *p_drv,
                                   uint16_t         adr_size,
                                   uint8_t          dev_adr);
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* BSP_DRV_AT24_H */
