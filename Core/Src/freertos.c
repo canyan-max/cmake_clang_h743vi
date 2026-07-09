@@ -71,6 +71,9 @@
 /* USER CODE BEGIN Variables */
 __attribute__((section(".ram_d2_dma_buffers"),
                aligned(32))) uint8_t g_camera_data_buffer[115200];
+/* FreeRTOS heap placed in AXI SRAM (512KB) instead of DTCMRAM (128KB) */
+__attribute__((section(".ram_dma_buffers"),
+               aligned(8))) uint8_t ucHeap[configTOTAL_HEAP_SIZE];
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -120,9 +123,7 @@ const camera_handle_ops_t g_cam_adapter_ops = {
 };
 camera_handle_t g_cam_handle;
 
-/* FreeRTOS heap placed in AXI SRAM (512KB) instead of DTCMRAM (128KB) */
-__attribute__((section(".ram_dma_buffers"),
-               aligned(8))) uint8_t ucHeap[configTOTAL_HEAP_SIZE];
+
 
 
 __attribute__((section(".ram_dma_buffers"),
