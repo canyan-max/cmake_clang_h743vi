@@ -5,6 +5,7 @@
 build/
 .clangd
 .mxproject
+.agents
 
 # 编译产物（若意外出现在源码目录）
 *.o

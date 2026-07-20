@@ -106,31 +106,7 @@ int main(void)
   MX_DCMI_Init();
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
-      // mp3dec_init(&mp3d);
-      // mp3dec_frame_info_t info = {0};
-      // const uint8_t *input = Array;
-      // int buf_size = sizeof(Array);
-      // int total_frames = 0;
-      // // taskENTER_CRITICAL();
-      // while (buf_size > 0 ) {
-      //     // __disable_irq();  // 禁用所有中断
-      //     int samples = mp3dec_decode_frame(&mp3d, input, buf_size, pcm, &info);
-      //     // __enable_irq();   // 恢复中断
-      //     if (samples > 0 ) {  
-      //         total_frames++;
-      //         // logInfo("解码成功 帧%d: hz=%d, channels=%d", total_frames, info.hz, info.channels);
-      //         input += info.frame_bytes;
-      //         buf_size -= info.frame_bytes;
-      //         // logInfo("current input=0x%p", (void*)input);
-      //     } else if (info.frame_bytes > 0) {
-      //         // logInfo("跳过 %d 字节", info.frame_bytes);
-      //         input += info.frame_bytes;
-      //         buf_size -= info.frame_bytes;
-      //     } else {
-      //         // logInfo("数据不足或结束，剩余 %d 字节", buf_size);
-      //         break;
-      //     }
-      // }
+  
   /* USER CODE END 2 */
 
   /* Init scheduler */
