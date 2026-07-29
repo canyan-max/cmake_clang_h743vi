@@ -45,10 +45,11 @@ add_subdirectory(Middlewares/Dwt)
 add_subdirectory(Middlewares/Front)
 add_subdirectory(Middlewares/Minimp3)
 # add_subdirectory(Middlewares/SeggerHardFault)
-add_subdirectory(ST_platform)
-add_subdirectory(Bsp_drivers)
-add_subdirectory(Adapter)
-add_subdirectory(Handle)
+add_subdirectory(02_Service)
+add_subdirectory(03_Platform/01_common)
+add_subdirectory(04_Impl/01_mcu)
+add_subdirectory(03_Platform/03_bsp)
+add_subdirectory(03_Platform/02_device)
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined library search paths
@@ -82,10 +83,11 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     letter_shell
     kfifo
     Soc
-    bsp_drivers
-    st_platform
-    adapter
-    handle
+    service
+    platform_common
+    platform_bsp
+    impl_mcu
+    platform_device
     dwt
     front
     minimp3
