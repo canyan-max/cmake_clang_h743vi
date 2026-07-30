@@ -8,7 +8,6 @@ set(PLATFORM_DEVICE_SRC
 
 set(PLATFORM_DEVICE_PRIVATE_LIB
     platform_bsp
-    impl_mcu
     platform_mcu_interface
 )
 

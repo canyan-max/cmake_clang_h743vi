@@ -26,7 +26,7 @@ extern "C" {
 /* variables ----------------------------------------------------------------*/
 
 /* functions ----------------------------------------------------------------*/
-platform_err_t service_camera_init(void (*frame_cb)(void));
+platform_err_t service_camera_init(void);
 platform_err_t service_camera_start(void);
 uint8_t       *service_camera_get_buffer(void);
 uint32_t       service_camera_get_buffer_len(void);

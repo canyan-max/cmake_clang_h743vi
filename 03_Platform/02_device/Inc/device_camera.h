@@ -31,7 +31,6 @@ extern "C"
 platform_err_t device_camera_init(void);
 platform_err_t device_camera_start(uint32_t *p_buf, uint32_t len_words);
 platform_err_t device_camera_stop(void);
-platform_err_t device_camera_register_frame_cb(void (*cb)(void));
 #ifdef __cplusplus
 }
 #endif

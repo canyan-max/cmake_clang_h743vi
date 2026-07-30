@@ -35,6 +35,7 @@
 #include "service_camera.h"    /* service_camera header file. */
 #include "service_indicator.h" /* service_indicator header file. */
 #include "service_storage.h"   /* service_storage header file. */
+#include "service_osd.h"       /* service_osd header file. */
 // #define MINIMP3_NO_SIMD
 #define MINIMP3_FLOAT_OUTPUT
 #define MINIMP3_IMPLEMENTATION
@@ -74,8 +75,6 @@ const osThreadAttr_t defaultTask_attributes = {
 /* USER CODE BEGIN FunctionPrototypes */
 uint8_t k_fifo_buffer[16];
 kfifo_t g_kfifo;
-
-static void on_frame_ready(void);
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -150,7 +149,7 @@ void StartDefaultTask(void *argument)
     {
         logError("display init failed");
     }
-    if(PLATFORM_ERR_OK != service_camera_init(on_frame_ready))
+    if(PLATFORM_ERR_OK != service_camera_init())
     {
         logError("camera init failed");
     }
@@ -158,6 +157,11 @@ void StartDefaultTask(void *argument)
     {
         logError("camera start failed");
     }
+    if(PLATFORM_ERR_OK != service_osd_init())
+    {
+        logError("osd init failed");
+    }
+    service_osd_set_rec_state(SERVICE_OSD_REC_ACTIVE);
 
     defaultTaskHandle = xTaskGetCurrentTaskHandle();
     logInfo("run ..");
@@ -166,23 +170,24 @@ void StartDefaultTask(void *argument)
     for(;;)
     {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-        service_display_show_frame(service_camera_get_buffer(), 0, 0);
+        service_osd_render();
+        service_display_show_frame(service_camera_get_buffer(),
+                                    0, OSD_BAR_HEIGHT, 240U, 240U - OSD_BAR_HEIGHT);
         service_indicator_blink(DEVICE_INDICATOR_1);
         service_indicator_blink(DEVICE_INDICATOR_2);
         vTaskDelay(10);
-        // logInfo("run ..");
     }
     /* USER CODE END StartDefaultTask */
 }
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-
-static void on_frame_ready(void)
+void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
 {
+    ((void)hdcmi);
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    SCB_InvalidateDCache_by_Addr(service_camera_get_buffer(), service_camera_get_buffer_len());
     vTaskNotifyGiveFromISR(defaultTaskHandle, &xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
-
 /* USER CODE END Application */

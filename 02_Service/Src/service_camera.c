@@ -11,7 +11,6 @@
 #include <stddef.h>         /* stdint lib header file. */
 #include "service_camera.h" /* service_camera lib header file. */
 #include "device_camera.h"
-#include "device_indicator.h"
 /* define   -----------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/
@@ -22,14 +21,9 @@ __attribute__((section(".ram_d2_dma_buffers"), aligned(32))) static uint8_t
 /* private  functions  ------------------------------------------------------*/
 
 /* exported functions -------------------------------------------------------*/
-platform_err_t service_camera_init(void (*frame_cb)(void))
+platform_err_t service_camera_init(void)
 {
-    platform_err_t ret = device_camera_init();
-    if(PLATFORM_ERR_OK != ret)
-    {
-        return ret;
-    }
-    return device_camera_register_frame_cb(frame_cb);
+    return device_camera_init();
 }
 
 platform_err_t service_camera_start(void)

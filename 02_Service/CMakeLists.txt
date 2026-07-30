@@ -4,10 +4,13 @@ set(SERVICE_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/service_camera.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/service_indicator.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/service_storage.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/service_osd.c
 )
 
 set(SERVICE_DEPEND_LIB
     platform_device
+    platform_mcu_interface
+    front
 )
 
 add_library(service STATIC ${SERVICE_SRC})

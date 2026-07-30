@@ -71,6 +71,12 @@ typedef struct LED_DRIVER_T
 led_driver_state_t bsp_driver_led_init(led_driver_t          *p_drv,
                                        const led_operation_t *p_ops);
 
+/**
+  * @brief            :  [bsp_led_init_by_id] init LED by board index (0 or 1).
+  *                       Internally binds g_led1_ops / g_led2_ops (Impl).
+  */
+led_driver_state_t bsp_led_init_by_id(led_driver_t *p_drv, uint8_t id);
+
 #ifdef __cplusplus
 }
 #endif

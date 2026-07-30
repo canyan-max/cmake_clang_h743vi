@@ -36,9 +36,11 @@ platform_err_t service_display_fill_screen(uint16_t color)
 
 platform_err_t service_display_show_frame(const uint8_t *p_pixels,
                                           uint16_t       x,
-                                          uint16_t       y)
+                                          uint16_t       y,
+                                          uint16_t       w,
+                                          uint16_t       h)
 {
-    return device_display_draw_image(x, y, 240U, 240U, p_pixels);
+    return device_display_draw_image(x, y, w, h, p_pixels);
 }
 
 /* end of  file -------------------------------------------------------------*/

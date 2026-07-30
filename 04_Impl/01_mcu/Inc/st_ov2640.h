@@ -21,9 +21,6 @@ extern "C"
 /* variables ----------------------------------------------------------------*/
 extern const ov2640_hw_ops_t g_ov2640_hw_ops;
 
-/* functions ----------------------------------------------------------------*/
-void st_ov2640_register_frame_cb(void (*cb)(void));
-
 #ifdef __cplusplus
 }
 #endif

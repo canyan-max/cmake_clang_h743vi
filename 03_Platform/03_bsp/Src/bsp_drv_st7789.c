@@ -11,6 +11,7 @@
 #include <stddef.h>         /* stddef lib header file. */
 #include "bsp_drv_st7789.h" /* bsp_drv_st7789 lib header file. */
 #include "front.h"          /* font table header file. */
+#include "st_lcd_spi.h"     /* Impl — board SPI ops instance */
 
 /* define   -----------------------------------------------------------------*/
 /* To avoid gcc/g++ warnings */
@@ -66,11 +67,11 @@ uint16_t color24bit_to_rgb565(uint32_t color)
                           set forward color
   * @retval           :  [ST7789_OK              = 0x00U,
                           ST7789_ERROR           = 0x01U,]
-  * @param[in]        :  [st7789_driver_t *p_drv , \
+  * @param[in]        :  [st7789_dev_t *p_drv , \
                           uint8_t cmd]
   */
 ST7789_NOT_USE_FUNCTION
-static st7789_state_t st7789_set_forward_color(st7789_driver_t *p_drv,
+static st7789_state_t st7789_set_forward_color(st7789_dev_t *p_drv,
                                                uint32_t         f_color)
 {
     if(NULL == p_drv)
@@ -87,11 +88,11 @@ static st7789_state_t st7789_set_forward_color(st7789_driver_t *p_drv,
                           set forward color
   * @retval           :  [ST7789_OK              = 0x00U,
                           ST7789_ERROR           = 0x01U,]
-  * @param[in]        :  [st7789_driver_t *p_drv , \
+  * @param[in]        :  [st7789_dev_t *p_drv , \
                           uint8_t cmd]
   */
 ST7789_NOT_USE_FUNCTION
-static st7789_state_t st7789_set_back_color(st7789_driver_t *p_drv,
+static st7789_state_t st7789_set_back_color(st7789_dev_t *p_drv,
                                             uint32_t         b_color)
 {
     if(NULL == p_drv)
@@ -106,21 +107,21 @@ static st7789_state_t st7789_set_back_color(st7789_driver_t *p_drv,
                          DC pin -> command mode, then SPI transmit 1 byte.
   * @retval           :  [ST7789_OK              = 0x00U,
                           ST7789_ERROR           = 0x01U,]
-  * @param[in]        :  [st7789_driver_t *p_drv , \
+  * @param[in]        :  [st7789_dev_t *p_drv , \
                           uint8_t cmd]
   */
-static st7789_state_t st7789_write_cmd(st7789_driver_t *p_drv, uint8_t cmd)
+static st7789_state_t st7789_write_cmd(st7789_dev_t *p_drv, uint8_t cmd)
 {
     st7789_state_t ret = ST7789_OK;
 
     /* DC pin = command mode */
-    ret = p_drv->p_spi_ops->pf_dc_pin(1U);
+    ret = p_drv->p_transport->pf_dc_pin(1U);
     if(ST7789_OK != ret)
     {
         return ret;
     }
     /* SPI transmit command byte */
-    ret = p_drv->p_spi_ops->pf_spi_transmit(&cmd, 1U);
+    ret = p_drv->p_transport->pf_spi_transmit(&cmd, 1U);
     return ret;
 }
 
@@ -129,21 +130,21 @@ static st7789_state_t st7789_write_cmd(st7789_driver_t *p_drv, uint8_t cmd)
                          DC pin -> data mode, then SPI transmit 1 byte.
   * @retval           :  [   ST7789_OK              = 0x00U,
                              ST7789_ERROR           = 0x01U,]
-  * @param[in]        :  [st7789_driver_t *p_drv , \
+  * @param[in]        :  [st7789_dev_t *p_drv , \
                           uint8_t data]
   */
-static st7789_state_t st7789_write_data(st7789_driver_t *p_drv, uint8_t data)
+static st7789_state_t st7789_write_data(st7789_dev_t *p_drv, uint8_t data)
 {
     st7789_state_t ret = ST7789_OK;
 
     /* DC pin = data mode */
-    ret = p_drv->p_spi_ops->pf_dc_pin(0U);
+    ret = p_drv->p_transport->pf_dc_pin(0U);
     if(ST7789_OK != ret)
     {
         return ret;
     }
     /* SPI transmit data byte */
-    ret = p_drv->p_spi_ops->pf_spi_transmit(&data, 1U);
+    ret = p_drv->p_transport->pf_spi_transmit(&data, 1U);
     return ret;
 }
 
@@ -152,11 +153,11 @@ static st7789_state_t st7789_write_data(st7789_driver_t *p_drv, uint8_t data)
                          DC pin → data mode, then SPI transmit buffer.
   * @retval           :  [   ST7789_OK              = 0x00U,
                              ST7789_ERROR           = 0x01U,]
-  * @param[in]        :  [st7789_driver_t *p_drv , \
+  * @param[in]        :  [st7789_dev_t *p_drv , \
                           uint8_t *p_data, uint32_t data_len]
   */
 static st7789_state_t
-st7789_write_buf(st7789_driver_t *p_drv, uint8_t *p_data, uint32_t data_len)
+st7789_write_buf(st7789_dev_t *p_drv, uint8_t *p_data, uint32_t data_len)
 {
     st7789_state_t ret = ST7789_OK;
 
@@ -166,7 +167,7 @@ st7789_write_buf(st7789_driver_t *p_drv, uint8_t *p_data, uint32_t data_len)
     }
 
     /* DC pin = data mode */
-    ret = p_drv->p_spi_ops->pf_dc_pin(0U);
+    ret = p_drv->p_transport->pf_dc_pin(0U);
     if(ST7789_OK != ret)
     {
         return ret;
@@ -177,7 +178,7 @@ st7789_write_buf(st7789_driver_t *p_drv, uint8_t *p_data, uint32_t data_len)
         uint16_t check_len = data_len >= 0xFFFFU ? 0xFFFFU : data_len;
         if(check_len > 16)
         {
-            ret = p_drv->p_spi_ops->pf_spi_transmit_with_dma(p_data, check_len);
+            ret = p_drv->p_transport->pf_spi_transmit_with_dma(p_data, check_len);
             if(ST7789_OK != ret)
             {
                 return ret;
@@ -185,7 +186,7 @@ st7789_write_buf(st7789_driver_t *p_drv, uint8_t *p_data, uint32_t data_len)
         }
         else
         {
-            ret = p_drv->p_spi_ops->pf_spi_transmit(p_data, check_len);
+            ret = p_drv->p_transport->pf_spi_transmit(p_data, check_len);
             if(ST7789_OK != ret)
             {
                 return ret;
@@ -202,11 +203,11 @@ st7789_write_buf(st7789_driver_t *p_drv, uint8_t *p_data, uint32_t data_len)
                          Write a command followed by a single data byte.
   * @retval           :  [   ST7789_OK              = 0x00U,
                              ST7789_ERROR           = 0x01U,]
-  * @param[in]        :  [st7789_driver_t *p_drv , \
+  * @param[in]        :  [st7789_dev_t *p_drv , \
                           uint8_t cmd, uint8_t data]
   */
 static st7789_state_t
-st7789_write_cmd_data(st7789_driver_t *p_drv, uint8_t cmd, uint8_t data)
+st7789_write_cmd_data(st7789_dev_t *p_drv, uint8_t cmd, uint8_t data)
 {
     st7789_state_t ret = ST7789_OK;
     ret                = st7789_write_cmd(p_drv, cmd);
@@ -223,11 +224,11 @@ st7789_write_cmd_data(st7789_driver_t *p_drv, uint8_t cmd, uint8_t data)
                          Write a command followed by a multi-byte data payload.
   * @retval           :  [   ST7789_OK              = 0x00U,
                              ST7789_ERROR           = 0x01U,]
-  * @param[in]        :  [st7789_driver_t *p_drv , \
+  * @param[in]        :  [st7789_dev_t *p_drv , \
                           uint8_t cmd , \
                           uint8_t *p_data, uint32_t data_len]
   */
-static st7789_state_t st7789_write_reg(st7789_driver_t *p_drv,
+static st7789_state_t st7789_write_reg(st7789_dev_t *p_drv,
                                        uint8_t          cmd,
                                        uint8_t         *p_data,
                                        uint32_t         data_len)
@@ -251,9 +252,9 @@ static st7789_state_t st7789_write_reg(st7789_driver_t *p_drv,
                          Initialize the ST7789 hardware (register sequence).
   * @retval           :  [   ST7789_OK              = 0x00U,
                              ST7789_ERROR           = 0x01U,]
-  * @param[in]        :  [st7789_driver_t *p_drv]
+  * @param[in]        :  [st7789_dev_t *p_drv]
   */
-static st7789_state_t st7789_init(st7789_driver_t *p_drv)
+static st7789_state_t st7789_init(st7789_dev_t *p_drv)
 {
     st7789_state_t ret = ST7789_OK;
     memset(sg_line_buf, 0, sizeof(sg_line_buf));
@@ -263,7 +264,7 @@ static st7789_state_t st7789_init(st7789_driver_t *p_drv)
     {
         return ret;
     }
-    p_drv->p_spi_ops->pf_delay_ms(ST7789_SWRESET_DELAY_MS);
+    p_drv->p_transport->pf_delay_ms(ST7789_SWRESET_DELAY_MS);
 
     /* Step 2: Sleep out */
     ret = st7789_write_cmd(p_drv, ST7789_CMD_SLPOUT);
@@ -271,7 +272,7 @@ static st7789_state_t st7789_init(st7789_driver_t *p_drv)
     {
         return ret;
     }
-    p_drv->p_spi_ops->pf_delay_ms(ST7789_SLPOUT_DELAY_MS);
+    p_drv->p_transport->pf_delay_ms(ST7789_SLPOUT_DELAY_MS);
 
     /* Step 3: Interface pixel format — RGB565 (16-bit) */
     ret = st7789_write_cmd_data(p_drv, ST7789_CMD_COLMOD, 0x05U);
@@ -384,7 +385,7 @@ static st7789_state_t st7789_init(st7789_driver_t *p_drv)
     {
         return ret;
     }
-    p_drv->p_spi_ops->pf_delay_ms(ST7789_SLPOUT_DELAY_MS);
+    p_drv->p_transport->pf_delay_ms(ST7789_SLPOUT_DELAY_MS);
 
     /* Step 17: Display on */
     ret = st7789_write_cmd(p_drv, ST7789_CMD_DISPON);
@@ -394,7 +395,7 @@ static st7789_state_t st7789_init(st7789_driver_t *p_drv)
     }
 
     /* Step 18: Backlight on */
-    ret = p_drv->p_spi_ops->pf_backlight_pin(1U);
+    ret = p_drv->p_transport->pf_backlight_pin(1U);
     if(ST7789_OK != ret)
     {
         return ret;
@@ -408,9 +409,9 @@ static st7789_state_t st7789_init(st7789_driver_t *p_drv)
                          Deinitialize the ST7789 hardware (register sequence).
   * @retval           :  [   ST7789_OK              = 0x00U,
                              ST7789_ERROR           = 0x01U,]
-  * @param[in]        :  [st7789_driver_t *p_drv]
+  * @param[in]        :  [st7789_dev_t *p_drv]
   */
-static st7789_state_t st7789_deinit(st7789_driver_t *p_drv)
+st7789_state_t st7789_deinit(st7789_dev_t *p_drv)
 {
     if(NULL == p_drv)
     {
@@ -434,12 +435,12 @@ static st7789_state_t st7789_deinit(st7789_driver_t *p_drv)
                              ST7789_BUSY            = 0x02U,
                              ST7789_TIMEOUT         = 0x03U,
                              ST7789_INVALID_PARAM   = 0x04U,]
-  * @param[in]        :  [st7789_driver_t *p_drv , \
+  * @param[in]        :  [st7789_dev_t *p_drv , \
                           uint16_t xs, uint16_t ys, \
                           uint16_t xe, uint16_t ye ]
   */
 static st7789_state_t st7789_set_window(
-    st7789_driver_t *p_drv, uint16_t xs, uint16_t ys, uint16_t xe, uint16_t ye)
+    st7789_dev_t *p_drv, uint16_t xs, uint16_t ys, uint16_t xe, uint16_t ye)
 {
     st7789_state_t ret = ST7789_OK;
 
@@ -495,10 +496,10 @@ static st7789_state_t st7789_set_window(
                              ST7789_BUSY            = 0x02U,
                              ST7789_TIMEOUT         = 0x03U,
                              ST7789_INVALID_PARAM   = 0x04U,]
-  * @param[in]        :  [st7789_driver_t *p_drv , \
+  * @param[in]        :  [st7789_dev_t *p_drv , \
                           uint16_t color ]
   */
-static st7789_state_t st7789_fill_screen(st7789_driver_t *p_drv, uint16_t color)
+st7789_state_t st7789_fill_screen(st7789_dev_t *p_drv, uint16_t color)
 {
     st7789_state_t ret = ST7789_OK;
     uint32_t       i   = 0U;
@@ -558,10 +559,10 @@ static st7789_state_t st7789_fill_screen(st7789_driver_t *p_drv, uint16_t color)
                              ST7789_BUSY            = 0x02U,
                              ST7789_TIMEOUT         = 0x03U,
                              ST7789_INVALID_PARAM   = 0x04U,]
-  * @param[in]        :  [st7789_driver_t *p_drv]
+  * @param[in]        :  [st7789_dev_t *p_drv]
   */
 ST7789_NOT_USE_FUNCTION
-static st7789_state_t st7789_clear_screen(st7789_driver_t *p_drv)
+static st7789_state_t st7789_clear_screen(st7789_dev_t *p_drv)
 {
     return st7789_fill_screen(p_drv, 0x0000U);
 }
@@ -575,12 +576,12 @@ static st7789_state_t st7789_clear_screen(st7789_driver_t *p_drv)
   * @retval           :  [ST7789_OK              = 0x00U,
                           ST7789_ERROR           = 0x01U,
                           ST7789_INVALID_PARAM   = 0x04U,]
-  * @param[in]        :  [st7789_driver_t *p_drv,
+  * @param[in]        :  [st7789_dev_t *p_drv,
                           uint16_t x, uint16_t y,
                           uint16_t w, uint16_t h,
                           uint16_t color]
   */
-static st7789_state_t st7789_fill_rect(st7789_driver_t *p_drv,
+st7789_state_t st7789_fill_rect(st7789_dev_t *p_drv,
                                        uint16_t         x,
                                        uint16_t         y,
                                        uint16_t         w,
@@ -653,11 +654,11 @@ static st7789_state_t st7789_fill_rect(st7789_driver_t *p_drv,
   * @retval           :  [ST7789_OK              = 0x00U,
                           ST7789_ERROR           = 0x01U,
                           ST7789_INVALID_PARAM   = 0x04U,]
-  * @param[in]        :  [st7789_driver_t *p_drv, const front_def_t *p_font,
+  * @param[in]        :  [st7789_dev_t *p_drv, const front_def_t *p_font,
                           uint16_t x, uint16_t y, char ch,
                           uint16_t f_color, uint16_t b_color]
   */
-static st7789_state_t st7789_draw_char(st7789_driver_t   *p_drv,
+st7789_state_t st7789_draw_char(st7789_dev_t   *p_drv,
                                        const front_def_t *p_font,
                                        uint16_t           x,
                                        uint16_t           y,
@@ -757,11 +758,11 @@ static st7789_state_t st7789_draw_char(st7789_driver_t   *p_drv,
  * @retval           :  [ST7789_OK              = 0x00U,
  *                        ST7789_ERROR           = 0x01U,
  *                        ST7789_INVALID_PARAM   = 0x04U,]
- * @param[in]        :  [st7789_driver_t *p_drv, const front_def_t *p_font,
+ * @param[in]        :  [st7789_dev_t *p_drv, const front_def_t *p_font,
  *                        uint16_t x, uint16_t y, const char *p_str,
  *                        uint16_t f_color, uint16_t b_color]
  */
-static st7789_state_t st7789_draw_string(st7789_driver_t   *p_drv,
+st7789_state_t st7789_draw_string(st7789_dev_t   *p_drv,
                                          const front_def_t *p_font,
                                          uint16_t           x,
                                          uint16_t           y,
@@ -810,11 +811,11 @@ static st7789_state_t st7789_draw_string(st7789_driver_t   *p_drv,
  * @retval           :  [ST7789_OK              = 0x00U,
  *                        ST7789_ERROR           = 0x01U,
  *                        ST7789_INVALID_PARAM   = 0x04U,]
- * @param[in]        :  [st7789_driver_t *p_drv,
+ * @param[in]        :  [st7789_dev_t *p_drv,
  *                        uint16_t x, uint16_t y, uint16_t w, uint16_t h,
  *                        const uint8_t *p_pixels]
  */
-static st7789_state_t st7789_draw_image(st7789_driver_t *p_drv,
+st7789_state_t st7789_draw_image(st7789_dev_t *p_drv,
                                         uint16_t         x,
                                         uint16_t         y,
                                         uint16_t         w,
@@ -930,11 +931,11 @@ static void st7789_dec_to_str(int32_t val, char *buf, uint8_t bufsz)
  * @brief            :  [st7789_draw_dec]
  *                       Display a signed decimal integer at (x, y).
  * @retval           :  [ST7789_OK / ST7789_ERROR / ST7789_INVALID_PARAM]
- * @param[in]        :  [st7789_driver_t *p_drv, const front_def_t *p_font,
+ * @param[in]        :  [st7789_dev_t *p_drv, const front_def_t *p_font,
  *                        uint16_t x, uint16_t y, int32_t value,
  *                        uint16_t f_color, uint16_t b_color]
  */
-static st7789_state_t st7789_draw_dec(st7789_driver_t   *p_drv,
+st7789_state_t st7789_draw_dec(st7789_dev_t   *p_drv,
                                       const front_def_t *p_font,
                                       uint16_t           x,
                                       uint16_t           y,
@@ -1012,11 +1013,11 @@ static void st7789_hex_to_str(uint32_t val, char *buf, uint8_t bufsz)
  * @brief            :  [st7789_draw_hex]
  *                       Display an unsigned 32-bit value in hex at (x, y).
  * @retval           :  [ST7789_OK / ST7789_ERROR / ST7789_INVALID_PARAM]
- * @param[in]        :  [st7789_driver_t *p_drv, const front_def_t *p_font,
+ * @param[in]        :  [st7789_dev_t *p_drv, const front_def_t *p_font,
  *                        uint16_t x, uint16_t y, uint32_t value,
  *                        uint16_t f_color, uint16_t b_color]
  */
-static st7789_state_t st7789_draw_hex(st7789_driver_t   *p_drv,
+st7789_state_t st7789_draw_hex(st7789_dev_t   *p_drv,
                                       const front_def_t *p_font,
                                       uint16_t           x,
                                       uint16_t           y,
@@ -1119,11 +1120,11 @@ st7789_float_to_str(float val, uint8_t dec, char *buf, uint8_t bufsz)
  *                       Display a float with `decimals` decimal places at (x,
  *                       y).
  * @retval           :  [ST7789_OK / ST7789_ERROR / ST7789_INVALID_PARAM]
- * @param[in]        :  [st7789_driver_t *p_drv, const front_def_t *p_font,
+ * @param[in]        :  [st7789_dev_t *p_drv, const front_def_t *p_font,
  *                        uint16_t x, uint16_t y, float value, uint8_t decimals,
  *                        uint16_t f_color, uint16_t b_color]
  */
-static st7789_state_t st7789_draw_float(st7789_driver_t   *p_drv,
+st7789_state_t st7789_draw_float(st7789_dev_t   *p_drv,
                                         const front_def_t *p_font,
                                         uint16_t           x,
                                         uint16_t           y,
@@ -1148,10 +1149,10 @@ static st7789_state_t st7789_draw_float(st7789_driver_t   *p_drv,
  *                       Write a single RGB565 pixel at (x, y).
  *                       Private helper — caller must have validated p_drv
  *                       and is_init before invoking.
- * @param[in]        :  [st7789_driver_t *p_drv,
+ * @param[in]        :  [st7789_dev_t *p_drv,
  *                        uint16_t x, uint16_t y, uint16_t color]
  */
-static st7789_state_t st7789_draw_pixel(st7789_driver_t *p_drv,
+static st7789_state_t st7789_draw_pixel(st7789_dev_t *p_drv,
                                         uint16_t         x,
                                         uint16_t         y,
                                         uint16_t         color)
@@ -1185,12 +1186,12 @@ static st7789_state_t st7789_draw_pixel(st7789_driver_t *p_drv,
  * @retval           :  [ST7789_OK              = 0x00U,
  *                        ST7789_ERROR           = 0x01U,
  *                        ST7789_INVALID_PARAM   = 0x04U,]
- * @param[in]        :  [st7789_driver_t *p_drv,
+ * @param[in]        :  [st7789_dev_t *p_drv,
  *                        uint16_t x0, uint16_t y0,
  *                        uint16_t x1, uint16_t y1,
  *                        uint16_t color]
  */
-static st7789_state_t st7789_draw_line(st7789_driver_t *p_drv,
+st7789_state_t st7789_draw_line(st7789_dev_t *p_drv,
                                        uint16_t         x0,
                                        uint16_t         y0,
                                        uint16_t         x1,
@@ -1281,70 +1282,35 @@ static st7789_state_t st7789_draw_line(st7789_driver_t *p_drv,
     return ST7789_OK;
 }
 
-/* exported functions -------------------------------------------------------*/
-/**
-  * @brief            :  [st7789_driver_instruct]
-                         Initialize the ST7789 driver with SPI ops.
-                         Binds all function pointers to the driver instance
-                         and executes the hardware init sequence.
-  * @retval           :  [   ST7789_OK              = 0x00U,
-                             ST7789_ERROR           = 0x01U,
-                             ST7789_BUSY            = 0x02U,
-                             ST7789_TIMEOUT         = 0x03U,
-                             ST7789_INVALID_PARAM   = 0x04U,]
-  * @param[in]        :  [st7789_driver_t        *p_drv,
-                            const st7789_spi_ops_t *p_ops,
-                            uint32_t f_color             ,
-                            uint32_t b_color              ]
-  */
-st7789_state_t st7789_driver_instruct(st7789_driver_t        *p_drv,
-                                      const st7789_spi_ops_t *p_ops)
+/* ---- board-level init ---------------------------------------------------- */
+
+extern const st7789_spi_ops_t g_st7789_spi_ops;
+
+st7789_state_t bsp_st7789_init(st7789_dev_t *p_drv)
 {
     st7789_state_t ret = ST7789_OK;
 
-    if((NULL == p_drv) || (NULL == p_ops))
+    if (NULL == p_drv)
     {
         return ST7789_INVALID_PARAM;
     }
 
-    if(ST7789_DRIVER_IS_INIT == p_drv->is_init)
+    if (ST7789_DRIVER_IS_INIT == p_drv->is_init)
     {
         return ST7789_OK;
     }
 
-    /* Bind SPI platform ops */
-    p_drv->p_spi_ops = p_ops;
+    /* wire board-default transport */
+    p_drv->p_transport = &g_st7789_spi_ops;
 
-    /* Bind driver function pointers */
-    p_drv->pf_deinit      = st7789_deinit;
-    p_drv->pf_fill_screen = st7789_fill_screen;
-    // p_drv->pf_clear_screen = st7789_clear_screen;
-    p_drv->pf_fill_rect   = st7789_fill_rect;
-    p_drv->pf_draw_char   = st7789_draw_char;
-    p_drv->pf_draw_string = st7789_draw_string;
-    p_drv->pf_draw_image  = st7789_draw_image;
-    p_drv->pf_draw_dec    = st7789_draw_dec;
-    p_drv->pf_draw_hex    = st7789_draw_hex;
-    p_drv->pf_draw_float  = st7789_draw_float;
-    p_drv->pf_draw_line   = st7789_draw_line;
-
-    /* Execute hardware init sequence */
+    /* execute hardware init sequence */
     ret = st7789_init(p_drv);
-    if(ST7789_OK != ret)
+    if (ST7789_OK != ret)
     {
-        p_drv->p_spi_ops      = NULL;
-        p_drv->pf_fill_screen = NULL;
-        // p_drv->pf_clear_screen = NULL;
-        p_drv->pf_fill_rect   = NULL;
-        p_drv->pf_draw_char   = NULL;
-        p_drv->pf_draw_string = NULL;
-        p_drv->pf_draw_image  = NULL;
-        p_drv->pf_draw_dec    = NULL;
-        p_drv->pf_draw_hex    = NULL;
-        p_drv->pf_draw_float  = NULL;
-        p_drv->pf_draw_line   = NULL;
+        p_drv->p_transport = NULL;
         return ret;
     }
+
     p_drv->is_init = ST7789_DRIVER_IS_INIT;
     return ST7789_OK;
 }

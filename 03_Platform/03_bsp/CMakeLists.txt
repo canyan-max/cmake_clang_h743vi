@@ -9,6 +9,7 @@ set(PLATFORM_BSP_SRC
 set(PLATFORM_BSP_DEPEND_LIB
     letter_shell
     front
+    impl_mcu
 )
 
 

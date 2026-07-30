@@ -14,9 +14,6 @@
 #include "stm32h7xx_hal.h"
 
 /* variables ----------------------------------------------------------------*/
-static void    (*s_frame_cb)(void) = NULL;
-static uint32_t *s_dma_buf         = NULL;
-static uint32_t  s_dma_buf_len     = 0U;
 
 /* Private functions --------------------------------------------------------*/
 /**
@@ -75,8 +72,6 @@ static ov2640_state_t st_read_reg(uint8_t reg, uint8_t *p_val)
 static ov2640_state_t
 st_dcmi_start_dma(uint32_t *p_buf, uint32_t len_words, ov2640_dcmi_mode_t mode)
 {
-    s_dma_buf     = p_buf;
-    s_dma_buf_len = len_words * sizeof(uint32_t);
     uint32_t hal_mode = (mode == OV2640_DCMI_SNAPSHOT) ? DCMI_MODE_SNAPSHOT
                                                        : DCMI_MODE_CONTINUOUS;
     HAL_StatusTypeDef ret = HAL_DCMI_Start_DMA(&hdcmi, hal_mode,
@@ -146,23 +141,6 @@ const ov2640_hw_ops_t g_ov2640_hw_ops = {
     .pf_power_ctrl     = st_power_ctrl,
 };
 
-/* Exported functions -------------------------------------------------------*/
-void st_ov2640_register_frame_cb(void (*cb)(void))
-{
-    s_frame_cb = cb;
-}
 
-void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
-{
-    ((void)hdcmi);
-    if(NULL != s_dma_buf)
-    {
-        SCB_InvalidateDCache_by_Addr(s_dma_buf, (int32_t)s_dma_buf_len);
-    }
-    if(NULL != s_frame_cb)
-    {
-        s_frame_cb();
-    }
-}
 
 /* end of file --------------------------------------------------------------*/

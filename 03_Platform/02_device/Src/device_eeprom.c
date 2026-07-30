@@ -11,7 +11,6 @@
 #include <stddef.h>
 #include "device_eeprom.h"
 #include "bsp_drv_at24.h"
-#include "st_iic.h"
 #include "plat_tick.h"
 #include "board_config.h"
 
@@ -22,7 +21,7 @@
 #define AT24C02_DEV_ADR         BOARD_EEPROM_DEV_ADDR
 
 /* variables ----------------------------------------------------------------*/
-static at24_driver_t g_eeprom;
+static at24_dev_t g_eeprom;
 
 /* private  functions  ------------------------------------------------------*/
 static platform_err_t write_page(uint16_t mem_adr,
@@ -34,7 +33,7 @@ static platform_err_t write_page(uint16_t mem_adr,
     {
         return PLATFORM_ERR_PARAM;
     }
-    at24_state_t ret = g_eeprom.pf_write_page(&g_eeprom, mem_adr, p_data, size,
+    at24_state_t ret = at24_write_page(&g_eeprom, mem_adr, p_data, size,
                                               timeout);
     return (AT24_OK == ret) ? PLATFORM_ERR_OK : PLATFORM_ERR_HW;
 }
@@ -42,11 +41,11 @@ static platform_err_t write_page(uint16_t mem_adr,
 /* exported functions -------------------------------------------------------*/
 platform_err_t device_eeprom_init(void)
 {
-    at24_state_t ret = at24_driver_instruct(&g_eeprom, &g_at24c02_iic_ops,
-                                            AT24C02_MAX_BYTE_ADDR,
-                                            AT24C02_PAGE_SIZE,
-                                            AT24C02_ADR_SIZE,
-                                            AT24C02_DEV_ADR);
+    at24_state_t ret = bsp_at24_init(&g_eeprom,
+                                      AT24C02_MAX_BYTE_ADDR,
+                                      AT24C02_PAGE_SIZE,
+                                      AT24C02_ADR_SIZE,
+                                      AT24C02_DEV_ADR);
     return (AT24_OK == ret) ? PLATFORM_ERR_OK : PLATFORM_ERR_HW;
 }
 
@@ -118,7 +117,7 @@ platform_err_t device_eeprom_read(uint16_t mem_adr,
     {
         return PLATFORM_ERR_PARAM;
     }
-    at24_state_t ret = g_eeprom.pf_read_bytes(&g_eeprom, mem_adr, p_data, size,
+    at24_state_t ret = at24_read_bytes(&g_eeprom, mem_adr, p_data, size,
                                               timeout);
     return (AT24_OK == ret) ? PLATFORM_ERR_OK : PLATFORM_ERR_HW;
 }

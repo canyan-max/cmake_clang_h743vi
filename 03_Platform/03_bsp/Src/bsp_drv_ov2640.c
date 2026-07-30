@@ -9,6 +9,7 @@
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>
 #include "bsp_drv_ov2640.h"
+#include "st_ov2640.h"
 
 /* Private variables --------------------------------------------------------*/
 
@@ -116,7 +117,7 @@ static const uint8_t ov2640_svga_cfg[][2] = {
  * @retval           : [OV2640_OK / OV2640_ERROR]
  * @param[in]        : [p_drv, cfg — 以 {0,0} 结尾的配置表]
  */
-static ov2640_state_t ov2640_apply_config(ov2640_driver_t *p_drv,
+static ov2640_state_t ov2640_apply_config(ov2640_dev_t *p_drv,
                                           const uint8_t (*cfg)[2])
 {
     for(uint32_t i = 0U; cfg[i][0] != 0U; i++)
@@ -143,8 +144,8 @@ static ov2640_state_t ov2640_apply_config(ov2640_driver_t *p_drv,
     return OV2640_OK;
 }
 
-static ov2640_state_t
-ov2640_drv_set_out_size(ov2640_driver_t *p_drv, uint16_t w, uint16_t h)
+ov2640_state_t
+ov2640_set_out_size(ov2640_dev_t *p_drv, uint16_t w, uint16_t h)
 {
     if(NULL == p_drv || 0U == w || 0U == h)
     {
@@ -161,8 +162,8 @@ ov2640_drv_set_out_size(ov2640_driver_t *p_drv, uint16_t w, uint16_t h)
     return OV2640_OK;
 }
 
-static ov2640_state_t
-ov2640_drv_start(ov2640_driver_t *p_drv, uint32_t *p_buf, uint32_t len_words)
+ov2640_state_t
+ov2640_start(ov2640_dev_t *p_drv, uint32_t *p_buf, uint32_t len_words)
 {
     if(NULL == p_drv || NULL == p_buf)
     {
@@ -172,7 +173,7 @@ ov2640_drv_start(ov2640_driver_t *p_drv, uint32_t *p_buf, uint32_t len_words)
                                               OV2640_DCMI_CONTINUOUS);
 }
 
-static ov2640_state_t ov2640_drv_stop(ov2640_driver_t *p_drv)
+ov2640_state_t ov2640_stop(ov2640_dev_t *p_drv)
 {
     if(NULL == p_drv)
     {
@@ -183,32 +184,29 @@ static ov2640_state_t ov2640_drv_stop(ov2640_driver_t *p_drv)
 
 /* Exported functions -------------------------------------------------------*/
 
-/**
- * @brief            : [ov2640_driver_instruct]
- * @retval           : [OV2640_OK / OV2640_ERROR / OV2640_INVALID_PARAM]
- * @param[in]        : [(ov2640_driver_t       *p_drv,
-                        const ov2640_hw_ops_t *p_hw_ops,
-                        ov2640_sensor_mode_t   sensor_mode]
- */
-ov2640_state_t ov2640_driver_instruct(ov2640_driver_t       *p_drv,
-                                      const ov2640_hw_ops_t *p_hw_ops,
-                                      ov2640_sensor_mode_t   sensor_mode)
-{
-    if(NULL == p_drv || NULL == p_hw_ops)
-    {
-        return OV2640_INVALID_PARAM;
-    }
+/* ---- board-level init ---------------------------------------------------- */
 
-    p_drv->p_hw_ops    = p_hw_ops;
-    p_drv->sensor_mode = sensor_mode;
-    // open the power and wait for 10ms
-    p_hw_ops->pf_power_ctrl(OV2640_POWER_ON);
-    p_hw_ops->pf_delay_ms(10U);
+extern const ov2640_hw_ops_t g_ov2640_hw_ops;
+
+ov2640_state_t bsp_ov2640_init(ov2640_dev_t *p_drv, ov2640_sensor_mode_t sensor_mode)
+{
+    const ov2640_hw_ops_t *ops = &g_ov2640_hw_ops;
     const uint8_t (*cfg)[2];
     uint32_t dsp_w;
     uint32_t dsp_h;
 
-    if(OV2640_MODE_CIF == sensor_mode)
+    if (NULL == p_drv) { return OV2640_INVALID_PARAM; }
+
+    /* wire transport */
+    p_drv->p_hw_ops    = ops;
+    p_drv->sensor_mode = sensor_mode;
+
+    /* power on */
+    ops->pf_power_ctrl(OV2640_POWER_ON);
+    ops->pf_delay_ms(10U);
+
+    /* select config table */
+    if (OV2640_MODE_CIF == sensor_mode)
     {
         cfg   = ov2640_svga_cfg;
         dsp_w = OV2640_SVGA_DSP_W;
@@ -221,41 +219,34 @@ ov2640_state_t ov2640_driver_instruct(ov2640_driver_t       *p_drv,
         dsp_h = OV2640_SVGA_DSP_H;
     }
 
-    /* 2. 初始软件复位 */
-    p_hw_ops->pf_write_reg(0xFFU, 0x01U);
-    p_hw_ops->pf_write_reg(0x12U, 0x80U);
-    p_hw_ops->pf_delay_ms(10U);
+    /* software reset */
+    ops->pf_write_reg(0xFFU, 0x01U);
+    ops->pf_write_reg(0x12U, 0x80U);
+    ops->pf_delay_ms(10U);
 
-    /* 3. 写入配置表（表内含第二次复位） */
-    if(OV2640_OK != ov2640_apply_config(p_drv, cfg))
-    {
-        return OV2640_ERROR;
-    }
-    p_hw_ops->pf_delay_ms(10U);
+    /* write config table */
+    if (OV2640_OK != ov2640_apply_config(p_drv, cfg)) { return OV2640_ERROR; }
+    ops->pf_delay_ms(10U);
 
-    /* 4. 设置 DSP 输出尺寸 */
-    if(OV2640_OK !=
-       ov2640_drv_set_out_size(p_drv, (uint16_t)dsp_w, (uint16_t)dsp_h))
+    /* set DSP output size */
+    if (OV2640_OK != ov2640_set_out_size(p_drv, (uint16_t)dsp_w, (uint16_t)dsp_h))
     {
         return OV2640_ERROR;
     }
 
-    /* 5. 配置 DCMI 裁剪窗口：从 DSP 输出截取 OUT_W × OUT_H */
-    uint32_t x0   = dsp_w - OV2640_OUT_W;
-    uint32_t y0   = (dsp_h - OV2640_OUT_H) / 2U - 1U;
-    uint32_t xcnt = OV2640_OUT_W * 2U - 1U; /* RGB565：每像素 2 字节 */
-    uint32_t ycnt = OV2640_OUT_H - 1U;
-    if(p_hw_ops->pf_config_crop(x0, y0, xcnt, ycnt) != OV2640_OK)
+    /* configure DCMI crop window */
     {
-        return OV2640_ERROR;
+        uint32_t x0   = dsp_w - OV2640_OUT_W;
+        uint32_t y0   = (dsp_h - OV2640_OUT_H) / 2U - 1U;
+        uint32_t xcnt = OV2640_OUT_W * 2U - 1U;
+        uint32_t ycnt = OV2640_OUT_H - 1U;
+        if (ops->pf_config_crop(x0, y0, xcnt, ycnt) != OV2640_OK)
+        {
+            return OV2640_ERROR;
+        }
     }
 
-    /* 6. 绑定驱动函数指针 */
-    p_drv->pf_start        = ov2640_drv_start;
-    p_drv->pf_stop         = ov2640_drv_stop;
-    p_drv->pf_set_out_size = ov2640_drv_set_out_size;
-    p_drv->is_init         = OV2640_DRIVER_IS_INIT;
-
+    p_drv->is_init = OV2640_DRIVER_IS_INIT;
     return OV2640_OK;
 }
 

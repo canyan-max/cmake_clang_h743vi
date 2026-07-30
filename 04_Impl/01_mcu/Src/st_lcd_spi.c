@@ -83,9 +83,9 @@ static st7789_state_t st_spi_transmit_with_dma(uint8_t *p_data, uint32_t lenth)
     {
         return ST7789_ERROR;
     }
-    // while(HAL_SPI_STATE_READY != HAL_SPI_GetState(&hspi4))
-    // {
-    // }
+    while(HAL_SPI_STATE_READY != HAL_SPI_GetState(&hspi4))
+    {
+    }
     return ST7789_OK;
 }
 
