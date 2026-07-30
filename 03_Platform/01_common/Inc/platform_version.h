@@ -1,38 +1,27 @@
-/******************************************************************************
- * Copyright (C) 2024 EternalChip, Inc.(Gmbh) or its affiliates.
- *
- * All Rights Reserved.
- *
- * @file platform_version.h
- *
- * @par dependencies
- * - platform_error.h
- * - version_config.h
- *
- * @brief Provide a typed platform version information interface.
- *
- * Processing flow:
- *
- * 1. Reads firmware version macros from version_config.h.
- * 2. Exposes a stable platform_version_t snapshot.
- * 3. Lets boot and diagnosis code query version information uniformly.
- *
- * @version V1.0 2026-06-06
- *
- * @note 1 tab == 4 spaces!
- *
- *****************************************************************************/
+/**
+ ******************************************************************************
+ *@file               :   platform_version.h
+ *@brief              :   Provide the HAL APIs of description.
+ *@version            :   V1.0 
+ *@note               :   1 tab == 4 spaces!  2026
+ ******************************************************************************
+ */
+/* Define to prevent recursive inclusion ------------------------------------*/
+#ifndef PLATFORM_VERSION_H
+#define PLATFORM_VERSION_H
 
-#ifndef __PLATFORM_VERSION_H__
-#define __PLATFORM_VERSION_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-//******************************** Includes *********************************//
-
+/* Includes -----------------------------------------------------------------*/
+#include <stdint.h>                               /* stdint lib header file. */
+#include <stddef.h>                               /* stdint lib header file. */
 #include "platform_error.h"
 #include "version_config.h"
+/* define -------------------------------------------------------------------*/
 
-//******************************** Declaring ********************************//
-
+/* typedef ------------------------------------------------------------------*/
 typedef struct
 {
     uint8_t major;
@@ -45,8 +34,19 @@ typedef struct
     const char *p_build_date;
     const char *p_build_time;
 } platform_version_t;
+/* exported types -----------------------------------------------------------*/
 
+/* variables ----------------------------------------------------------------*/
+
+/* functions ----------------------------------------------------------------*/
 platform_err_t platform_version_get(platform_version_t *p_out);
 const char *platform_version_get_string(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+
+
 
 #endif /* __PLATFORM_VERSION_H__ */

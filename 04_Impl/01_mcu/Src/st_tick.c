@@ -1,52 +1,38 @@
 /**
  ******************************************************************************
- *@file               :   platform_version.c
+ *@file               :   st_tick.c
  *@brief              :   Provide the HAL APIs of description.
- *@version            :   V1.0 
+ *@version            :   V1.0
  *@note               :   1 tab == 4 spaces!  2026
  ******************************************************************************
  */
 
 /* Includes -----------------------------------------------------------------*/
-#include <stddef.h>       /* stdint lib header file. */
-#include "platform_version.h"
-
+#include <stddef.h> /* stdint lib header file. */
+#include "stm32h7xx_hal.h"
+#include "plat_tick.h"
 /* define   -----------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/
 
 /* variables ----------------------------------------------------------------*/
-static const platform_version_t g_platform_version = {
-    (uint8_t)PLATFORM_VERSION_MAJOR,
-    (uint8_t)PLATFORM_VERSION_MINOR,
-    (uint8_t)PLATFORM_VERSION_PATCH,
-    (uint8_t)PLATFORM_VERSION_BUILD,
-    PLATFORM_PRODUCT_NAME,
-    PLATFORM_VERSION_STRING,
-    PLATFORM_GIT_HASH,
-    PLATFORM_BUILD_DATE,
-    PLATFORM_BUILD_TIME
-};
+
 /* private  functions  ------------------------------------------------------*/
 
 /* exported functions -------------------------------------------------------*/
-platform_err_t platform_version_get(platform_version_t *p_out)
+uint32_t plat_tick_get_ms(void)
 {
-    if (NULL == p_out)
-    {
-        return PLATFORM_ERR_PARAM;
-    }
-
-    *p_out = g_platform_version;
-
-    return PLATFORM_ERR_OK;
+    return (uint32_t)HAL_GetTick();
 }
 
-const char *platform_version_get_string(void)
+void plat_delay_ms(uint32_t ms)
 {
-    return g_platform_version.p_version_string;
+    if(0u == ms)
+    {
+        return;
+    }
+
+    HAL_Delay(ms);
 }
 
 /* end of  file -------------------------------------------------------------*/
-
-

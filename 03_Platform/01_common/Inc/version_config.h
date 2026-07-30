@@ -1,24 +1,20 @@
-/******************************************************************************
- * Copyright (C) 2024 EternalChip, Inc.(Gmbh) or its affiliates.
- *
- * All Rights Reserved.
- *
- * @file version_config.h
- *
- * @brief Firmware version configuration macros.
- *        Edit these macros before each release build.
- *
- * @version V1.0 2026-07-29
- *
- * @note 1 tab == 4 spaces!
- *
- *****************************************************************************/
+/**
+ ******************************************************************************
+ *@file               :   version_config.h
+ *@brief              :   Provide the HAL APIs of description.
+ *@version            :   V1.0 
+ *@note               :   1 tab == 4 spaces!  2026
+ ******************************************************************************
+ */
+/* Define to prevent recursive inclusion ------------------------------------*/
+#ifndef VERSION_CONFIG_H
+#define VERSION_CONFIG_H
 
-#ifndef __VERSION_CONFIG_H__
-#define __VERSION_CONFIG_H__
-
-//******************************** Version Macros ***************************//
-
+#ifdef __cplusplus
+extern "C" {
+#endif
+/* Includes -----------------------------------------------------------------*/
+/* define -------------------------------------------------------------------*/
 #define PLATFORM_VERSION_MAJOR   1U
 #define PLATFORM_VERSION_MINOR   0U
 #define PLATFORM_VERSION_PATCH   0U
@@ -29,5 +25,17 @@
 #define PLATFORM_GIT_HASH        "unknown"
 #define PLATFORM_BUILD_DATE      __DATE__
 #define PLATFORM_BUILD_TIME      __TIME__
+/* typedef ------------------------------------------------------------------*/
+
+/* exported types -----------------------------------------------------------*/
+
+/* variables ----------------------------------------------------------------*/
+
+/* functions ----------------------------------------------------------------*/
+
+#ifdef __cplusplus
+}
+#endif // end of __cplusplus
+
 
 #endif /* __VERSION_CONFIG_H__ */

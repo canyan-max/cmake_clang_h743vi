@@ -4,9 +4,11 @@ set(IMPL_MCU_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/st_iic.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/st_lcd_spi.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/st_ov2640.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/st_tick.c
 )
 set(IMPL_MCU_DEPEND_LIB
     platform_bsp
+    platform_mcu_interface
     stm32cubemx
     letter_shell
     dwt

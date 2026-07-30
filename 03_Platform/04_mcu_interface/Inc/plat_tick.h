@@ -1,46 +1,36 @@
 /**
  ******************************************************************************
- *@file               :   device_indicator.h
+ *@file               :   plat_tick.h
  *@brief              :   Provide the HAL APIs of description.
- *@version            :   V1.0
+ *@version            :   V1.0 
  *@note               :   1 tab == 4 spaces!  2026
  ******************************************************************************
  */
 /* Define to prevent recursive inclusion ------------------------------------*/
-#ifndef DEVICE_INDICATOR_H
-#define DEVICE_INDICATOR_H
+#ifndef PLAT_TICK_H
+#define PLAT_TICK_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /* Includes -----------------------------------------------------------------*/
-#include <stdint.h> /* stdint lib header file. */
-#include <stddef.h> /* stdint lib header file. */
-#include "platform_error.h"
+#include <stdint.h>                               /* stdint lib header file. */
+#include <stddef.h>                               /* stdint lib header file. */
 /* define -------------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/
-typedef enum
-{
-    DEVICE_INDICATOR_1 = 0,
-    DEVICE_INDICATOR_2 = 1,
-    DEVICE_INDICATOR_NUM
-} device_indicator_id_t;
 
 /* exported types -----------------------------------------------------------*/
 
 /* variables ----------------------------------------------------------------*/
 
 /* functions ----------------------------------------------------------------*/
-platform_err_t device_indicator_init(device_indicator_id_t id,
-                                     const void           *p_led_ops);
-platform_err_t device_indicator_on(device_indicator_id_t id);
-platform_err_t device_indicator_off(device_indicator_id_t id);
-platform_err_t device_indicator_blink(device_indicator_id_t id);
+uint32_t plat_tick_get_ms(void);
+void plat_delay_ms(uint32_t ms);
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* DEVICE_INDICATOR_H */
+#endif /* PLAT_TICK_H */
+
