@@ -1,20 +1,22 @@
 /**
  ******************************************************************************
  *@file               :   st_ov2640.c
- * 
  *@brief              :   Provide the HAL APIs of description.
- * 
  *@version            :   V1.0 
- * 
  *@note               :   1 tab == 4 spaces!  2026
- * 
- *@pardependencies    :   st_ov2640.c
  ******************************************************************************
  */
 /* Includes -----------------------------------------------------------------*/
 #include "st_ov2640.h"
+#include "board_config.h"
 #include "i2c.h"
 #include "dcmi.h"
+#include "stm32h7xx_hal.h"
+
+/* variables ----------------------------------------------------------------*/
+static void    (*s_frame_cb)(void) = NULL;
+static uint32_t *s_dma_buf         = NULL;
+static uint32_t  s_dma_buf_len     = 0U;
 
 /* Private functions --------------------------------------------------------*/
 /**
@@ -29,9 +31,9 @@
 static ov2640_state_t st_write_reg(uint8_t reg, uint8_t val)
 {
     uint8_t           buf[2] = {reg, val};
-    HAL_StatusTypeDef ret    = HAL_I2C_Master_Transmit(&hi2c1, OV2640_I2C_ADDR,
+    HAL_StatusTypeDef ret    = HAL_I2C_Master_Transmit(&hi2c1, BOARD_CAM_I2C_ADDR,
                                                        buf, 2U,
-                                                       OV2640_I2C_TIMEOUT);
+                                                       BOARD_CAM_I2C_TIMEOUT);
     return (ret == HAL_OK) ? OV2640_OK : OV2640_ERROR;
 }
 /**
@@ -49,15 +51,15 @@ static ov2640_state_t st_read_reg(uint8_t reg, uint8_t *p_val)
     {
         return OV2640_INVALID_PARAM;
     }
-    HAL_StatusTypeDef ret = HAL_I2C_Master_Transmit(&hi2c1, OV2640_I2C_ADDR,
+    HAL_StatusTypeDef ret = HAL_I2C_Master_Transmit(&hi2c1, BOARD_CAM_I2C_ADDR,
                                                     &reg, 1U,
-                                                    OV2640_I2C_TIMEOUT);
+                                                    BOARD_CAM_I2C_TIMEOUT);
     if(ret != HAL_OK)
     {
         return OV2640_ERROR;
     }
-    ret = HAL_I2C_Master_Receive(&hi2c1, OV2640_I2C_ADDR, p_val, 1U,
-                                 OV2640_I2C_TIMEOUT);
+    ret = HAL_I2C_Master_Receive(&hi2c1, BOARD_CAM_I2C_ADDR, p_val, 1U,
+                                 BOARD_CAM_I2C_TIMEOUT);
     return (ret == HAL_OK) ? OV2640_OK : OV2640_ERROR;
 }
 /**
@@ -73,6 +75,8 @@ static ov2640_state_t st_read_reg(uint8_t reg, uint8_t *p_val)
 static ov2640_state_t
 st_dcmi_start_dma(uint32_t *p_buf, uint32_t len_words, ov2640_dcmi_mode_t mode)
 {
+    s_dma_buf     = p_buf;
+    s_dma_buf_len = len_words * sizeof(uint32_t);
     uint32_t hal_mode = (mode == OV2640_DCMI_SNAPSHOT) ? DCMI_MODE_SNAPSHOT
                                                        : DCMI_MODE_CONTINUOUS;
     HAL_StatusTypeDef ret = HAL_DCMI_Start_DMA(&hdcmi, hal_mode,
@@ -141,5 +145,24 @@ const ov2640_hw_ops_t g_ov2640_hw_ops = {
     .pf_delay_ms       = st_delay_ms,
     .pf_power_ctrl     = st_power_ctrl,
 };
+
+/* Exported functions -------------------------------------------------------*/
+void st_ov2640_register_frame_cb(void (*cb)(void))
+{
+    s_frame_cb = cb;
+}
+
+void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
+{
+    ((void)hdcmi);
+    if(NULL != s_dma_buf)
+    {
+        SCB_InvalidateDCache_by_Addr(s_dma_buf, (int32_t)s_dma_buf_len);
+    }
+    if(NULL != s_frame_cb)
+    {
+        s_frame_cb();
+    }
+}
 
 /* end of file --------------------------------------------------------------*/

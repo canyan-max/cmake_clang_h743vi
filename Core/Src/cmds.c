@@ -22,7 +22,7 @@
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>         /* stdint lib header file */
 #include "shell.h"          /* shell lib header file */
-#include "device_storage.h" /* device_storage lib header file. */
+#include "device_eeprom.h"  /* device_eeprom lib header file. */
 #include "main.h"
 #include "log.h"
 #include "core_dwt.h" /* dwt header file. */
@@ -40,7 +40,7 @@ int write_cross_i2c1(uint8_t adr, uint8_t w_code, uint8_t size)
 {
     uint32_t time    = get_dwt_us();
     uint8_t  arrs[5] = {w_code, w_code + 1, w_code + 2, w_code + 3, w_code + 4};
-    uint8_t  ret = device_storage_write_cross_page(adr, arrs, size, 2);
+    uint8_t  ret = device_eeprom_write(adr, arrs, size, 2);
     time         = get_dwt_us() - time;
     logInfo("write_cross_i2c1 time %d us", time);
     return ret;
@@ -55,7 +55,7 @@ int write_i2c1(uint8_t adr, uint8_t w_code, uint8_t size)
 {
     uint32_t time    = get_dwt_us();
     uint8_t  arrs[5] = {w_code, w_code + 1, w_code + 2, w_code + 3, w_code + 4};
-    uint8_t  ret = device_storage_write_page(adr, arrs, size, 2);
+    uint8_t  ret = device_eeprom_write(adr, arrs, size, 2);
     time         = get_dwt_us() - time;
     logInfo("write_page time %d us", time);
     return ret;
@@ -70,7 +70,7 @@ int read_i2c1(uint8_t adr)
 {
     uint8_t  r_code = 0;
     uint32_t time   = get_dwt_us();
-    device_storage_read(adr, &r_code, 1, 1);
+    device_eeprom_read(adr, &r_code, 1U, 1U);
     time = get_dwt_us() - time;
     logInfo("read_byte time %d us", time);
     return r_code;

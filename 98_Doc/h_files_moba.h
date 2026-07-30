@@ -1,35 +1,33 @@
 /**
  ******************************************************************************
- *@file               :   st_lcd_spi.h
- *@brief              :   Provide the HAL APIs of description.
- *@version            :   V1.0
- *@note               :   1 tab == 4 spaces!  2026
+ *@file               :   {FileName}        
+ *@brief              :   Provide the HAL APIs of .
+ *@version            :   V1.0 
+ *@note               :   1 tab == 4 spaces!      
  ******************************************************************************
  */
+ 
 /* Define to prevent recursive inclusion ------------------------------------*/
-#ifndef ST_LCD_SPI_H
-#define ST_LCD_SPI_H
+{ifndef}                    /*end of {FileName}*/
 
 #ifdef __cplusplus
-extern "C"
+extern "C" 
 {
 #endif
 /* Includes -----------------------------------------------------------------*/
-#include <stdint.h> /* stdint lib header file. */
-
+#include <stdint.h>                                /* stdint lib header file */
+#include <stddef.h>                                /* stddef lib header file */
 /* define -------------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/
-typedef struct ST7789_SPI_OPS_T st7789_spi_ops_t;
-
-/* Exported types -----------------------------------------------------------*/
 
 /* variables ----------------------------------------------------------------*/
-extern const st7789_spi_ops_t g_st7789_spi_ops;
 
-/* functions ----------------------------------------------------------------*/
+/* function  ----------------------------------------------------------------*/
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* ST_LCD_SPI_H */
+/* end of file --------------------------------------------------------------*/
+

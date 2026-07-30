@@ -1,7 +1,7 @@
 # ---------- platform_device ----------
 set(PLATFORM_DEVICE_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/device_display.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Src/device_storage.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/device_eeprom.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/device_indicator.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/device_camera.c
 )

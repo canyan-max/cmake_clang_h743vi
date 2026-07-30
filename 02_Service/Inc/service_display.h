@@ -16,7 +16,8 @@ extern "C"
 #endif
 
 /* Includes -----------------------------------------------------------------*/
-#include <stdint.h> /* stdint lib header file. */
+#include <stdint.h>
+#include "platform_error.h"
 /* define -------------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/
@@ -26,10 +27,11 @@ extern "C"
 /* variables ----------------------------------------------------------------*/
 
 /* functions ----------------------------------------------------------------*/
-void service_display_init(void);
-void service_display_fill_screen(uint16_t color);
-void service_display_show_frame(
-    const uint8_t *p_pixels, uint16_t x, uint16_t y, uint16_t w, uint16_t h);
+platform_err_t service_display_init(void);
+platform_err_t service_display_fill_screen(uint16_t color);
+platform_err_t service_display_show_frame(const uint8_t *p_pixels,
+                                          uint16_t       x,
+                                          uint16_t       y);
 
 #ifdef __cplusplus
 }

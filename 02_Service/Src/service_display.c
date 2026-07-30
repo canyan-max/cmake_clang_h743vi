@@ -8,8 +8,7 @@
  */
 
 /* Includes -----------------------------------------------------------------*/
-#include <stddef.h>          /* stdint lib header file. */
-#include "service_display.h" /* service_display lib header file. */
+#include "service_display.h"
 #include "device_display.h"
 /* define   -----------------------------------------------------------------*/
 
@@ -20,21 +19,26 @@
 /* private  functions  ------------------------------------------------------*/
 
 /* exported functions -------------------------------------------------------*/
-void service_display_init(void)
+platform_err_t service_display_init(void)
 {
-    device_display_init();
-    device_display_fill_screen(0x0000U);
+    platform_err_t ret = device_display_init();
+    if(PLATFORM_ERR_OK != ret)
+    {
+        return ret;
+    }
+    return device_display_fill_screen(0x0000U);
 }
 
-void service_display_fill_screen(uint16_t color)
+platform_err_t service_display_fill_screen(uint16_t color)
 {
-    device_display_fill_screen(color);
+    return device_display_fill_screen(color);
 }
 
-void service_display_show_frame(
-    const uint8_t *p_pixels, uint16_t x, uint16_t y, uint16_t w, uint16_t h)
+platform_err_t service_display_show_frame(const uint8_t *p_pixels,
+                                          uint16_t       x,
+                                          uint16_t       y)
 {
-    device_display_draw_image(x, y, w, h, p_pixels);
+    return device_display_draw_image(x, y, 240U, 240U, p_pixels);
 }
 
 /* end of  file -------------------------------------------------------------*/

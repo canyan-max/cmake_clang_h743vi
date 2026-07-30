@@ -15,8 +15,8 @@ extern "C" {
 #endif
 
 /* Includes -----------------------------------------------------------------*/
-#include <stdint.h>                               /* stdint lib header file. */
-#include <stddef.h>                               /* stdint lib header file. */
+#include <stdint.h>
+#include "platform_error.h"
 /* define -------------------------------------------------------------------*/
 #define SERVICE_CAMERA_BUF_SIZE  (115200U)
 /* typedef ------------------------------------------------------------------*/
@@ -26,10 +26,10 @@ extern "C" {
 /* variables ----------------------------------------------------------------*/
 
 /* functions ----------------------------------------------------------------*/
-void         service_camera_init(void);
-void         service_camera_start(void);
-uint8_t     *service_camera_get_buffer(void);
-uint32_t     service_camera_get_buffer_len(void);
+platform_err_t service_camera_init(void (*frame_cb)(void));
+platform_err_t service_camera_start(void);
+uint8_t       *service_camera_get_buffer(void);
+uint32_t       service_camera_get_buffer_len(void);
 
 #ifdef __cplusplus
 }

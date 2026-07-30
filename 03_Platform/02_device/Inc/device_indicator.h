@@ -34,8 +34,7 @@ typedef enum
 /* variables ----------------------------------------------------------------*/
 
 /* functions ----------------------------------------------------------------*/
-platform_err_t device_indicator_init(device_indicator_id_t id,
-                                     const void           *p_led_ops);
+platform_err_t device_indicator_init(device_indicator_id_t id);
 platform_err_t device_indicator_on(device_indicator_id_t id);
 platform_err_t device_indicator_off(device_indicator_id_t id);
 platform_err_t device_indicator_blink(device_indicator_id_t id);

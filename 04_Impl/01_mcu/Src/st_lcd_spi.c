@@ -1,22 +1,17 @@
 /**
  ******************************************************************************
  *@file               :   st_lcd_spi.c
- * 
  *@brief              :   Provide the HAL APIs of description.
- * 
  *@version            :   V1.0 
- * 
  *@note               :   1 tab == 4 spaces!  2026
- * 
- *@pardependencies    :   st_lcd_spi.c
  ******************************************************************************
  */
 /* Includes -----------------------------------------------------------------*/
 #include "stdint.h"         /* stdint lib header file. */
+#include "stddef.h"         /* stddef lib header file. */
 #include "st_lcd_spi.h"     /* st_lcd_spi lib header file. */
 #include "bsp_drv_st7789.h" /* bsp_drv_st7789 lib header file. */
 #include "spi.h"            /* spi lib header file. */
-#include "stddef.h"         /* stddef lib header file. */
 /* define   -----------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/

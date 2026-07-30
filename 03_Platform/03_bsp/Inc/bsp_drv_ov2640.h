@@ -1,11 +1,8 @@
 /**
  ******************************************************************************
  *@file               :   bsp_drv_ov2640.h
- *
  *@brief              :   Provide the HAL APIs of description.
- *
  *@version            :   V1.0
- *
  *@note               :   1 tab == 4 spaces!  2026
  ******************************************************************************
  */
@@ -23,9 +20,6 @@ extern "C"
 /* define -------------------------------------------------------------------*/
 #define OV2640_DRIVER_IS_INIT   (0x01U)
 #define OV2640_DRIVER_NOT_INIT  (0x00U)
-
-#define OV2640_I2C_ADDR         (0x60U)
-#define OV2640_I2C_TIMEOUT      (100U)
 
 /* SVGA mode: sensor 800×600 → DSP 400×300 → DCMI crop 240×240, ~29fps */
 #define OV2640_SVGA_DSP_W       (400U)

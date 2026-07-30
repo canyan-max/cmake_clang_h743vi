@@ -26,16 +26,15 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include <alloca.h>
 #include <stdint.h>
-#include <stdio.h>
 #include "shell_port.h"
 #include "log.h"
-#include "kfifo.h"          /* kfifo lib header file. */
-#include "core_dwt.h"       /* dwt header file. */
-#include "service_display.h" /* service_display header file. */
-#include "service_camera.h"  /* service_camera header file. */
-#include "bsp_drv_ov2640.h"  /* OV2640_OUT_W/H for frame display */
+#include "kfifo.h"            /* kfifo lib header file. */
+#include "core_dwt.h"         /* dwt header file. */
+#include "service_display.h"   /* service_display header file. */
+#include "service_camera.h"    /* service_camera header file. */
+#include "service_indicator.h" /* service_indicator header file. */
+#include "service_storage.h"   /* service_storage header file. */
 // #define MINIMP3_NO_SIMD
 #define MINIMP3_FLOAT_OUTPUT
 #define MINIMP3_IMPLEMENTATION
@@ -64,18 +63,19 @@ __attribute__((section(".ram_dma_buffers"),
                aligned(8))) uint8_t ucHeap[configTOTAL_HEAP_SIZE];
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
-osThreadId_t defaultTaskHandle;
+osThreadId_t         defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
-  .name = "defaultTask",
-  .stack_size = 8192 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+    .name       = "defaultTask",
+    .stack_size = 8192 * 4,
+    .priority   = (osPriority_t)osPriorityNormal,
 };
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-uint8_t          k_fifo_buffer[16];
-kfifo_t          g_kfifo;
+uint8_t k_fifo_buffer[16];
+kfifo_t g_kfifo;
 
+static void on_frame_ready(void);
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -83,45 +83,46 @@ void StartDefaultTask(void *argument);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
-  * @brief  FreeRTOS initialization
-  * @param  None
-  * @retval None
-  */
-void MX_FREERTOS_Init(void) {
-  /* USER CODE BEGIN Init */
+ * @brief  FreeRTOS initialization
+ * @param  None
+ * @retval None
+ */
+void MX_FREERTOS_Init(void)
+{
+    /* USER CODE BEGIN Init */
     dwt_init();
-  /* USER CODE END Init */
+    /* USER CODE END Init */
 
-  /* USER CODE BEGIN RTOS_MUTEX */
+    /* USER CODE BEGIN RTOS_MUTEX */
     /* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
+    /* USER CODE END RTOS_MUTEX */
 
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
+    /* USER CODE BEGIN RTOS_SEMAPHORES */
     /* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
+    /* USER CODE END RTOS_SEMAPHORES */
 
-  /* USER CODE BEGIN RTOS_TIMERS */
+    /* USER CODE BEGIN RTOS_TIMERS */
     /* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
+    /* USER CODE END RTOS_TIMERS */
 
-  /* USER CODE BEGIN RTOS_QUEUES */
+    /* USER CODE BEGIN RTOS_QUEUES */
     /* add queues, ... */
 
-  /* USER CODE END RTOS_QUEUES */
+    /* USER CODE END RTOS_QUEUES */
 
-  /* Create the thread(s) */
-  /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+    /* Create the thread(s) */
+    /* creation of defaultTask */
+    defaultTaskHandle = osThreadNew(StartDefaultTask, NULL,
+                                    &defaultTask_attributes);
 
-  /* USER CODE BEGIN RTOS_THREADS */
+    /* USER CODE BEGIN RTOS_THREADS */
     /* add threads, ... */
     userShellInit();
-  /* USER CODE END RTOS_THREADS */
+    /* USER CODE END RTOS_THREADS */
 
-  /* USER CODE BEGIN RTOS_EVENTS */
+    /* USER CODE BEGIN RTOS_EVENTS */
     /* add events, ... */
-  /* USER CODE END RTOS_EVENTS */
-
+    /* USER CODE END RTOS_EVENTS */
 }
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -133,13 +134,30 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void *argument)
 {
-  /* USER CODE BEGIN StartDefaultTask */
+    /* USER CODE BEGIN StartDefaultTask */
     portTASK_USES_FLOATING_POINT();
     ((void)argument);
 
-    service_display_init();
-    service_camera_init();
-    service_camera_start();
+    if(PLATFORM_ERR_OK != service_indicator_init())
+    {
+        logError("indicator init failed");
+    }
+    if(PLATFORM_ERR_OK != service_storage_init())
+    {
+        logError("storage init failed");
+    }
+    if(PLATFORM_ERR_OK != service_display_init())
+    {
+        logError("display init failed");
+    }
+    if(PLATFORM_ERR_OK != service_camera_init(on_frame_ready))
+    {
+        logError("camera init failed");
+    }
+    if(PLATFORM_ERR_OK != service_camera_start())
+    {
+        logError("camera start failed");
+    }
 
     defaultTaskHandle = xTaskGetCurrentTaskHandle();
     logInfo("run ..");
@@ -148,24 +166,23 @@ void StartDefaultTask(void *argument)
     for(;;)
     {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-        service_display_show_frame(service_camera_get_buffer(),
-                                   0U, 0U, OV2640_OUT_W, OV2640_OUT_H);
-        logInfo("run ..");
+        service_display_show_frame(service_camera_get_buffer(), 0, 0);
+        service_indicator_blink(DEVICE_INDICATOR_1);
+        service_indicator_blink(DEVICE_INDICATOR_2);
+        vTaskDelay(10);
+        // logInfo("run ..");
     }
-  /* USER CODE END StartDefaultTask */
+    /* USER CODE END StartDefaultTask */
 }
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 
-void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
+static void on_frame_ready(void)
 {
-    ((void)hdcmi);
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    SCB_InvalidateDCache_by_Addr((uint32_t *)service_camera_get_buffer(),
-                                 service_camera_get_buffer_len());
     vTaskNotifyGiveFromISR(defaultTaskHandle, &xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
-/* USER CODE END Application */
 
+/* USER CODE END Application */

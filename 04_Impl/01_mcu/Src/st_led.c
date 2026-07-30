@@ -1,21 +1,17 @@
 /**
  ******************************************************************************
  *@file               :   st_led.c
- * 
  *@brief              :   Provide the HAL APIs of description.
- * 
  *@version            :   V1.0 
- * 
  *@note               :   1 tab == 4 spaces!  2026
- * 
- *@pardependencies    :   st_led.c
  ******************************************************************************
  */
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>      /* stdint lib header file. */
-#include "st_led.h"      /* st_led lib header file. */
-#include "bsp_drv_led.h" /* bsp_drv_led lib header file. */
-#include "gpio.h"        /* gpio lib header file. */
+#include "st_led.h"
+#include "bsp_drv_led.h"
+#include "board_config.h"
+#include "gpio.h"
 /* define   -----------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/
@@ -28,7 +24,7 @@ static led_driver_state_t st_led_blink(led_driver_t *self);
 static led_driver_state_t st_led_deinit(led_driver_t *self);
 const led_operation_t     g_led1_ops = {.p_port        = (void *)LED1_GPIO_Port,
                                         .pin           = LED1_Pin,
-                                        .led_on_level  = LED_ON_LEVEL_HIGH,
+                                        .led_on_level  = BOARD_LED1_ON_LEVEL,
                                         .pf_led_init   = st_led_init,
                                         .pf_led_on     = st_led_on,
                                         .pf_led_off    = st_led_off,
@@ -36,7 +32,7 @@ const led_operation_t     g_led1_ops = {.p_port        = (void *)LED1_GPIO_Port,
                                         .pf_led_deinit = st_led_deinit};
 const led_operation_t     g_led2_ops = {.p_port        = (void *)LED2_GPIO_Port,
                                         .pin           = LED2_Pin,
-                                        .led_on_level  = LED_ON_LEVEL_HIGH,
+                                        .led_on_level  = BOARD_LED2_ON_LEVEL,
                                         .pf_led_init   = st_led_init,
                                         .pf_led_on     = st_led_on,
                                         .pf_led_off    = st_led_off,

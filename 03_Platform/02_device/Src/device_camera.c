@@ -18,6 +18,7 @@
 
 /* variables ----------------------------------------------------------------*/
 static ov2640_driver_t g_cam;
+extern const ov2640_hw_ops_t g_ov2640_hw_ops;
 /* private  functions  ------------------------------------------------------*/
 
 /* exported functions -------------------------------------------------------*/
@@ -52,4 +53,10 @@ platform_err_t device_camera_stop(void)
     ov2640_state_t ret = g_cam.pf_stop(&g_cam);
     return (OV2640_OK == ret) ? PLATFORM_ERR_OK : PLATFORM_ERR_HW;
 }
+platform_err_t device_camera_register_frame_cb(void (*cb)(void))
+{
+    st_ov2640_register_frame_cb(cb);
+    return PLATFORM_ERR_OK;
+}
+
 /* end of  file -------------------------------------------------------------*/

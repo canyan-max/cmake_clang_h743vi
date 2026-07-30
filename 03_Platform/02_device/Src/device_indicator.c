@@ -11,12 +11,16 @@
 #include <stddef.h>           /* stdint lib header file. */
 #include "device_indicator.h" /* device_indicator lib header file. */
 #include "bsp_drv_led.h"
+#include "st_led.h"
 /* define   -----------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/
 
 /* variables ----------------------------------------------------------------*/
-static led_driver_t g_leds[DEVICE_INDICATOR_NUM];
+static led_driver_t g_leds[DEVICE_INDICATOR_NUM] = {
+    [DEVICE_INDICATOR_1] = {.p_led_ops = &g_led1_ops, .is_init = LED_DRIVER_NOT_INIT},
+    [DEVICE_INDICATOR_2] = {.p_led_ops = &g_led2_ops, .is_init = LED_DRIVER_NOT_INIT},
+};
 /* private  functions  ------------------------------------------------------*/
 static inline led_driver_t *get_led(device_indicator_id_t id)
 {
@@ -28,11 +32,10 @@ static inline led_driver_t *get_led(device_indicator_id_t id)
 }
 /* exported functions -------------------------------------------------------*/
 
-platform_err_t device_indicator_init(device_indicator_id_t id,
-                                     const void           *p_led_ops)
+platform_err_t device_indicator_init(device_indicator_id_t id)
 {
     led_driver_t *p_led = get_led(id);
-    if(NULL == p_led || NULL == p_led_ops)
+    if(NULL == p_led)
     {
         return PLATFORM_ERR_PARAM;
     }
@@ -40,10 +43,8 @@ platform_err_t device_indicator_init(device_indicator_id_t id,
     {
         return PLATFORM_ERR_OK;
     }
-    led_driver_state_t ret = bsp_driver_led_init(p_led,
-                                                 (const led_operation_t *)
-                                                     p_led_ops);
-    return (LED_OK == ret) ? PLATFORM_ERR_OK : PLATFORM_ERR_HW;
+    p_led->is_init = LED_DRIVER_IS_INIT;
+    return PLATFORM_ERR_OK;
 }
 
 platform_err_t device_indicator_on(device_indicator_id_t id)

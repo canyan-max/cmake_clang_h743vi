@@ -11,13 +11,13 @@
 #include <stddef.h>         /* stdint lib header file. */
 #include "device_display.h" /* device_display lib header file. */
 #include "bsp_drv_st7789.h"
-#include "st_lcd_spi.h"
 /* define   -----------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/
 
 /* variables ----------------------------------------------------------------*/
 static st7789_driver_t g_lcd;
+extern const st7789_spi_ops_t g_st7789_spi_ops;
 /* private  functions  ------------------------------------------------------*/
 
 /* exported functions -------------------------------------------------------*/
