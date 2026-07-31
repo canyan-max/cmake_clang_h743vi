@@ -1,4 +1,4 @@
-/**
+﻿/**
  ******************************************************************************
  *@file               :   device_camera.h
  *@brief              :   Provide the HAL APIs of description.
@@ -18,7 +18,7 @@ extern "C"
 /* Includes -----------------------------------------------------------------*/
 #include <stdint.h> /* stdint lib header file. */
 #include <stddef.h> /* stdint lib header file. */
-#include "platform_error.h"
+#include "plat_error.h"
 /* define -------------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/
@@ -29,8 +29,11 @@ extern "C"
 
 /* functions ----------------------------------------------------------------*/
 platform_err_t device_camera_init(void);
-platform_err_t device_camera_start(uint32_t *p_buf, uint32_t len_words);
+platform_err_t device_camera_start(void);
 platform_err_t device_camera_stop(void);
+uint8_t       *device_camera_get_buffer(void);
+uint32_t       device_camera_get_buffer_size(void);
+void           device_camera_frame_isr(void);
 #ifdef __cplusplus
 }
 #endif

@@ -1,4 +1,4 @@
-/**
+﻿/**
  ******************************************************************************
  *@file               :   device_indicator.c
  *@brief              :   Provide the device indicator  APIs of description.
@@ -10,7 +10,7 @@
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>           /* stdint lib header file. */
 #include "device_indicator.h" /* device_indicator lib header file. */
-#include "bsp_drv_led.h"
+#include "bsp_led.h"
 /* define   -----------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/

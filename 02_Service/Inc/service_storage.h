@@ -1,4 +1,4 @@
-/**
+﻿/**
  ******************************************************************************
  *@file               :   service_storage.h
  *@brief              :   Provide the service storage APIs of description.
@@ -16,7 +16,7 @@ extern "C"
 
 /* Includes -----------------------------------------------------------------*/
 #include <stdint.h>
-#include "platform_error.h"
+#include "plat_error.h"
 
 /* functions ----------------------------------------------------------------*/
 platform_err_t service_storage_init(void);

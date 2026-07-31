@@ -1,4 +1,4 @@
-/**
+﻿/**
  ******************************************************************************
  *@file               :   st_tick.c
  *@brief              :   Provide the HAL APIs of description.
@@ -10,7 +10,7 @@
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h> /* stdint lib header file. */
 #include "stm32h7xx_hal.h"
-#include "plat_tick.h"
+#include "plat_sys.h"
 /* define   -----------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/
@@ -33,6 +33,11 @@ void plat_delay_ms(uint32_t ms)
     }
 
     HAL_Delay(ms);
+}
+
+void plat_dcache_invalidate(void *p_addr, int32_t size)
+{
+    SCB_InvalidateDCache_by_Addr((uint32_t *)p_addr, size);
 }
 
 /* end of  file -------------------------------------------------------------*/

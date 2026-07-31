@@ -1,6 +1,6 @@
-/**
+﻿/**
  ******************************************************************************
- *@file               :   st_ov2640.h
+ *@file               :   mcu_ov2640.h
  *@brief              :   Provide the HAL APIs of description.
  *@version            :   V1.0
  *@note               :   1 tab == 4 spaces!  2026
@@ -16,7 +16,7 @@ extern "C"
 #endif
 
 /* Includes -----------------------------------------------------------------*/
-#include "bsp_drv_ov2640.h"
+#include "bsp_ov2640.h"
 
 /* variables ----------------------------------------------------------------*/
 extern const ov2640_hw_ops_t g_ov2640_hw_ops;

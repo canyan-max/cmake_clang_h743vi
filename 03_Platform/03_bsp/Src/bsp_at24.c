@@ -1,4 +1,4 @@
-/**
+﻿/**
  ******************************************************************************
  *@file               :   bsp_drv_at24.c
  *@brief              :   Provide the HAL APIs of description.
@@ -9,8 +9,7 @@
 
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>       /* stdint lib header file. */
-#include "bsp_drv_at24.h" /* bsp_drv_at24 lib header file. */
-#include "st_iic.h"       /* Impl — board I2C ops instance */
+#include "bsp_at24.h" /* bsp_drv_at24 lib header file. */
 
 /* define   -----------------------------------------------------------------*/
 #define AT24_DRIVER_IS_INITED      (0x01U)

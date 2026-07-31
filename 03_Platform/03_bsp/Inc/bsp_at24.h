@@ -1,7 +1,7 @@
-/**
+﻿/**
  ******************************************************************************
- *@file               :   bsp_drv_at24.h
- *@brief              :   AT24 EEPROM driver — protocol functions + I2C transport.
+ *@file               :   bsp_at24.h
+ *@brief              :   AT24 EEPROM driver 鈥?protocol functions + I2C transport.
  *                        Transport is the ONLY replaceable part (I2C read/write).
  *                        Protocol functions are direct calls, not function pointers.
  *@version            :   V2.0
@@ -36,7 +36,7 @@ typedef enum
     AT24_PARAM_ERR = 0x04U,
 } at24_state_t;
 
-/* ---- transport (the only replaceable part — I2C bus) --------------------- */
+/* ---- transport (the only replaceable part 鈥?I2C bus) --------------------- */
 typedef struct IIC_OPS_T
 {
     void *p_iic_handle;

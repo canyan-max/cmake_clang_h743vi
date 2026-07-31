@@ -1,4 +1,4 @@
-/**
+﻿/**
  ******************************************************************************
  *@file               :   bsp_drv_st7789.c
  *@brief              :   Provide the HAL APIs of description.
@@ -9,9 +9,8 @@
 /* Includes -----------------------------------------------------------------*/
 #include <string.h>         /* string lib header file. */
 #include <stddef.h>         /* stddef lib header file. */
-#include "bsp_drv_st7789.h" /* bsp_drv_st7789 lib header file. */
+#include "bsp_st7789.h" /* bsp_drv_st7789 lib header file. */
 #include "front.h"          /* font table header file. */
-#include "st_lcd_spi.h"     /* Impl — board SPI ops instance */
 
 /* define   -----------------------------------------------------------------*/
 /* To avoid gcc/g++ warnings */
@@ -150,7 +149,7 @@ static st7789_state_t st7789_write_data(st7789_dev_t *p_drv, uint8_t data)
 
 /**
   * @brief            :  [st7789_write_buf]
-                         DC pin → data mode, then SPI transmit buffer.
+                         DC pin 鈫?data mode, then SPI transmit buffer.
   * @retval           :  [   ST7789_OK              = 0x00U,
                              ST7789_ERROR           = 0x01U,]
   * @param[in]        :  [st7789_dev_t *p_drv , \
@@ -274,7 +273,7 @@ static st7789_state_t st7789_init(st7789_dev_t *p_drv)
     }
     p_drv->p_transport->pf_delay_ms(ST7789_SLPOUT_DELAY_MS);
 
-    /* Step 3: Interface pixel format — RGB565 (16-bit) */
+    /* Step 3: Interface pixel format 鈥?RGB565 (16-bit) */
     ret = st7789_write_cmd_data(p_drv, ST7789_CMD_COLMOD, 0x05U);
     if(ST7789_OK != ret)
     {
@@ -572,7 +571,7 @@ static st7789_state_t st7789_clear_screen(st7789_dev_t *p_drv)
                          Fill a rectangular region with a single RGB565 color.
                          Sends one row at a time via the DMA line buffer,
                          so only the row width (w*2 bytes) is transmitted
-                         per row — much faster than clearing the full screen.
+                         per row 鈥?much faster than clearing the full screen.
   * @retval           :  [ST7789_OK              = 0x00U,
                           ST7789_ERROR           = 0x01U,
                           ST7789_INVALID_PARAM   = 0x04U,]
@@ -805,7 +804,7 @@ st7789_state_t st7789_draw_string(st7789_dev_t   *p_drv,
 
 /**
  * @brief            :  [st7789_draw_image]
- *                       Blit a w×h RGB565 big-endian pixel buffer at (x, y).
+ *                       Blit a w脳h RGB565 big-endian pixel buffer at (x, y).
  *                       p_pixels must point to w*h*2 bytes in DMA-accessible
  *                       memory (e.g. .ram_dma_buffers or AXI SRAM).
  * @retval           :  [ST7789_OK              = 0x00U,
@@ -854,7 +853,7 @@ st7789_state_t st7789_draw_image(st7789_dev_t *p_drv,
     }
 
     /* Send row by row through sg_line_buf so p_pixels can reside anywhere
-       (Flash, DTCM, non-DMA SRAM) — no DMA-accessible requirement on caller. */
+       (Flash, DTCM, non-DMA SRAM) 鈥?no DMA-accessible requirement on caller. */
     {
         uint32_t row_bytes = (uint32_t)w * 2U;
         uint16_t row       = 0U;
@@ -875,7 +874,7 @@ st7789_state_t st7789_draw_image(st7789_dev_t *p_drv,
 /**
  * @brief            :  [st7789_dec_to_str]
  *                       Convert int32_t to null-terminated decimal string.
- *                       Uses two's-complement negation — safe for INT32_MIN.
+ *                       Uses two's-complement negation 鈥?safe for INT32_MIN.
  * @param[in]        :  [int32_t val, char *buf, uint8_t bufsz]
  */
 static void st7789_dec_to_str(int32_t val, char *buf, uint8_t bufsz)
@@ -957,7 +956,7 @@ st7789_state_t st7789_draw_dec(st7789_dev_t   *p_drv,
 /**
  * @brief            :  [st7789_hex_to_str]
  *                       Convert uint32_t to uppercase hex string with "0x"
- * prefix. Nibble computed inline — no lookup table.
+ * prefix. Nibble computed inline 鈥?no lookup table.
  * @param[in]        :  [uint32_t val, char *buf, uint8_t bufsz]
  */
 static void st7789_hex_to_str(uint32_t val, char *buf, uint8_t bufsz)
@@ -1038,7 +1037,7 @@ st7789_state_t st7789_draw_hex(st7789_dev_t   *p_drv,
 
 /**
  * @brief            :  [st7789_float_to_str]
- *                       Manual float→string; avoids float-printf dependency.
+ *                       Manual float鈫抯tring; avoids float-printf dependency.
  * @param[in]        :  [float val, uint8_t dec, char *buf, uint8_t bufsz]
  */
 static void
@@ -1147,7 +1146,7 @@ st7789_state_t st7789_draw_float(st7789_dev_t   *p_drv,
 /**
  * @brief            :  [st7789_draw_pixel]
  *                       Write a single RGB565 pixel at (x, y).
- *                       Private helper — caller must have validated p_drv
+ *                       Private helper 鈥?caller must have validated p_drv
  *                       and is_init before invoking.
  * @param[in]        :  [st7789_dev_t *p_drv,
  *                        uint16_t x, uint16_t y, uint16_t color]

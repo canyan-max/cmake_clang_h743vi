@@ -8,17 +8,8 @@
  */
 
 /* Includes -----------------------------------------------------------------*/
-#include <stddef.h>         /* stdint lib header file. */
-#include "service_camera.h" /* service_camera lib header file. */
+#include "service_camera.h"
 #include "device_camera.h"
-/* define   -----------------------------------------------------------------*/
-
-/* typedef ------------------------------------------------------------------*/
-
-/* variables ----------------------------------------------------------------*/
-__attribute__((section(".ram_d2_dma_buffers"), aligned(32))) static uint8_t
-    g_camera_buffer[SERVICE_CAMERA_BUF_SIZE];
-/* private  functions  ------------------------------------------------------*/
 
 /* exported functions -------------------------------------------------------*/
 platform_err_t service_camera_init(void)
@@ -28,18 +19,22 @@ platform_err_t service_camera_init(void)
 
 platform_err_t service_camera_start(void)
 {
-    return device_camera_start((uint32_t *)g_camera_buffer,
-                               SERVICE_CAMERA_BUF_SIZE / sizeof(uint32_t));
+    return device_camera_start();
 }
 
 uint8_t *service_camera_get_buffer(void)
 {
-    return g_camera_buffer;
+    return device_camera_get_buffer();
 }
 
-uint32_t service_camera_get_buffer_len(void)
+uint32_t service_camera_get_buffer_size(void)
 {
-    return SERVICE_CAMERA_BUF_SIZE;
+    return device_camera_get_buffer_size();
+}
+
+void service_camera_frame_isr(void)
+{
+    device_camera_frame_isr();
 }
 
 /* end of  file -------------------------------------------------------------*/

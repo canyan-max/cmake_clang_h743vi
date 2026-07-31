@@ -1,4 +1,4 @@
-/**
+﻿/**
  ******************************************************************************
  *@file               :   device_display.c
  *@brief              :   Provide the HAL APIs of description.
@@ -10,7 +10,7 @@
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>         /* stdint lib header file. */
 #include "device_display.h" /* device_display lib header file. */
-#include "bsp_drv_st7789.h"
+#include "bsp_st7789.h"
 /* define   -----------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/

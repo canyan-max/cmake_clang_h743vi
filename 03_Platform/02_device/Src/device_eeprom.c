@@ -1,4 +1,4 @@
-/**
+﻿/**
  ******************************************************************************
  *@file               :   device_eeprom.c
  *@brief              :   Provide the device eeprom APIs of description.
@@ -10,8 +10,8 @@
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>
 #include "device_eeprom.h"
-#include "bsp_drv_at24.h"
-#include "plat_tick.h"
+#include "bsp_at24.h"
+#include "plat_sys.h"
 #include "board_config.h"
 
 /* define   -----------------------------------------------------------------*/

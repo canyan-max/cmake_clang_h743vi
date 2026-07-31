@@ -1,36 +1,37 @@
-/**
+﻿/**
  ******************************************************************************
- *@file               :   plat_tick.h
- *@brief              :   Provide the HAL APIs of description.
- *@version            :   V1.0 
+ *@file               :   mcu_at24.h
+ *@brief              :   STM32 I2C HAL ops instance declaration.
+ *@version            :   V1.0
  *@note               :   1 tab == 4 spaces!  2026
  ******************************************************************************
  */
 /* Define to prevent recursive inclusion ------------------------------------*/
-#ifndef PLAT_TICK_H
-#define PLAT_TICK_H
+#ifndef ST_IIC_H
+#define ST_IIC_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /* Includes -----------------------------------------------------------------*/
-#include <stdint.h>                               /* stdint lib header file. */
-#include <stddef.h>                               /* stdint lib header file. */
+#include <stdint.h> /* stdint lib header file. */
+#include <stddef.h> /* stddef lib header file. */
+
 /* define -------------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/
+typedef struct IIC_OPS_T iic_ops_t;
 
-/* exported types -----------------------------------------------------------*/
+/* Exported types -----------------------------------------------------------*/
 
 /* variables ----------------------------------------------------------------*/
+extern const iic_ops_t g_at24c02_iic_ops;
 
 /* functions ----------------------------------------------------------------*/
-uint32_t plat_tick_get_ms(void);
-void plat_delay_ms(uint32_t ms);
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* PLAT_TICK_H */
-
+#endif /* ST_IIC_H */

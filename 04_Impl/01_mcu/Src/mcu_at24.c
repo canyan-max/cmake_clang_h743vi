@@ -1,4 +1,4 @@
-/**
+﻿/**
  ******************************************************************************
  *@file               :   st_iic.c
  *@brief              :   Provide the HAL APIs of description.
@@ -8,9 +8,9 @@
  */
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>       /* stdint lib header file. */
-#include "st_iic.h"       /* st_iic lib header file. */
+#include "mcu_at24.h"       /* st_iic lib header file. */
 #include "i2c.h"          /* i2c lib header file. */
-#include "bsp_drv_at24.h" /* bsp_drv_at24 lib header file. */
+#include "bsp_at24.h" /* bsp_drv_at24 lib header file. */
 /* define   -----------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/

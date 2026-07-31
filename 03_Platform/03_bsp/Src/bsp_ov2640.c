@@ -1,4 +1,4 @@
-/**
+﻿/**
  ******************************************************************************
  *@file               :   bsp_drv_ov2640.c
  *@brief              :   Provide the HAL APIs of description.
@@ -8,8 +8,8 @@
  */
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>
-#include "bsp_drv_ov2640.h"
-#include "st_ov2640.h"
+#include "bsp_ov2640.h"
+extern const ov2640_hw_ops_t g_ov2640_hw_ops;
 
 /* Private variables --------------------------------------------------------*/
 

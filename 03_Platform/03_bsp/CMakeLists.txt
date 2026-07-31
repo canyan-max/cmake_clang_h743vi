@@ -1,9 +1,9 @@
 # ---------- platform_bsp ----------
 set(PLATFORM_BSP_SRC
-    ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_drv_led.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_drv_at24.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_drv_st7789.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_drv_ov2640.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_led.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_at24.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_st7789.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_ov2640.c
 )
 
 set(PLATFORM_BSP_DEPEND_LIB

@@ -185,8 +185,8 @@ void StartDefaultTask(void *argument)
 void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
 {
     ((void)hdcmi);
+    service_camera_frame_isr();
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    SCB_InvalidateDCache_by_Addr(service_camera_get_buffer(), service_camera_get_buffer_len());
     vTaskNotifyGiveFromISR(defaultTaskHandle, &xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }

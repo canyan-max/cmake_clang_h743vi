@@ -1,4 +1,4 @@
-/**
+﻿/**
  ******************************************************************************
  *@file               :   device_eeprom.h
  *@brief              :   Provide the device eeprom APIs of description.
@@ -17,7 +17,7 @@ extern "C"
 
 /* Includes -----------------------------------------------------------------*/
 #include <stdint.h>
-#include "platform_error.h"
+#include "plat_error.h"
 
 /* functions ----------------------------------------------------------------*/
 platform_err_t device_eeprom_init(void);

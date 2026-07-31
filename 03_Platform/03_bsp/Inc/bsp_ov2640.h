@@ -1,7 +1,7 @@
-/**
+﻿/**
  ******************************************************************************
- *@file               :   bsp_drv_ov2640.h
- *@brief              :   OV2640 driver — protocol functions + hw ops transport.
+ *@file               :   bsp_ov2640.h
+ *@brief              :   OV2640 driver 鈥?protocol functions + hw ops transport.
  *                        Transport is the ONLY replaceable part (I2C/DCMI/power/delay).
  *                        Protocol functions are direct calls, not function pointers.
  *@version            :   V2.0

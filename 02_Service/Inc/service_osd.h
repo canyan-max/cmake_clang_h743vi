@@ -1,4 +1,4 @@
-/**
+﻿/**
  ******************************************************************************
  *@file               :   service_osd.h
  *@brief              :   OSD (On-Screen Display) status bar service.
@@ -18,7 +18,7 @@ extern "C" {
 
 /* Includes -----------------------------------------------------------------*/
 #include <stdint.h>
-#include "platform_error.h"
+#include "plat_error.h"
 
 /* ---- OSD layout constants ------------------------------------------------- */
 #define OSD_BAR_HEIGHT   (20U)

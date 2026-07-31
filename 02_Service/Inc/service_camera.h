@@ -1,4 +1,4 @@
-/**
+﻿/**
  ******************************************************************************
  *@file               :   service_camera.h
  *@brief              :   Provide the HAL APIs of description.
@@ -16,20 +16,13 @@ extern "C" {
 
 /* Includes -----------------------------------------------------------------*/
 #include <stdint.h>
-#include "platform_error.h"
-/* define -------------------------------------------------------------------*/
-#define SERVICE_CAMERA_BUF_SIZE  (115200U)
-/* typedef ------------------------------------------------------------------*/
-
-/* exported types -----------------------------------------------------------*/
-
-/* variables ----------------------------------------------------------------*/
-
+#include "plat_error.h"
 /* functions ----------------------------------------------------------------*/
 platform_err_t service_camera_init(void);
 platform_err_t service_camera_start(void);
 uint8_t       *service_camera_get_buffer(void);
-uint32_t       service_camera_get_buffer_len(void);
+uint32_t       service_camera_get_buffer_size(void);
+void           service_camera_frame_isr(void);
 
 #ifdef __cplusplus
 }

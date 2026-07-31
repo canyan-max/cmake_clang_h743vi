@@ -1,7 +1,7 @@
-/**
+﻿/**
  ******************************************************************************
  *@file               :   service_osd.c
- *@brief              :   OSD status bar — REC indicator / battery / FPS.
+ *@brief              :   OSD status bar 鈥?REC indicator / battery / FPS.
  *                        Renders a 20px top-bar on the LCD after each frame.
  *@version            :   V1.0
  *@note               :   1 tab == 4 spaces!  2026
@@ -15,7 +15,7 @@
 #include "service_osd.h"
 #include "device_display.h"
 #include "front.h"
-#include "plat_tick.h"
+#include "plat_sys.h"
 
 /* ---- layout constants ------------------------------------------------------ */
 #define OSD_BAR_WIDTH    (240U)
@@ -95,8 +95,7 @@ platform_err_t service_osd_set_battery(uint8_t percent)
   * @brief            :  [service_osd_render] draw OSD bar on LCD.
   *                      Called once per camera frame.  Updates internal FPS.
   *                      On first frame or REC state change: clears bar + draws REC.
-  *                      Subsequent frames: only redraw battery/FPS text —
-  *                      the text bg_color naturally covers old content.
+  *                      Subsequent frames: only redraw battery/FPS text 鈥?  *                      the text bg_color naturally covers old content.
   * @retval           :  PLATFORM_ERR_OK / PLATFORM_ERR_HW
   */
 platform_err_t service_osd_render(void)

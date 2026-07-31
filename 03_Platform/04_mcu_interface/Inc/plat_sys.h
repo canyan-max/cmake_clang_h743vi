@@ -1,35 +1,37 @@
-/**
+﻿/**
  ******************************************************************************
- *@file               :   st_lcd_spi.h
+ *@file               :   plat_sys.h
  *@brief              :   Provide the HAL APIs of description.
- *@version            :   V1.0
+ *@version            :   V1.0 
  *@note               :   1 tab == 4 spaces!  2026
  ******************************************************************************
  */
 /* Define to prevent recursive inclusion ------------------------------------*/
-#ifndef ST_LCD_SPI_H
-#define ST_LCD_SPI_H
+#ifndef PLAT_TICK_H
+#define PLAT_TICK_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
-/* Includes -----------------------------------------------------------------*/
-#include <stdint.h> /* stdint lib header file. */
 
+/* Includes -----------------------------------------------------------------*/
+#include <stdint.h>                               /* stdint lib header file. */
+#include <stddef.h>                               /* stdint lib header file. */
 /* define -------------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/
-typedef struct ST7789_SPI_OPS_T st7789_spi_ops_t;
 
-/* Exported types -----------------------------------------------------------*/
+/* exported types -----------------------------------------------------------*/
 
 /* variables ----------------------------------------------------------------*/
-extern const st7789_spi_ops_t g_st7789_spi_ops;
 
 /* functions ----------------------------------------------------------------*/
+uint32_t plat_tick_get_ms(void);
+void     plat_delay_ms(uint32_t ms);
+void     plat_dcache_invalidate(void *p_addr, int32_t size);
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* ST_LCD_SPI_H */
+#endif /* PLAT_TICK_H */
+

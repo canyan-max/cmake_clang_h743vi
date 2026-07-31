@@ -1,4 +1,4 @@
-/**
+﻿/**
  ******************************************************************************
  *@file               :   device_camera.c
  *@brief              :   Provide the device of camera
@@ -8,16 +8,19 @@
  */
 
 /* Includes -----------------------------------------------------------------*/
-#include <stddef.h>        /* stdint lib header file. */
-#include "device_camera.h" /* device_camera lib header file. */
-#include "bsp_drv_ov2640.h"
-/* define   -----------------------------------------------------------------*/
+#include <stddef.h>
+#include "device_camera.h"
+#include "bsp_ov2640.h"
+#include "plat_sys.h"
 
-/* typedef ------------------------------------------------------------------*/
+/* define   -----------------------------------------------------------------*/
+#define DEVICE_CAM_BUF_SIZE  (OV2640_OUT_W * OV2640_OUT_H * 2U)
 
 /* variables ----------------------------------------------------------------*/
+__attribute__((section(".ram_d2_dma_buffers"), aligned(32)))
+static uint8_t g_cam_buf[DEVICE_CAM_BUF_SIZE];
+
 static ov2640_dev_t g_cam;
-/* private  functions  ------------------------------------------------------*/
 
 /* exported functions -------------------------------------------------------*/
 
@@ -27,17 +30,14 @@ platform_err_t device_camera_init(void)
     return (OV2640_OK == ret) ? PLATFORM_ERR_OK : PLATFORM_ERR_HW;
 }
 
-platform_err_t device_camera_start(uint32_t *p_buf, uint32_t len_words)
+platform_err_t device_camera_start(void)
 {
-    if(NULL == p_buf)
-    {
-        return PLATFORM_ERR_PARAM;
-    }
     if(OV2640_DRIVER_IS_INIT != g_cam.is_init)
     {
         return PLATFORM_ERR_HW;
     }
-    ov2640_state_t ret = ov2640_start(&g_cam, p_buf, len_words);
+    ov2640_state_t ret = ov2640_start(&g_cam, (uint32_t *)g_cam_buf,
+                                       DEVICE_CAM_BUF_SIZE / sizeof(uint32_t));
     return (OV2640_OK == ret) ? PLATFORM_ERR_OK : PLATFORM_ERR_HW;
 }
 
@@ -50,4 +50,20 @@ platform_err_t device_camera_stop(void)
     ov2640_state_t ret = ov2640_stop(&g_cam);
     return (OV2640_OK == ret) ? PLATFORM_ERR_OK : PLATFORM_ERR_HW;
 }
+
+uint8_t *device_camera_get_buffer(void)
+{
+    return g_cam_buf;
+}
+
+uint32_t device_camera_get_buffer_size(void)
+{
+    return DEVICE_CAM_BUF_SIZE;
+}
+
+void device_camera_frame_isr(void)
+{
+    plat_dcache_invalidate(g_cam_buf, (int32_t)DEVICE_CAM_BUF_SIZE);
+}
+
 /* end of  file -------------------------------------------------------------*/

@@ -1,4 +1,4 @@
-/**
+﻿/**
  ******************************************************************************
  *@file               :   service_indicator.h
  *@brief              :   Provide the service indicator APIs of description.
@@ -16,7 +16,7 @@ extern "C"
 
 /* Includes -----------------------------------------------------------------*/
 #include "device_indicator.h"
-#include "platform_error.h"
+#include "plat_error.h"
 
 /* functions ----------------------------------------------------------------*/
 platform_err_t service_indicator_init(void);

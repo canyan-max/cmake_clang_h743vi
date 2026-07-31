@@ -1,10 +1,10 @@
 # ---------- impl_mcu ----------
 set(IMPL_MCU_SRC
-    ${CMAKE_CURRENT_SOURCE_DIR}/Src/st_led.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Src/st_iic.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Src/st_lcd_spi.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Src/st_ov2640.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Src/st_tick.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/mcu_led.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/mcu_at24.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/mcu_st7789.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/mcu_ov2640.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/mcu_sys.c
 )
 set(IMPL_MCU_DEPEND_LIB
     platform_bsp

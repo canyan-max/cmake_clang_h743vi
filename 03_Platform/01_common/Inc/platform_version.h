@@ -1,4 +1,4 @@
-/**
+﻿/**
  ******************************************************************************
  *@file               :   platform_version.h
  *@brief              :   Provide the HAL APIs of description.
@@ -17,7 +17,7 @@ extern "C" {
 /* Includes -----------------------------------------------------------------*/
 #include <stdint.h>                               /* stdint lib header file. */
 #include <stddef.h>                               /* stdint lib header file. */
-#include "platform_error.h"
+#include "plat_error.h"
 #include "version_config.h"
 /* define -------------------------------------------------------------------*/
 
