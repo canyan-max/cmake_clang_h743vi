@@ -179,60 +179,33 @@ at24_state_t at24_write_byte(at24_dev_t *p_drv,
 
 extern const iic_ops_t g_at24c02_iic_ops;
 
-at24_state_t bsp_at24_init(at24_dev_t *p_drv,
-                             uint32_t       max_byte_addr,
-                             uint32_t       page_size,
-                             uint16_t       adr_size,
-                             uint8_t        dev_adr)
+at24_state_t bsp_at24_init(at24_dev_t *p_drv)
 {
     const iic_ops_t *ops = &g_at24c02_iic_ops;
-    at24_state_t ret = AT24_OK;
+    at24_state_t     ret = AT24_OK;
 
-    if (NULL == p_drv) { return AT24_ERROR; }
+    if (NULL == p_drv)           { return AT24_ERROR; }
     if (!DRV_IS_NOT_INIT(p_drv)) { return AT24_OK; }
 
-#ifdef AT24_DEBUG_LOG
-    AT_LOG("AT24 driver initialized start.\n");
-#endif
-
-    p_drv->iic_ops = ops;
+    p_drv->iic_ops       = ops;
+    p_drv->max_byte_addr = AT24C02_MAX_BYTE_ADDR;
+    p_drv->page_size     = AT24C02_PAGE_SIZE;
+    p_drv->adr_size      = AT24C02_ADR_SIZE;
+    p_drv->dev_adr       = AT24C02_DEV_ADDR;
 
     if (NULL != ops->pf_iic_init)
     {
         ret = ops->pf_iic_init(ops->p_iic_handle);
-        if (AT24_OK != ret)
-        {
-#ifdef AT24_DEBUG_LOG
-            AT_LOG("AT24 driver iic init err.\n");
-#endif
-            p_drv->iic_ops = NULL;
-            return ret;
-        }
+        if (AT24_OK != ret) { p_drv->iic_ops = NULL; return ret; }
     }
 
     if (NULL != ops->pf_iic_dev_isready)
     {
-        ret = ops->pf_iic_dev_isready(ops->p_iic_handle, dev_adr, 1, 100);
-        if (AT24_OK != ret)
-        {
-#ifdef AT24_DEBUG_LOG
-            AT_LOG("AT24 driver iic dev is ready err.\n");
-#endif
-            p_drv->iic_ops = NULL;
-            return ret;
-        }
+        ret = ops->pf_iic_dev_isready(ops->p_iic_handle, AT24C02_DEV_ADDR, 1U, 100U);
+        if (AT24_OK != ret) { p_drv->iic_ops = NULL; return ret; }
     }
 
-    p_drv->max_byte_addr = max_byte_addr;
-    p_drv->page_size     = page_size;
-    p_drv->dev_adr       = dev_adr;
-    p_drv->adr_size      = adr_size;
-    p_drv->is_inited     = AT24_DRIVER_IS_INITED;
-
-#ifdef AT24_DEBUG_LOG
-    AT_LOG("AT24 driver initialized successfully.\n");
-    AT_LOG("dev=%d", p_drv->dev_adr);
-#endif
+    p_drv->is_inited = AT24_DRIVER_IS_INITED;
     return AT24_OK;
 }
 

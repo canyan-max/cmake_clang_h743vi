@@ -28,7 +28,7 @@
 static ov2640_state_t st_write_reg(uint8_t reg, uint8_t val)
 {
     uint8_t           buf[2] = {reg, val};
-    HAL_StatusTypeDef ret    = HAL_I2C_Master_Transmit(&hi2c1, BOARD_CAM_I2C_ADDR,
+    HAL_StatusTypeDef ret    = HAL_I2C_Master_Transmit(&BOARD_CAM_I2C_HANDLE, BOARD_CAM_I2C_ADDR,
                                                        buf, 2U,
                                                        BOARD_CAM_I2C_TIMEOUT);
     return (ret == HAL_OK) ? OV2640_OK : OV2640_ERROR;
@@ -48,14 +48,14 @@ static ov2640_state_t st_read_reg(uint8_t reg, uint8_t *p_val)
     {
         return OV2640_INVALID_PARAM;
     }
-    HAL_StatusTypeDef ret = HAL_I2C_Master_Transmit(&hi2c1, BOARD_CAM_I2C_ADDR,
+    HAL_StatusTypeDef ret = HAL_I2C_Master_Transmit(&BOARD_CAM_I2C_HANDLE, BOARD_CAM_I2C_ADDR,
                                                     &reg, 1U,
                                                     BOARD_CAM_I2C_TIMEOUT);
     if(ret != HAL_OK)
     {
         return OV2640_ERROR;
     }
-    ret = HAL_I2C_Master_Receive(&hi2c1, BOARD_CAM_I2C_ADDR, p_val, 1U,
+    ret = HAL_I2C_Master_Receive(&BOARD_CAM_I2C_HANDLE, BOARD_CAM_I2C_ADDR, p_val, 1U,
                                  BOARD_CAM_I2C_TIMEOUT);
     return (ret == HAL_OK) ? OV2640_OK : OV2640_ERROR;
 }
@@ -74,7 +74,7 @@ st_dcmi_start_dma(uint32_t *p_buf, uint32_t len_words, ov2640_dcmi_mode_t mode)
 {
     uint32_t hal_mode = (mode == OV2640_DCMI_SNAPSHOT) ? DCMI_MODE_SNAPSHOT
                                                        : DCMI_MODE_CONTINUOUS;
-    HAL_StatusTypeDef ret = HAL_DCMI_Start_DMA(&hdcmi, hal_mode,
+    HAL_StatusTypeDef ret = HAL_DCMI_Start_DMA(&BOARD_CAM_DCMI_HANDLE, hal_mode,
                                                (uint32_t)p_buf, len_words);
     return (ret == HAL_OK) ? OV2640_OK : OV2640_ERROR;
 }
@@ -88,7 +88,7 @@ st_dcmi_start_dma(uint32_t *p_buf, uint32_t len_words, ov2640_dcmi_mode_t mode)
  */
 static ov2640_state_t st_dcmi_stop(void)
 {
-    HAL_StatusTypeDef ret = HAL_DCMI_Stop(&hdcmi);
+    HAL_StatusTypeDef ret = HAL_DCMI_Stop(&BOARD_CAM_DCMI_HANDLE);
     return (ret == HAL_OK) ? OV2640_OK : OV2640_ERROR;
 }
 /**
@@ -104,12 +104,12 @@ static ov2640_state_t st_dcmi_stop(void)
 static ov2640_state_t
 st_config_crop(uint32_t x0, uint32_t y0, uint32_t xcnt, uint32_t ycnt)
 {
-    HAL_StatusTypeDef ret = HAL_DCMI_ConfigCrop(&hdcmi, x0, y0, xcnt, ycnt);
+    HAL_StatusTypeDef ret = HAL_DCMI_ConfigCrop(&BOARD_CAM_DCMI_HANDLE, x0, y0, xcnt, ycnt);
     if(ret != HAL_OK)
     {
         return OV2640_ERROR;
     }
-    HAL_DCMI_EnableCrop(&hdcmi);
+    HAL_DCMI_EnableCrop(&BOARD_CAM_DCMI_HANDLE);
     return OV2640_OK;
 }
 /**

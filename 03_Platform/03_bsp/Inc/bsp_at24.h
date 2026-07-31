@@ -23,6 +23,12 @@ extern "C"
 #define AT24_MEMADD_SIZE_8BIT   (1U)
 #define AT24_MEMADD_SIZE_16BIT  (2U)
 
+/* ---- AT24C02 chip specifications ----------------------------------------- */
+#define AT24C02_MAX_BYTE_ADDR   (256U)
+#define AT24C02_PAGE_SIZE       (8U)
+#define AT24C02_ADR_SIZE        AT24_MEMADD_SIZE_8BIT
+#define AT24C02_DEV_ADDR        (0xA0U)
+
 /* ---- forward decalarations ----------------------------------------------- */
 typedef struct AT24_DEV_T      at24_dev_t;
 
@@ -72,8 +78,7 @@ at24_state_t at24_write_byte(at24_dev_t *p_dev, uint16_t mem_adr,
                               uint8_t data, uint32_t timeout);
 
 /* ---- board-level init (wires Impl transport + I2C init) ------------------ */
-at24_state_t bsp_at24_init(at24_dev_t *p_dev, uint32_t max_byte_addr,
-                             uint32_t page_size, uint16_t adr_size, uint8_t dev_adr);
+at24_state_t bsp_at24_init(at24_dev_t *p_dev);
 
 #ifdef __cplusplus
 }

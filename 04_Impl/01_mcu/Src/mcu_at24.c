@@ -8,9 +8,10 @@
  */
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>       /* stdint lib header file. */
-#include "mcu_at24.h"       /* st_iic lib header file. */
-#include "i2c.h"          /* i2c lib header file. */
-#include "bsp_at24.h" /* bsp_drv_at24 lib header file. */
+#include "mcu_at24.h"
+#include "board_config.h"
+#include "i2c.h"
+#include "bsp_at24.h"
 /* define   -----------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/
@@ -36,7 +37,7 @@ static at24_state_t
 st_dev_is_ready(void *hi2c, uint8_t dev_adr, uint32_t tails, uint32_t timeout);
 
 const iic_ops_t g_at24c02_iic_ops = {
-    .p_iic_handle       = (void *)&hi2c1,
+    .p_iic_handle       = (void *)&BOARD_EEPROM_I2C_HANDLE,
     .pf_iic_init        = NULL,
     .pf_iic_deinit      = NULL,
     .pf_iic_dev_isready = st_dev_is_ready,

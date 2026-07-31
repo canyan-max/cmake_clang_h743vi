@@ -12,13 +12,8 @@
 #include "device_eeprom.h"
 #include "bsp_at24.h"
 #include "plat_sys.h"
-#include "board_config.h"
 
 /* define   -----------------------------------------------------------------*/
-#define AT24C02_MAX_BYTE_ADDR   BOARD_EEPROM_MAX_BYTE_ADDR
-#define AT24C02_PAGE_SIZE       BOARD_EEPROM_PAGE_SIZE
-#define AT24C02_ADR_SIZE        BOARD_EEPROM_ADR_SIZE
-#define AT24C02_DEV_ADR         BOARD_EEPROM_DEV_ADDR
 
 /* variables ----------------------------------------------------------------*/
 static at24_dev_t g_eeprom;
@@ -41,11 +36,7 @@ static platform_err_t write_page(uint16_t mem_adr,
 /* exported functions -------------------------------------------------------*/
 platform_err_t device_eeprom_init(void)
 {
-    at24_state_t ret = bsp_at24_init(&g_eeprom,
-                                      AT24C02_MAX_BYTE_ADDR,
-                                      AT24C02_PAGE_SIZE,
-                                      AT24C02_ADR_SIZE,
-                                      AT24C02_DEV_ADR);
+    at24_state_t ret = bsp_at24_init(&g_eeprom);
     return (AT24_OK == ret) ? PLATFORM_ERR_OK : PLATFORM_ERR_HW;
 }
 
@@ -94,7 +85,7 @@ platform_err_t device_eeprom_write(uint16_t mem_adr,
         {
             if(AT24_OK == g_eeprom.iic_ops->pf_iic_dev_isready(
                               g_eeprom.iic_ops->p_iic_handle,
-                              AT24C02_DEV_ADR, 1U, 0U))
+                              AT24C02_DEV_ADDR, 1U, 0U))
             {
                 timeout_flag = 0U;
                 break;
