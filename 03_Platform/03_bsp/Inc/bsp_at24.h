@@ -45,15 +45,14 @@ typedef enum
 /* ---- transport (the only replaceable part 鈥?I2C bus) --------------------- */
 typedef struct IIC_OPS_T
 {
-    void *p_iic_handle;
-    at24_state_t (*pf_iic_init)(void *p_handle);
-    at24_state_t (*pf_iic_deinit)(void *p_handle);
-    at24_state_t (*pf_iic_dev_isready)(void *p_handle, uint8_t dev_adr,
+    at24_state_t (*pf_iic_init)(void);
+    at24_state_t (*pf_iic_deinit)(void);
+    at24_state_t (*pf_iic_dev_isready)(uint8_t dev_adr,
                                         uint32_t trials, uint32_t timeout);
-    at24_state_t (*pf_mem_read)(void *p_handle, uint16_t dev_adr,
+    at24_state_t (*pf_mem_read)(uint16_t dev_adr,
                                  uint16_t mem_adr, uint16_t mem_adr_size,
                                  uint8_t *p_data, uint16_t size, uint32_t timeout);
-    at24_state_t (*pf_mem_write)(void *p_handle, uint16_t dev_adr,
+    at24_state_t (*pf_mem_write)(uint16_t dev_adr,
                                   uint16_t mem_adr, uint16_t mem_adr_size,
                                   uint8_t *p_data, uint16_t size, uint32_t timeout);
 } iic_ops_t;

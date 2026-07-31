@@ -84,7 +84,6 @@ platform_err_t device_eeprom_write(uint16_t mem_adr,
         while((plat_tick_get_ms() - start) <= 5U)
         {
             if(AT24_OK == g_eeprom.iic_ops->pf_iic_dev_isready(
-                              g_eeprom.iic_ops->p_iic_handle,
                               AT24C02_DEV_ADDR, 1U, 0U))
             {
                 timeout_flag = 0U;

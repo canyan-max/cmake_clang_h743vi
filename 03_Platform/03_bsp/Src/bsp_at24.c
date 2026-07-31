@@ -21,16 +21,14 @@
         (AT24_DRIVER_NOT_INITED == p_drv->is_inited)
 
 #define AT24_MEM_WRITE(p_drv, mem_adr, p_data, size, timeout) \
-        ((p_drv)->iic_ops->pf_mem_write((p_drv)->iic_ops->p_iic_handle, \
-                                        (p_drv)->dev_adr, \
+        ((p_drv)->iic_ops->pf_mem_write((p_drv)->dev_adr, \
                                         (mem_adr), \
                                         ((p_drv)->adr_size), \
                                         (p_data), \
                                         (size), \
                                         (timeout)))
 #define AT24_MEM_READ(p_drv, mem_adr, p_data, size, timeout) \
-        ((p_drv)->iic_ops->pf_mem_read((p_drv)->iic_ops->p_iic_handle, \
-                                        ((p_drv)->dev_adr|0x01), \
+        ((p_drv)->iic_ops->pf_mem_read(((p_drv)->dev_adr | 0x01U), \
                                         (mem_adr), \
                                         ((p_drv)->adr_size), \
                                         (p_data), \
@@ -195,13 +193,13 @@ at24_state_t bsp_at24_init(at24_dev_t *p_drv)
 
     if (NULL != ops->pf_iic_init)
     {
-        ret = ops->pf_iic_init(ops->p_iic_handle);
+        ret = ops->pf_iic_init();
         if (AT24_OK != ret) { p_drv->iic_ops = NULL; return ret; }
     }
 
     if (NULL != ops->pf_iic_dev_isready)
     {
-        ret = ops->pf_iic_dev_isready(ops->p_iic_handle, AT24C02_DEV_ADDR, 1U, 100U);
+        ret = ops->pf_iic_dev_isready(AT24C02_DEV_ADDR, 1U, 100U);
         if (AT24_OK != ret) { p_drv->iic_ops = NULL; return ret; }
     }
 
