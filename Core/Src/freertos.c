@@ -31,11 +31,10 @@
 #include "log.h"
 #include "kfifo.h"            /* kfifo lib header file. */
 #include "core_dwt.h"         /* dwt header file. */
-#include "service_display.h"   /* service_display header file. */
-#include "service_camera.h"    /* service_camera header file. */
-#include "service_indicator.h" /* service_indicator header file. */
-#include "service_storage.h"   /* service_storage header file. */
+#include "service_app.h"       /* service_app header file. */
 #include "service_osd.h"       /* service_osd header file. */
+#include "device_camera.h"     /* for device_camera_frame_isr in ISR */
+#include "device_key.h"        /* for key polling task */
 // #define MINIMP3_NO_SIMD
 #define MINIMP3_FLOAT_OUTPUT
 #define MINIMP3_IMPLEMENTATION
@@ -78,6 +77,8 @@ kfifo_t g_kfifo;
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
+static void BatteryTask(void *argument);
+static void KeyTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -115,8 +116,21 @@ void MX_FREERTOS_Init(void)
                                     &defaultTask_attributes);
 
     /* USER CODE BEGIN RTOS_THREADS */
-    /* add threads, ... */
     userShellInit();
+
+    static const osThreadAttr_t battery_task_attr = {
+        .name       = "batteryTask",
+        .stack_size = 512U,
+        .priority   = (osPriority_t)osPriorityBelowNormal,
+    };
+    osThreadNew(BatteryTask, NULL, &battery_task_attr);
+
+    static const osThreadAttr_t key_task_attr = {
+        .name       = "keyTask",
+        .stack_size = 512U,
+        .priority   = (osPriority_t)osPriorityBelowNormal,
+    };
+    osThreadNew(KeyTask, NULL, &key_task_attr);
     /* USER CODE END RTOS_THREADS */
 
     /* USER CODE BEGIN RTOS_EVENTS */
@@ -137,45 +151,17 @@ void StartDefaultTask(void *argument)
     portTASK_USES_FLOATING_POINT();
     ((void)argument);
 
-    if(PLATFORM_ERR_OK != service_indicator_init())
+    if(PLATFORM_ERR_OK != service_app_init())
     {
-        logError("indicator init failed");
+        logError("service_app_init failed");
     }
-    if(PLATFORM_ERR_OK != service_storage_init())
-    {
-        logError("storage init failed");
-    }
-    if(PLATFORM_ERR_OK != service_display_init())
-    {
-        logError("display init failed");
-    }
-    if(PLATFORM_ERR_OK != service_camera_init())
-    {
-        logError("camera init failed");
-    }
-    if(PLATFORM_ERR_OK != service_camera_start())
-    {
-        logError("camera start failed");
-    }
-    if(PLATFORM_ERR_OK != service_osd_init())
-    {
-        logError("osd init failed");
-    }
-    service_osd_set_rec_state(SERVICE_OSD_REC_ACTIVE);
-
     defaultTaskHandle = xTaskGetCurrentTaskHandle();
-    logInfo("run ..");
 
-    /* Idle loop */
     for(;;)
     {
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-        service_osd_render();
-        service_display_show_frame(service_camera_get_buffer(),
-                                    0, OSD_BAR_HEIGHT, 240U, 240U - OSD_BAR_HEIGHT);
-        service_indicator_blink(DEVICE_INDICATOR_1);
-        service_indicator_blink(DEVICE_INDICATOR_2);
-        vTaskDelay(20);
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  /* wait for camera frame */
+        service_on_frame();
+        vTaskDelay(pdMS_TO_TICKS(30U));
     }
     /* USER CODE END StartDefaultTask */
 }
@@ -185,9 +171,55 @@ void StartDefaultTask(void *argument)
 void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
 {
     ((void)hdcmi);
-    service_camera_frame_isr();
+    device_camera_frame_isr();
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     vTaskNotifyGiveFromISR(defaultTaskHandle, &xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+/**
+ * @brief  Simulates battery drain: decreases level by 1% every 2 seconds.
+ *         Calls service_osd_set_battery() — no display logic here.
+ */
+static void BatteryTask(void *argument)
+{
+    ((void)argument);
+    uint8_t bat = 100U;
+    for(;;)
+    {
+        vTaskDelay(pdMS_TO_TICKS(2000U));
+        bat = (bat > 0U) ? (bat - 1U) : 100U;
+        service_osd_set_battery(bat);
+    }
+}
+/**
+ * @brief  Polls KEY1 at 50ms interval, debounces, toggles REC state on press.
+ */
+static void KeyTask(void *argument)
+{
+    ((void)argument);
+    device_key_init(DEVICE_KEY_1);
+    device_key_init(DEVICE_KEY_2);
+
+    static service_osd_rec_state_t s_rec = SERVICE_OSD_REC_ACTIVE;
+
+    for(;;)
+    {
+        vTaskDelay(pdMS_TO_TICKS(50U));
+
+        switch(device_key_get_event(DEVICE_KEY_1))
+        {
+            case DEVICE_KEY_EVT_SHORT_PRESS:
+                s_rec = (SERVICE_OSD_REC_ACTIVE == s_rec)
+                            ? SERVICE_OSD_REC_IDLE
+                            : SERVICE_OSD_REC_ACTIVE;
+                service_osd_set_rec_state(s_rec);
+                break;
+            case DEVICE_KEY_EVT_LONG_PRESS:
+                /* reserved for future use */
+                break;
+            default:
+                break;
+        }
+    }
 }
 /* USER CODE END Application */

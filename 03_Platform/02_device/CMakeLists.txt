@@ -4,6 +4,7 @@ set(PLATFORM_DEVICE_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/device_eeprom.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/device_indicator.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/device_camera.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/device_key.c
 )
 
 set(PLATFORM_DEVICE_PRIVATE_LIB

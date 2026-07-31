@@ -1,6 +1,6 @@
 # ---------- impl_mcu ----------
 set(IMPL_MCU_SRC
-    ${CMAKE_CURRENT_SOURCE_DIR}/Src/mcu_led.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/mcu_gpio.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/mcu_at24.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/mcu_st7789.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/mcu_ov2640.c
