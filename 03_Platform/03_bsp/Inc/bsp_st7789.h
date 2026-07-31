@@ -1,7 +1,7 @@
 ﻿/**
  ******************************************************************************
  *@file               :   bsp_st7789.h
- *@brief              :   ST7789 driver 鈥?protocol functions + transport abstraction.
+ *@brief              :   ST7789 driver protocol functions + transport abstraction.
  *                        Transport is the ONLY replaceable part (SPI/DC/backlight/delay).
  *                        Protocol functions are direct calls, not function pointers.
  *@version            :   V2.0

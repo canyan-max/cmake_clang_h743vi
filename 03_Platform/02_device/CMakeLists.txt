@@ -7,8 +7,10 @@ set(PLATFORM_DEVICE_SRC
 )
 
 set(PLATFORM_DEVICE_PRIVATE_LIB
+    platform_bsp_binding
     platform_bsp
     platform_mcu_interface
+    platform_device_interface
 )
 
 add_library(platform_device STATIC ${PLATFORM_DEVICE_SRC})

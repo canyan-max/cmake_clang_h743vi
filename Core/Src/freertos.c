@@ -175,7 +175,7 @@ void StartDefaultTask(void *argument)
                                     0, OSD_BAR_HEIGHT, 240U, 240U - OSD_BAR_HEIGHT);
         service_indicator_blink(DEVICE_INDICATOR_1);
         service_indicator_blink(DEVICE_INDICATOR_2);
-        vTaskDelay(10);
+        vTaskDelay(20);
     }
     /* USER CODE END StartDefaultTask */
 }

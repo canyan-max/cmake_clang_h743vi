@@ -1,22 +1,20 @@
-﻿/**
+/**
  ******************************************************************************
  *@file               :   device_indicator.c
- *@brief              :   Provide the device indicator  APIs of description.
+ *@brief              :   Provide the device indicator APIs of description.
  *@version            :   V1.0
  *@note               :   1 tab == 4 spaces!  2026
  ******************************************************************************
  */
 
 /* Includes -----------------------------------------------------------------*/
-#include <stddef.h>           /* stdint lib header file. */
-#include "device_indicator.h" /* device_indicator lib header file. */
+#include <stddef.h>
+#include "device_indicator.h"
 #include "bsp_led.h"
-/* define   -----------------------------------------------------------------*/
-
-/* typedef ------------------------------------------------------------------*/
 
 /* variables ----------------------------------------------------------------*/
 static led_driver_t g_leds[DEVICE_INDICATOR_NUM];
+
 /* private  functions  ------------------------------------------------------*/
 static inline led_driver_t *get_led(device_indicator_id_t id)
 {
@@ -26,6 +24,7 @@ static inline led_driver_t *get_led(device_indicator_id_t id)
     }
     return &g_leds[id];
 }
+
 /* exported functions -------------------------------------------------------*/
 
 platform_err_t device_indicator_init(device_indicator_id_t id)
@@ -42,15 +41,8 @@ platform_err_t device_indicator_init(device_indicator_id_t id)
 platform_err_t device_indicator_on(device_indicator_id_t id)
 {
     led_driver_t *p_led = get_led(id);
-    if(NULL == p_led)
-    {
-        return PLATFORM_ERR_PARAM;
-    }
-    if(LED_DRIVER_IS_INIT != p_led->is_init)
-    {
-        return PLATFORM_ERR_PARAM;
-    }
-    if(NULL == p_led->p_led_ops || NULL == p_led->p_led_ops->pf_led_on)
+    if(NULL == p_led || LED_DRIVER_IS_INIT != p_led->is_init ||
+       NULL == p_led->p_led_ops || NULL == p_led->p_led_ops->pf_led_on)
     {
         return PLATFORM_ERR_PARAM;
     }
@@ -61,15 +53,8 @@ platform_err_t device_indicator_on(device_indicator_id_t id)
 platform_err_t device_indicator_off(device_indicator_id_t id)
 {
     led_driver_t *p_led = get_led(id);
-    if(NULL == p_led)
-    {
-        return PLATFORM_ERR_PARAM;
-    }
-    if(LED_DRIVER_IS_INIT != p_led->is_init)
-    {
-        return PLATFORM_ERR_PARAM;
-    }
-    if(NULL == p_led->p_led_ops || NULL == p_led->p_led_ops->pf_led_off)
+    if(NULL == p_led || LED_DRIVER_IS_INIT != p_led->is_init ||
+       NULL == p_led->p_led_ops || NULL == p_led->p_led_ops->pf_led_off)
     {
         return PLATFORM_ERR_PARAM;
     }
@@ -80,15 +65,8 @@ platform_err_t device_indicator_off(device_indicator_id_t id)
 platform_err_t device_indicator_blink(device_indicator_id_t id)
 {
     led_driver_t *p_led = get_led(id);
-    if(NULL == p_led)
-    {
-        return PLATFORM_ERR_PARAM;
-    }
-    if(LED_DRIVER_IS_INIT != p_led->is_init)
-    {
-        return PLATFORM_ERR_PARAM;
-    }
-    if(NULL == p_led->p_led_ops || NULL == p_led->p_led_ops->pf_led_blink)
+    if(NULL == p_led || LED_DRIVER_IS_INIT != p_led->is_init ||
+       NULL == p_led->p_led_ops || NULL == p_led->p_led_ops->pf_led_blink)
     {
         return PLATFORM_ERR_PARAM;
     }

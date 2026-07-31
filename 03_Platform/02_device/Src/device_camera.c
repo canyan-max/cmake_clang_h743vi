@@ -1,4 +1,4 @@
-﻿/**
+/**
  ******************************************************************************
  *@file               :   device_camera.c
  *@brief              :   Provide the device of camera
@@ -10,45 +10,32 @@
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>
 #include "device_camera.h"
-#include "bsp_ov2640.h"
+#include "camera_intf.h"
 #include "plat_sys.h"
 
 /* define   -----------------------------------------------------------------*/
-#define DEVICE_CAM_BUF_SIZE  (OV2640_OUT_W * OV2640_OUT_H * 2U)
+#define DEVICE_CAM_BUF_SIZE  BSP_CAMERA_BUF_SIZE
 
 /* variables ----------------------------------------------------------------*/
 __attribute__((section(".ram_d2_dma_buffers"), aligned(32)))
 static uint8_t g_cam_buf[DEVICE_CAM_BUF_SIZE];
 
-static ov2640_dev_t g_cam;
-
 /* exported functions -------------------------------------------------------*/
 
 platform_err_t device_camera_init(void)
 {
-    ov2640_state_t ret = bsp_ov2640_init(&g_cam, OV2640_MODE_SVGA);
-    return (OV2640_OK == ret) ? PLATFORM_ERR_OK : PLATFORM_ERR_HW;
+    return g_camera_bsp_ops.pf_init();
 }
 
 platform_err_t device_camera_start(void)
 {
-    if(OV2640_DRIVER_IS_INIT != g_cam.is_init)
-    {
-        return PLATFORM_ERR_HW;
-    }
-    ov2640_state_t ret = ov2640_start(&g_cam, (uint32_t *)g_cam_buf,
-                                       DEVICE_CAM_BUF_SIZE / sizeof(uint32_t));
-    return (OV2640_OK == ret) ? PLATFORM_ERR_OK : PLATFORM_ERR_HW;
+    return g_camera_bsp_ops.pf_start((uint32_t *)g_cam_buf,
+                                      DEVICE_CAM_BUF_SIZE / sizeof(uint32_t));
 }
 
 platform_err_t device_camera_stop(void)
 {
-    if(OV2640_DRIVER_IS_INIT != g_cam.is_init)
-    {
-        return PLATFORM_ERR_HW;
-    }
-    ov2640_state_t ret = ov2640_stop(&g_cam);
-    return (OV2640_OK == ret) ? PLATFORM_ERR_OK : PLATFORM_ERR_HW;
+    return g_camera_bsp_ops.pf_stop();
 }
 
 uint8_t *device_camera_get_buffer(void)

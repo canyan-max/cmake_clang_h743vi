@@ -250,4 +250,5 @@ ov2640_state_t bsp_ov2640_init(ov2640_dev_t *p_drv, ov2640_sensor_mode_t sensor_
     return OV2640_OK;
 }
 
+
 /* end of file --------------------------------------------------------------*/

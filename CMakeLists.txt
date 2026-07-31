@@ -48,8 +48,10 @@ add_subdirectory(Middlewares/Minimp3)
 add_subdirectory(02_Service)
 add_subdirectory(03_Platform/01_common)
 add_subdirectory(03_Platform/04_mcu_interface)
+add_subdirectory(03_Platform/02_device_interface)
 add_subdirectory(04_Impl/01_mcu)
 add_subdirectory(03_Platform/03_bsp)
+add_subdirectory(03_Platform/03_bsp_binding)
 add_subdirectory(03_Platform/02_device)
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
@@ -87,6 +89,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     service
     platform_common
     platform_bsp
+    platform_bsp_binding
     impl_mcu
     platform_device
     dwt
