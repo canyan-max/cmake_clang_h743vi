@@ -18,7 +18,7 @@ static ov2640_dev_t g_ov2640_cam;
 /* Private functions --------------------------------------------------------*/
 static platform_err_t camera_bsp_init(void)
 {
-    ov2640_state_t ret = bsp_ov2640_init(&g_ov2640_cam, OV2640_MODE_SVGA);
+    ov2640_state_t ret = bsp_ov2640_init(&g_ov2640_cam, OV2640_MODE_CIF);
     return (OV2640_OK == ret) ? PLATFORM_ERR_OK : PLATFORM_ERR_HW;
 }
 

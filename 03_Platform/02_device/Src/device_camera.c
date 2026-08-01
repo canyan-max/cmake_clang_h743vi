@@ -40,7 +40,7 @@ platform_err_t device_camera_stop(void)
 
 uint8_t *device_camera_get_buffer(void)
 {
-    return g_cam_buf;
+    return g_cam_buf ;
 }
 
 uint32_t device_camera_get_buffer_size(void)

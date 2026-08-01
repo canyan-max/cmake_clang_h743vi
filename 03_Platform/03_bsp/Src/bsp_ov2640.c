@@ -1,15 +1,14 @@
 ﻿/**
  ******************************************************************************
- *@file               :   bsp_drv_ov2640.c
+ *@file               :   bsp_ov2640.c
  *@brief              :   Provide the HAL APIs of description.
- *@version            :   V1.0 
+ *@version            :   V1.0
  *@note               :   1 tab == 4 spaces!  2026
  ******************************************************************************
  */
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>
 #include "bsp_ov2640.h"
-extern const ov2640_hw_ops_t g_ov2640_hw_ops;
 
 /* Private variables --------------------------------------------------------*/
 
@@ -128,12 +127,10 @@ static ov2640_state_t ov2640_apply_config(ov2640_dev_t *p_drv,
         }
         if(cfg[i][0] == 0xFFU)
         {
-            /* Bank 切换后等待稳定 */
             p_drv->p_hw_ops->pf_delay_ms(2U);
         }
         else if(cfg[i][0] == 0x12U && cfg[i][1] == 0x80U)
         {
-            /* 软件复位后等待传感器就绪 */
             p_drv->p_hw_ops->pf_delay_ms(50U);
         }
         else
@@ -144,8 +141,7 @@ static ov2640_state_t ov2640_apply_config(ov2640_dev_t *p_drv,
     return OV2640_OK;
 }
 
-ov2640_state_t
-ov2640_set_out_size(ov2640_dev_t *p_drv, uint16_t w, uint16_t h)
+ov2640_state_t ov2640_set_out_size(ov2640_dev_t *p_drv, uint16_t w, uint16_t h)
 {
     if(NULL == p_drv || 0U == w || 0U == h)
     {
@@ -186,16 +182,18 @@ ov2640_state_t ov2640_stop(ov2640_dev_t *p_drv)
 
 /* ---- board-level init ---------------------------------------------------- */
 
-extern const ov2640_hw_ops_t g_ov2640_hw_ops;
-
-ov2640_state_t bsp_ov2640_init(ov2640_dev_t *p_drv, ov2640_sensor_mode_t sensor_mode)
+ov2640_state_t bsp_ov2640_init(ov2640_dev_t        *p_drv,
+                               ov2640_sensor_mode_t sensor_mode)
 {
     const ov2640_hw_ops_t *ops = &g_ov2640_hw_ops;
     const uint8_t (*cfg)[2];
     uint32_t dsp_w;
     uint32_t dsp_h;
 
-    if (NULL == p_drv) { return OV2640_INVALID_PARAM; }
+    if(NULL == p_drv)
+    {
+        return OV2640_INVALID_PARAM;
+    }
 
     /* wire transport */
     p_drv->p_hw_ops    = ops;
@@ -205,12 +203,12 @@ ov2640_state_t bsp_ov2640_init(ov2640_dev_t *p_drv, ov2640_sensor_mode_t sensor_
     ops->pf_power_ctrl(OV2640_POWER_ON);
     ops->pf_delay_ms(10U);
 
-    /* select config table */
-    if (OV2640_MODE_CIF == sensor_mode)
+    /* 选择配置表；CIF 预留，当前与 SVGA 共用同一张表 */
+    if(OV2640_MODE_CIF == sensor_mode)
     {
         cfg   = ov2640_svga_cfg;
-        dsp_w = OV2640_SVGA_DSP_W;
-        dsp_h = OV2640_SVGA_DSP_H;
+        dsp_w = OV2640_CIF_DSP_W;
+        dsp_h = OV2640_CIF_DSP_H;
     }
     else
     {
@@ -225,11 +223,15 @@ ov2640_state_t bsp_ov2640_init(ov2640_dev_t *p_drv, ov2640_sensor_mode_t sensor_
     ops->pf_delay_ms(10U);
 
     /* write config table */
-    if (OV2640_OK != ov2640_apply_config(p_drv, cfg)) { return OV2640_ERROR; }
+    if(OV2640_OK != ov2640_apply_config(p_drv, cfg))
+    {
+        return OV2640_ERROR;
+    }
     ops->pf_delay_ms(10U);
 
     /* set DSP output size */
-    if (OV2640_OK != ov2640_set_out_size(p_drv, (uint16_t)dsp_w, (uint16_t)dsp_h))
+    if(OV2640_OK !=
+       ov2640_set_out_size(p_drv, (uint16_t)dsp_w, (uint16_t)dsp_h))
     {
         return OV2640_ERROR;
     }
@@ -240,7 +242,7 @@ ov2640_state_t bsp_ov2640_init(ov2640_dev_t *p_drv, ov2640_sensor_mode_t sensor_
         uint32_t y0   = (dsp_h - OV2640_OUT_H) / 2U - 1U;
         uint32_t xcnt = OV2640_OUT_W * 2U - 1U;
         uint32_t ycnt = OV2640_OUT_H - 1U;
-        if (ops->pf_config_crop(x0, y0, xcnt, ycnt) != OV2640_OK)
+        if(ops->pf_config_crop(x0, y0, xcnt, ycnt) != OV2640_OK)
         {
             return OV2640_ERROR;
         }
@@ -249,6 +251,5 @@ ov2640_state_t bsp_ov2640_init(ov2640_dev_t *p_drv, ov2640_sensor_mode_t sensor_
     p_drv->is_init = OV2640_DRIVER_IS_INIT;
     return OV2640_OK;
 }
-
 
 /* end of file --------------------------------------------------------------*/

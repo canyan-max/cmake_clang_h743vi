@@ -48,6 +48,9 @@ typedef struct ST7789_SPI_OPS_T
     void           (*pf_delay_ms)(uint32_t ms);
 } st7789_spi_ops_t;
 
+/* ---- transport instance (provided by MCU impl) --------------------------- */
+extern const st7789_spi_ops_t g_st7789_spi_ops;
+
 /* ---- device instance ----------------------------------------------------- */
 struct ST7789_DEV_T
 {

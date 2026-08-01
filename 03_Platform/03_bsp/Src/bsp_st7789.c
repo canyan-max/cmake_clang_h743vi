@@ -1,6 +1,6 @@
 ﻿/**
  ******************************************************************************
- *@file               :   bsp_drv_st7789.c
+ *@file               :   bsp_st7789.c
  *@brief              :   Provide the HAL APIs of description.
  *@version            :   V1.0
  *@note               :   1 tab == 4 spaces!  2026
@@ -1282,8 +1282,6 @@ st7789_state_t st7789_draw_line(st7789_dev_t *p_drv,
 }
 
 /* ---- board-level init ---------------------------------------------------- */
-
-extern const st7789_spi_ops_t g_st7789_spi_ops;
 
 st7789_state_t bsp_st7789_init(st7789_dev_t *p_drv)
 {

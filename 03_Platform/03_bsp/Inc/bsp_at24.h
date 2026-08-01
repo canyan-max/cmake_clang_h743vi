@@ -57,6 +57,9 @@ typedef struct IIC_OPS_T
                                   uint8_t *p_data, uint16_t size, uint32_t timeout);
 } iic_ops_t;
 
+/* ---- transport instance (provided by MCU impl) --------------------------- */
+extern const iic_ops_t g_at24c02_iic_ops;
+
 /* ---- device instance ----------------------------------------------------- */
 struct AT24_DEV_T
 {

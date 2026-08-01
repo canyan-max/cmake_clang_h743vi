@@ -63,59 +63,57 @@ __attribute__((section(".ram_dma_buffers"),
                aligned(8))) uint8_t ucHeap[configTOTAL_HEAP_SIZE];
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
-osThreadId_t         defaultTaskHandle;
+osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
-    .name       = "defaultTask",
-    .stack_size = 8192 * 4,
-    .priority   = (osPriority_t)osPriorityNormal,
+  .name = "defaultTask",
+  .stack_size = 512 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
 uint8_t k_fifo_buffer[16];
 kfifo_t g_kfifo;
+static void BatteryTask(void *argument);
+static void KeyTask(void *argument);
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
-static void BatteryTask(void *argument);
-static void KeyTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
- * @brief  FreeRTOS initialization
- * @param  None
- * @retval None
- */
-void MX_FREERTOS_Init(void)
-{
-    /* USER CODE BEGIN Init */
+  * @brief  FreeRTOS initialization
+  * @param  None
+  * @retval None
+  */
+void MX_FREERTOS_Init(void) {
+  /* USER CODE BEGIN Init */
     dwt_init();
-    /* USER CODE END Init */
+  /* USER CODE END Init */
 
-    /* USER CODE BEGIN RTOS_MUTEX */
+  /* USER CODE BEGIN RTOS_MUTEX */
     /* add mutexes, ... */
-    /* USER CODE END RTOS_MUTEX */
+  /* USER CODE END RTOS_MUTEX */
 
-    /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
     /* add semaphores, ... */
-    /* USER CODE END RTOS_SEMAPHORES */
+  /* USER CODE END RTOS_SEMAPHORES */
 
-    /* USER CODE BEGIN RTOS_TIMERS */
+  /* USER CODE BEGIN RTOS_TIMERS */
     /* start timers, add new ones, ... */
-    /* USER CODE END RTOS_TIMERS */
+  /* USER CODE END RTOS_TIMERS */
 
-    /* USER CODE BEGIN RTOS_QUEUES */
+  /* USER CODE BEGIN RTOS_QUEUES */
     /* add queues, ... */
 
-    /* USER CODE END RTOS_QUEUES */
+  /* USER CODE END RTOS_QUEUES */
 
-    /* Create the thread(s) */
-    /* creation of defaultTask */
-    defaultTaskHandle = osThreadNew(StartDefaultTask, NULL,
-                                    &defaultTask_attributes);
+  /* Create the thread(s) */
+  /* creation of defaultTask */
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-    /* USER CODE BEGIN RTOS_THREADS */
+  /* USER CODE BEGIN RTOS_THREADS */
     userShellInit();
 
     static const osThreadAttr_t battery_task_attr = {
@@ -131,11 +129,12 @@ void MX_FREERTOS_Init(void)
         .priority   = (osPriority_t)osPriorityBelowNormal,
     };
     osThreadNew(KeyTask, NULL, &key_task_attr);
-    /* USER CODE END RTOS_THREADS */
+  /* USER CODE END RTOS_THREADS */
 
-    /* USER CODE BEGIN RTOS_EVENTS */
+  /* USER CODE BEGIN RTOS_EVENTS */
     /* add events, ... */
-    /* USER CODE END RTOS_EVENTS */
+  /* USER CODE END RTOS_EVENTS */
+
 }
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -147,7 +146,7 @@ void MX_FREERTOS_Init(void)
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void *argument)
 {
-    /* USER CODE BEGIN StartDefaultTask */
+  /* USER CODE BEGIN StartDefaultTask */
     portTASK_USES_FLOATING_POINT();
     ((void)argument);
 
@@ -161,9 +160,9 @@ void StartDefaultTask(void *argument)
     {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  /* wait for camera frame */
         service_on_frame();
-        vTaskDelay(pdMS_TO_TICKS(30U));
+        vTaskDelay(pdMS_TO_TICKS(5U));
     }
-    /* USER CODE END StartDefaultTask */
+  /* USER CODE END StartDefaultTask */
 }
 
 /* Private application code --------------------------------------------------*/
@@ -186,7 +185,7 @@ static void BatteryTask(void *argument)
     uint8_t bat = 100U;
     for(;;)
     {
-        vTaskDelay(pdMS_TO_TICKS(2000U));
+        vTaskDelay(pdMS_TO_TICKS(5000U));
         bat = (bat > 0U) ? (bat - 1U) : 100U;
         service_osd_set_battery(bat);
     }
@@ -223,3 +222,4 @@ static void KeyTask(void *argument)
     }
 }
 /* USER CODE END Application */
+

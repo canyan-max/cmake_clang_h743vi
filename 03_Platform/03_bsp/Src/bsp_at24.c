@@ -1,6 +1,6 @@
 ﻿/**
  ******************************************************************************
- *@file               :   bsp_drv_at24.c
+ *@file               :   bsp_at24.c
  *@brief              :   Provide the HAL APIs of description.
  *@version            :   V1.0 
  *@note               :   1 tab == 4 spaces!  2026
@@ -174,8 +174,6 @@ at24_state_t at24_write_byte(at24_dev_t *p_drv,
                          uint8_t  dev_adr)]
  */
 /* ---- board-level init ---------------------------------------------------- */
-
-extern const iic_ops_t g_at24c02_iic_ops;
 
 at24_state_t bsp_at24_init(at24_dev_t *p_drv)
 {

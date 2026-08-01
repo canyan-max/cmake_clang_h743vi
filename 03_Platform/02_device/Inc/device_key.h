@@ -15,7 +15,6 @@ extern "C"
 {
 #endif
 
-#include <stdint.h>
 #include "plat_error.h"
 
 /* ---- key id -------------------------------------------------------------- */

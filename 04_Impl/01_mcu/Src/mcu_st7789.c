@@ -1,6 +1,6 @@
 ﻿/**
  ******************************************************************************
- *@file               :   st_lcd_spi.c
+ *@file               :   mcu_st7789.c
  *@brief              :   Provide the HAL APIs of description.
  *@version            :   V1.0 
  *@note               :   1 tab == 4 spaces!  2026
@@ -9,7 +9,6 @@
 /* Includes -----------------------------------------------------------------*/
 #include "stdint.h"         /* stdint lib header file. */
 #include "stddef.h"         /* stddef lib header file. */
-#include "mcu_st7789.h"     /* st_lcd_spi lib header file. */
 #include "bsp_st7789.h" /* bsp_drv_st7789 lib header file. */
 #include "spi.h"            /* spi lib header file. */
 /* define   -----------------------------------------------------------------*/
@@ -30,7 +29,6 @@ const st7789_spi_ops_t g_st7789_spi_ops = {
     .pf_dc_pin                = st_dc_pin,
     .pf_delay_ms              = st_delay_ms,
 };
-uint8_t g_dma_spi_tx_finish = 0;
 /* Private  functions  ------------------------------------------------------*/
 
 /**
@@ -127,17 +125,4 @@ static void st_delay_ms(uint32_t ms)
     HAL_Delay(ms);
 }
 
-void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
-{
-    if(hspi == &hspi4)
-    {
-    }
-}
-
-void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
-{
-    if(hspi == &hspi4)
-    {
-    }
-}
 /* end of  file -------------------------------------------------------------*/

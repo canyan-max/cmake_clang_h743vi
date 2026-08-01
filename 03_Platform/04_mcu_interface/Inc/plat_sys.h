@@ -7,8 +7,8 @@
  ******************************************************************************
  */
 /* Define to prevent recursive inclusion ------------------------------------*/
-#ifndef PLAT_TICK_H
-#define PLAT_TICK_H
+#ifndef PLAT_SYS_H
+#define PLAT_SYS_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,5 +33,5 @@ void     plat_dcache_invalidate(void *p_addr, int32_t size);
 }
 #endif
 
-#endif /* PLAT_TICK_H */
+#endif /* PLAT_SYS_H */
 

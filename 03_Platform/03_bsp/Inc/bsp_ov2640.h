@@ -44,6 +44,7 @@ typedef enum
     OV2640_INVALID_PARAM = 0x04U,
 } ov2640_state_t;
 
+/* 预留：不同输出分辨率的传感器模式，配置表后续按需填充 */
 typedef enum
 {
     OV2640_MODE_SVGA = 0x00U,
@@ -69,6 +70,9 @@ typedef struct OV2640_HW_OPS_T
     void (*pf_power_ctrl)(uint8_t state);
     void (*pf_delay_ms)(uint32_t ms);
 } ov2640_hw_ops_t;
+
+/* ---- hw ops instance (provided by MCU impl) ------------------------------ */
+extern const ov2640_hw_ops_t g_ov2640_hw_ops;
 
 /* ---- device instance ----------------------------------------------------- */
 struct OV2640_DEV_T

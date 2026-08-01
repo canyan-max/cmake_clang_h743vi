@@ -8,7 +8,6 @@
  */
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>
-#include "mcu_at24.h"
 #include "board_config.h"
 #include "i2c.h"
 #include "bsp_at24.h"
