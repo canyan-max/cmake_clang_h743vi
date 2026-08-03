@@ -10,6 +10,7 @@
 #define BOARD_CONFIG_H
 
 #include "gpio.h"   /* LED1_GPIO_Port / KEY_1_GPIO_Port etc. */
+#include "usart.h"  /* hlpuart1 */
 
 /* OV2640 camera ------------------------------------------------------------*/
 #define BOARD_CAM_I2C_ADDR          (0x60U)
@@ -33,5 +34,6 @@
 #define BOARD_CAM_I2C_HANDLE        hi2c1
 #define BOARD_CAM_DCMI_HANDLE       hdcmi
 #define BOARD_EEPROM_I2C_HANDLE     hi2c1
+#define BOARD_UART_PROTO1_HANDLE    hlpuart1
 
 #endif /* BOARD_CONFIG_H */

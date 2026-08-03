@@ -5,6 +5,7 @@ set(PLATFORM_BSP_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_st7789.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_ov2640.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_key.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_uart.c
 )
 
 set(PLATFORM_BSP_DEPEND_LIB
@@ -13,6 +14,7 @@ set(PLATFORM_BSP_DEPEND_LIB
     letter_shell
     front
     impl_mcu
+    kfifo
 )
 
 

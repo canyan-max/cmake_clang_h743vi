@@ -35,6 +35,7 @@
 #include "service_osd.h"       /* service_osd header file. */
 #include "device_camera.h"     /* for device_camera_frame_isr in ISR */
 #include "device_key.h"        /* for key polling task */
+#include "service_uart_test.h"  /* for DMA+IDLE UART smoke test */
 // #define MINIMP3_NO_SIMD
 #define MINIMP3_FLOAT_OUTPUT
 #define MINIMP3_IMPLEMENTATION
@@ -76,6 +77,7 @@ uint8_t k_fifo_buffer[16];
 kfifo_t g_kfifo;
 static void BatteryTask(void *argument);
 static void KeyTask(void *argument);
+static void UartEchoTestTask(void *argument);
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -114,7 +116,7 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-    userShellInit();
+    // userShellInit();
 
     static const osThreadAttr_t battery_task_attr = {
         .name       = "batteryTask",
@@ -129,6 +131,13 @@ void MX_FREERTOS_Init(void) {
         .priority   = (osPriority_t)osPriorityBelowNormal,
     };
     osThreadNew(KeyTask, NULL, &key_task_attr);
+
+    static const osThreadAttr_t uart_test_task_attr = {
+        .name       = "uartTestTask",
+        .stack_size = 512U,
+        .priority   = (osPriority_t)osPriorityBelowNormal,
+    };
+    osThreadNew(UartEchoTestTask, NULL, &uart_test_task_attr);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -219,6 +228,22 @@ static void KeyTask(void *argument)
             default:
                 break;
         }
+    }
+}
+/**
+ * @brief  DMA+IDLE + proto_simple smoke test: parses framed data received
+ *         on DEVICE_UART_PROTO_1 (bound to hlpuart1 for bring-up) and echoes
+ *         the decoded payload back.
+ */
+static void UartEchoTestTask(void *argument)
+{
+    ((void)argument);
+    (void)service_uart_test_init();
+
+    for(;;)
+    {
+        vTaskDelay(pdMS_TO_TICKS(20U));
+        service_uart_test_poll();
     }
 }
 /* USER CODE END Application */

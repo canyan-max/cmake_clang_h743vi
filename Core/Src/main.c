@@ -20,6 +20,7 @@
 #include "main.h"
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
+#include "bdma.h"
 #include "dcmi.h"
 #include "dma.h"
 #include "i2c.h"
@@ -101,10 +102,11 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
+  MX_BDMA_Init();
   MX_LPUART1_UART_Init();
   MX_SPI4_Init();
-  MX_DCMI_Init();
   MX_I2C1_Init();
+  MX_DCMI_Init();
   /* USER CODE BEGIN 2 */
   /* USER CODE END 2 */
 

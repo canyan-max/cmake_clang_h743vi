@@ -57,6 +57,8 @@ void DMA2_Stream7_IRQHandler(void);
 void DCMI_IRQHandler(void);
 void SPI4_IRQHandler(void);
 void TIM17_IRQHandler(void);
+void BDMA_Channel0_IRQHandler(void);
+void LPUART1_IRQHandler(void);
 /* USER CODE BEGIN EFP */
 
 /* USER CODE END EFP */

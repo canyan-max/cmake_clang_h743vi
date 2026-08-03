@@ -247,7 +247,14 @@ SECTIONS
     *(.ram_d2_dma_buffers)
     *(.ram_d2_dma_buffers.*)
     . = ALIGN(32);
-  } >RAM_D2  
+  } >RAM_D2
+
+  .ram_d3_dma_buffers (NOLOAD) : ALIGN(32)
+  {
+    *(.ram_d3_dma_buffers)
+    *(.ram_d3_dma_buffers.*)
+    . = ALIGN(32);
+  } >RAM_D3
 
   /* User_heap_stack section, used to check that there is enough RAM left */
   ._user_heap_stack (NOLOAD) :
