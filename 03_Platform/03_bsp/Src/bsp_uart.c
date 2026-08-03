@@ -23,8 +23,9 @@
 /* typedef  -------------------------------------------------------------- */
 typedef struct
 {
-    kfifo_t  rx_fifo;
-    uint32_t last_pos; /* last DMA write position handled (0..BUF_SIZE-1) */
+    kfifo_t                 rx_fifo;
+    uint32_t                last_pos; /* last DMA write position handled (0..BUF_SIZE-1) */
+    bsp_uart_rx_notify_cb_t rx_notify_cb;
 } uart_inst_t;
 
 /* variables ----------------------------------------------------------------*/
@@ -60,6 +61,10 @@ static void uart_rx_event_handler(plat_uart_id_t id, uint16_t size)
     {
         kfifo_advance_in(&p_inst->rx_fifo, delta);
         p_inst->last_pos = size & (BSP_UART_RX_BUF_SIZE - 1U);
+        if(NULL != p_inst->rx_notify_cb)
+        {
+            p_inst->rx_notify_cb(id);
+        }
     }
 }
 
@@ -113,6 +118,17 @@ uint16_t bsp_uart_available(plat_uart_id_t id)
         return 0U;
     }
     return (uint16_t)kfifo_len(&g_uart_inst[id].rx_fifo);
+}
+
+platform_err_t bsp_uart_set_rx_notify_cb(plat_uart_id_t id,
+                                          bsp_uart_rx_notify_cb_t cb)
+{
+    if(id >= PLAT_UART_NUM)
+    {
+        return PLATFORM_ERR_PARAM;
+    }
+    g_uart_inst[id].rx_notify_cb = cb;
+    return PLATFORM_ERR_OK;
 }
 
 /* end of file --------------------------------------------------------------*/

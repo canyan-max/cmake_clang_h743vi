@@ -30,6 +30,10 @@ typedef enum
     DEVICE_UART_NUM,
 } device_uart_id_t;
 
+/* Fired from ISR context when new bytes are ready to read. Must be
+ * ISR-safe: no blocking calls. */
+typedef void (*device_uart_rx_notify_cb_t)(device_uart_id_t id);
+
 /* Exported types -----------------------------------------------------------*/
 
 /* variables ----------------------------------------------------------------*/
@@ -41,6 +45,8 @@ platform_err_t device_uart_send(device_uart_id_t id, const uint8_t *p_data,
 uint16_t       device_uart_read(device_uart_id_t id, uint8_t *p_buf,
                                  uint16_t max_len);
 uint16_t       device_uart_available(device_uart_id_t id);
+platform_err_t device_uart_set_rx_notify_cb(device_uart_id_t          id,
+                                             device_uart_rx_notify_cb_t cb);
 
 #ifdef __cplusplus
 }

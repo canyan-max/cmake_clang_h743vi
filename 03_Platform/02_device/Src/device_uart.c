@@ -8,8 +8,27 @@
  */
 
 /* Includes -----------------------------------------------------------------*/
+#include <stddef.h>
 #include "device_uart.h"
 #include "bsp_uart.h"
+
+/* variables ----------------------------------------------------------------*/
+static device_uart_rx_notify_cb_t s_rx_notify_cb[DEVICE_UART_NUM];
+
+/* private  functions  ------------------------------------------------------*/
+
+/* Trampoline: bsp_uart's callback is typed plat_uart_id_t, ours is
+ * device_uart_id_t — the two enums share the same values, so this just
+ * re-dispatches to the registered device-level callback. Runs in ISR
+ * context, same as bsp_uart's notify. */
+static void device_uart_rx_notify_trampoline(plat_uart_id_t id)
+{
+    device_uart_id_t dev_id = (device_uart_id_t)id;
+    if((dev_id < DEVICE_UART_NUM) && (NULL != s_rx_notify_cb[dev_id]))
+    {
+        s_rx_notify_cb[dev_id](dev_id);
+    }
+}
 
 /* exported functions -------------------------------------------------------*/
 
@@ -49,6 +68,18 @@ uint16_t device_uart_available(device_uart_id_t id)
         return 0U;
     }
     return bsp_uart_available((plat_uart_id_t)id);
+}
+
+platform_err_t device_uart_set_rx_notify_cb(device_uart_id_t          id,
+                                             device_uart_rx_notify_cb_t cb)
+{
+    if(id >= DEVICE_UART_NUM)
+    {
+        return PLATFORM_ERR_PARAM;
+    }
+    s_rx_notify_cb[id] = cb;
+    return bsp_uart_set_rx_notify_cb((plat_uart_id_t)id,
+                                      device_uart_rx_notify_trampoline);
 }
 
 /* end of file --------------------------------------------------------------*/

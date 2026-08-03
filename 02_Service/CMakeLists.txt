@@ -10,6 +10,7 @@ set(SERVICE_DEPEND_LIB
     platform_mcu_interface
     front
     protocol
+    stm32cubemx
 )
 
 add_library(service STATIC ${SERVICE_SRC})

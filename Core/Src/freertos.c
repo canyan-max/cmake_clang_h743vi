@@ -247,7 +247,7 @@ static void UartEchoTestTask(void *argument)
 
     for(;;)
     {
-        vTaskDelay(pdMS_TO_TICKS(20U));
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY); /* wait for RX data */
         service_uart_test_poll();
     }
 }
