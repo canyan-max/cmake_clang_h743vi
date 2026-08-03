@@ -28,6 +28,16 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 project(${CMAKE_PROJECT_NAME})
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
+# EasyLogger / Segger RTT switches — set OFF to compile them out entirely.
+# NOTE: the USE_DEBUG_LOG / USE_JLINK_RTT defines themselves are attached to
+# the platform_mcu_interface / EasyLog targets (not added globally here), so
+# that any translation unit seeing USE_DEBUG_LOG also always has EasyLog's
+# include path — a blanket add_compile_definitions() here previously put
+# USE_DEBUG_LOG on every file in the project (HAL, FreeRTOS, ...) without the
+# matching -I, which also confused clangd's header-only fallback resolution.
+option(USE_DEBUG_LOG "Compile in EasyLogger-based debug logging" ON)
+option(USE_JLINK_RTT "Route EasyLogger output through Segger RTT (else UART)" ON)
+
 
 # Enable CMake support for ASM and C languages
 enable_language(C ASM)
@@ -45,15 +55,17 @@ add_subdirectory(Middlewares/Dwt)
 add_subdirectory(Middlewares/Front)
 add_subdirectory(Middlewares/Minimp3)
 add_subdirectory(Middlewares/Protocol)
+add_subdirectory(Middlewares/SEGGER_RTT)
+add_subdirectory(Middlewares/EasyLog)
 # add_subdirectory(Middlewares/SeggerHardFault)
 add_subdirectory(02_Service)
 add_subdirectory(03_Platform/01_common)
 add_subdirectory(03_Platform/04_mcu_interface)
 add_subdirectory(03_Platform/02_device_interface)
-add_subdirectory(04_Impl/01_mcu)
 add_subdirectory(03_Platform/03_bsp)
 add_subdirectory(03_Platform/03_bsp_binding)
 add_subdirectory(03_Platform/02_device)
+add_subdirectory(04_Impl/01_mcu)
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined library search paths
@@ -91,11 +103,13 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     platform_common
     platform_bsp
     platform_bsp_binding
+    platform_mcu_interface
     impl_mcu
     platform_device
     dwt
     front
     minimp3
+    EasyLog
 )
 
 # generate .hex and .bin files from the .elf file after building the executable

@@ -20,7 +20,7 @@ extern "C"
 
 /* Includes -----------------------------------------------------------------*/
 #include <stdint.h> /* stdint lib header file. */
-
+#include "plat_error.h" /* platform error code header file. */
 /* define -------------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/
@@ -37,10 +37,10 @@ typedef void (*plat_uart_rx_cb_t)(plat_uart_id_t id, uint16_t size);
 /* variables ----------------------------------------------------------------*/
 
 /* functions ----------------------------------------------------------------*/
-void plat_uart_send(plat_uart_id_t id, const uint8_t *p_data, uint16_t size);
-void plat_uart_receive_start(plat_uart_id_t id, uint8_t *p_buf,
+platform_err_t plat_uart_send(plat_uart_id_t id, const uint8_t *p_data, uint16_t size);
+platform_err_t plat_uart_receive_start(plat_uart_id_t id, uint8_t *p_buf,
                               uint16_t buf_size);
-void plat_uart_set_rx_callback(plat_uart_id_t id, plat_uart_rx_cb_t cb);
+platform_err_t plat_uart_set_rx_callback(plat_uart_id_t id, plat_uart_rx_cb_t cb);
 
 #ifdef __cplusplus
 }

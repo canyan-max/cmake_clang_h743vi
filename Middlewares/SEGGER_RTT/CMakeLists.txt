@@ -1,0 +1,10 @@
+# ---------- SeggerRTT ----------
+set(SEGGER_RTT_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/SEGGER_RTT.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/SEGGER_RTT_printf.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/SEGGER_RTT_ASM_ARMv7M.S
+)
+
+add_library(SeggerRTT STATIC ${SEGGER_RTT_SRC})
+
+target_include_directories(SeggerRTT PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

@@ -45,47 +45,56 @@ __attribute__((section(".ram_d3_dma_buffers"), aligned(32))) static uint8_t
  * reported by HAL on every HT / TC / IDLE event — not a byte count. */
 static void uart_rx_event_handler(plat_uart_id_t id, uint16_t size)
 {
-    uart_inst_t *p_inst    = &g_uart_inst[id];
-    uint32_t     new_bytes = (size >= p_inst->last_pos)
-                                 ? ((uint32_t)size - p_inst->last_pos)
-                                 : (BSP_UART_RX_BUF_SIZE - p_inst->last_pos +
-                                    (uint32_t)size);
-    p_inst->last_pos       = size;
-
+    uart_inst_t *p_inst = &g_uart_inst[id];
+    // uint32_t     new_bytes = (size >= p_inst->last_pos)
+    //                              ? ((uint32_t)size - p_inst->last_pos)
+    //                              : (BSP_UART_RX_BUF_SIZE - p_inst->last_pos +
+    //                                 (uint32_t)size);
+    uint16_t delta   = (uint16_t)((size - p_inst->last_pos) &
+                                  (BSP_UART_RX_BUF_SIZE - 1U));
+    p_inst->last_pos = size;
     /* RAM_D2/D3 is cacheable on this MCU config; DMA writes bypass the
      * cache, so the CPU must invalidate before reading what DMA wrote. */
     plat_dcache_invalidate(g_rx_buf[id], (int32_t)BSP_UART_RX_BUF_SIZE);
-
-    if(0U != new_bytes)
+    if(delta > 0U)
     {
-        kfifo_advance_in(&p_inst->rx_fifo, new_bytes);
+        kfifo_advance_in(&p_inst->rx_fifo, delta);
+        p_inst->last_pos = size & (BSP_UART_RX_BUF_SIZE - 1U);
     }
 }
 
 /* exported functions -------------------------------------------------------*/
 
-void bsp_uart_init(plat_uart_id_t id)
+platform_err_t bsp_uart_init(plat_uart_id_t id)
 {
     if(id >= PLAT_UART_NUM)
     {
-        return;
+        return PLATFORM_ERR_PARAM;
     }
 
     uart_inst_t *p_inst = &g_uart_inst[id];
-    p_inst->last_pos     = 0U;
-    kfifo_init(&p_inst->rx_fifo, g_rx_buf[id], BSP_UART_RX_BUF_SIZE);
+    p_inst->last_pos    = 0U;
+    if(0U != kfifo_init(&p_inst->rx_fifo, g_rx_buf[id], BSP_UART_RX_BUF_SIZE))
+    {
+        return PLATFORM_ERR_PARAM;
+    }
 
-    plat_uart_set_rx_callback(id, uart_rx_event_handler);
-    plat_uart_receive_start(id, g_rx_buf[id], BSP_UART_RX_BUF_SIZE);
+    platform_err_t ret = plat_uart_set_rx_callback(id, uart_rx_event_handler);
+    if(PLATFORM_ERR_OK != ret)
+    {
+        return ret;
+    }
+    return plat_uart_receive_start(id, g_rx_buf[id], BSP_UART_RX_BUF_SIZE);
 }
 
-void bsp_uart_send(plat_uart_id_t id, const uint8_t *p_data, uint16_t size)
+platform_err_t
+bsp_uart_send(plat_uart_id_t id, const uint8_t *p_data, uint16_t size)
 {
     if((id >= PLAT_UART_NUM) || (NULL == p_data))
     {
-        return;
+        return PLATFORM_ERR_PARAM;
     }
-    plat_uart_send(id, p_data, size);
+    return plat_uart_send(id, p_data, size);
 }
 
 uint16_t bsp_uart_read(plat_uart_id_t id, uint8_t *p_buf, uint16_t max_len)

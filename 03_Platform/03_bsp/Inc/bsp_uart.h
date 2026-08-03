@@ -21,6 +21,7 @@ extern "C"
 
 /* Includes -----------------------------------------------------------------*/
 #include <stdint.h>     /* stdint lib header file. */
+#include "plat_error.h" /* platform error code header file. */
 #include "plat_uart.h"  /* plat_uart_id_t */
 
 /* define -------------------------------------------------------------------*/
@@ -32,9 +33,9 @@ extern "C"
 /* variables ----------------------------------------------------------------*/
 
 /* functions ----------------------------------------------------------------*/
-void     bsp_uart_init(plat_uart_id_t id);
-void     bsp_uart_send(plat_uart_id_t id, const uint8_t *p_data,
-                        uint16_t size);
+platform_err_t bsp_uart_init(plat_uart_id_t id);
+platform_err_t bsp_uart_send(plat_uart_id_t id, const uint8_t *p_data,
+                              uint16_t size);
 uint16_t bsp_uart_read(plat_uart_id_t id, uint8_t *p_buf, uint16_t max_len);
 uint16_t bsp_uart_available(plat_uart_id_t id);
 

@@ -36,6 +36,7 @@
 #include "device_camera.h"     /* for device_camera_frame_isr in ISR */
 #include "device_key.h"        /* for key polling task */
 #include "service_uart_test.h"  /* for DMA+IDLE UART smoke test */
+#include "plat_log.h"           /* platform log header file. */
 // #define MINIMP3_NO_SIMD
 #define MINIMP3_FLOAT_OUTPUT
 #define MINIMP3_IMPLEMENTATION
@@ -92,6 +93,10 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
     dwt_init();
+    if(PLATFORM_ERR_OK == plat_log_init())
+    {
+        plat_log_i("SYS", "log init OK (build %s %s)", __DATE__, __TIME__);
+    }
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */

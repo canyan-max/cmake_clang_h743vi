@@ -19,8 +19,7 @@ platform_err_t device_uart_init(device_uart_id_t id)
     {
         return PLATFORM_ERR_PARAM;
     }
-    bsp_uart_init((plat_uart_id_t)id);
-    return PLATFORM_ERR_OK;
+    return bsp_uart_init((plat_uart_id_t)id);
 }
 
 platform_err_t device_uart_send(device_uart_id_t id, const uint8_t *p_data,
@@ -30,8 +29,7 @@ platform_err_t device_uart_send(device_uart_id_t id, const uint8_t *p_data,
     {
         return PLATFORM_ERR_PARAM;
     }
-    bsp_uart_send((plat_uart_id_t)id, p_data, size);
-    return PLATFORM_ERR_OK;
+    return bsp_uart_send((plat_uart_id_t)id, p_data, size);
 }
 
 uint16_t device_uart_read(device_uart_id_t id, uint8_t *p_buf,

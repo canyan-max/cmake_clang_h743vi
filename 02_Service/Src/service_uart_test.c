@@ -14,6 +14,7 @@
 #include "service_uart_test.h"
 #include "device_uart.h"
 #include "proto_simple.h"
+#include "plat_log.h"
 
 /* define   -----------------------------------------------------------------*/
 #define SERVICE_UART_TEST_POLL_BUF_SIZE  (64U)
@@ -40,15 +41,21 @@ void service_uart_test_poll(void)
         if((PROTO_SIMPLE_ST_SOF == g_parser.state) &&
            (PROTO_SIMPLE_SOF != buf[i]))
         {
-            (void)device_uart_send(DEVICE_UART_PROTO_1, &buf[i], 1U);
+            if(PLATFORM_ERR_OK != device_uart_send(DEVICE_UART_PROTO_1, &buf[i], 1U))
+            {
+                plat_log_w("uart_test", "raw echo send failed");
+            }
             continue;
         }
 
         proto_simple_frame_t frame;
         if(1U == proto_simple_feed(&g_parser, buf[i], &frame))
         {
-            (void)device_uart_send(DEVICE_UART_PROTO_1, frame.payload,
-                                    frame.len);
+            if(PLATFORM_ERR_OK != device_uart_send(DEVICE_UART_PROTO_1, frame.payload,
+                                                    frame.len))
+            {
+                plat_log_w("uart_test", "frame reply send failed");
+            }
         }
     }
 }
