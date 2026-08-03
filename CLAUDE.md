@@ -114,46 +114,62 @@ FreeRTOS 堆由 `heap_4.c` + `configTOTAL_HEAP_SIZE` 控制（放在 AXI SRAM）
 
 ---
 
-## 3. 驱动架构（四层模型）
+## 3. 驱动架构
 
-项目采用四层解耦架构，**新增外设驱动必须严格遵循此分层**：
+项目按硬件依赖程度分层，从上到下：
 
 ```
-Handle        ← 应用逻辑，void* 接口，平台无关
-   ↕ (Adapter 桥接)
-Adapter       ← 类型转换层，将 Bsp 类型 API 适配为 Handle 期望的 void* 签名
+02_Service               ← 业务逻辑
    ↕
-Bsp_drivers   ← 设备无关驱动接口（纯函数指针结构体 + 状态枚举）
+02_device                ← 语义翻译层：把硬件信号变成业务概念（状态机/边界检查等）
    ↕
-ST_platform   ← STM32 具体硬件实现，填充 Bsp_drivers 的 ops 结构体
+03_bsp                   ← 设备无关的驱动接口
+   ↕ （仅"可插拔外挂芯片"需要，见下方判断标准）
+03_bsp_binding            ← 绑定层：把具体芯片的驱动接到 ops 接口上，换芯片只改这一份文件
+   ↕
+04_Impl/01_mcu            ← STM32 具体硬件实现，直接调 HAL/LL
 ```
 
-### 各层职责说明
+`03_Platform/04_mcu_interface` 是横向的：声明 `plat_*` 接口（`plat_uart.h`/`plat_sys.h`/`plat_gpio.h`/`plat_log.h`），由 `04_Impl/01_mcu` 实现，`03_bsp` 直接调用，不经过 `03_bsp_binding`。
 
-| 层          | 目录           | 职责                                                      |
-| ----------- | -------------- | --------------------------------------------------------- |
-| Handle      | `Handle/`      | 调用 Adapter 完成业务逻辑，不感知底层硬件类型             |
-| Adapter     | `Adapter/`     | 将 `led_driver_t*` 等强类型转换为 `void*`，供 Handle 使用 |
-| Bsp_drivers | `Bsp_drivers/` | 定义驱动接口结构体（ops）和状态枚举，执行驱动初始化逻辑   |
-| ST_platform | `ST_platform/` | 实现 ops 中的每个函数指针，直接调用 HAL / LL 库           |
+### 要不要挂 ops（函数指针结构体）？
 
-### 数据流示例（LED）
+**判断标准：换一种实现方式，调用方的代码要不要跟着改？** 不用改 → 抽象挂在了正确的地方；要跟着改，或者压根不存在"以后可能换实现"这种可能性 → 不需要挂 ops，直接函数调用就好，不要为了"看起来统一"而挂。
 
+- **MCU 片上外设**（GPIO、UART、Timer、ADC……）：只有这一种实现方式，直接函数调用，不挂 ops。例：`plat_uart_send()`、`bsp_led_on()`。
+- **可插拔外挂芯片**（EEPROM、LCD、Camera……）：同一个"概念"（存储、显示、取像）可能换成完全不同的芯片，用 ops 结构体，把"换芯片"的成本限制在 `03_bsp_binding/` 一份文件里。例：`eeprom_intf.h` 定义 `bsp_eeprom_ops_t`，`bsp_at24_intf.c` 用 AT24 驱动填充它——换成别的 EEPROM 芯片，新写一份 `bsp_xxx_intf.c` 就够了，`device_eeprom.c` 及以上都不用动。
+- 同一个模块内部粒度可以更细：`bsp_at24.h` 里 AT24 的协议函数（`at24_write_page` 等分页写入逻辑）是直接调用——这是 AT24 专属逻辑，抽象了也没意义；只有 I2C 收发（`iic_ops_t`）挂了函数指针，因为换一条 I2C 总线/换一种传输方式是真实可能发生的。
+
+### 数据流示例
+
+**MCU 片上外设（直接调用，无 ops）：**
 ```
-led_handle_on(p_handle)
-  → p_handle->p_ops->pf_led_on(p_handle->p_drv)      [Handle]
-    → drv_led_on(p_drv)                               [Adapter]
-      → p_drv->p_led_ops->pf_led_on(p_drv)           [Bsp_drivers]
-        → st_led_on(self)  →  HAL_GPIO_WritePin()     [ST_platform]
+device_indicator_on(id)                    [02_device]
+  → bsp_led_on(id)                         [03_bsp]
+    → plat_gpio_write(port, pin, level)    [04_mcu_interface 声明]
+      → HAL_GPIO_WritePin(...)             [04_Impl/01_mcu 实现]
 ```
 
-### 现有驱动一览
+**可插拔外挂芯片（ops，换芯片只改一处）：**
+```
+device_eeprom_write(addr, data, size)                  [02_device：边界检查]
+  → g_eeprom_bsp_ops.pf_write(...)                      [02_device_interface：ops 接口]
+    → eeprom_bsp_write(...)  (bsp_at24_intf.c)          [03_bsp_binding：换芯片只改这里]
+      → at24_write_page(...)                            [03_bsp：AT24 协议逻辑，直接调用]
+        → p_dev->iic_ops->pf_mem_write(...)             [03_bsp 内部 ops：换传输方式的缝合点]
+          → HAL_I2C_Mem_Write(...)                      [04_Impl/01_mcu]
+```
 
-| 外设       | Bsp_drivers         | ST_platform     |
-| ---------- | ------------------- | --------------- |
-| LED        | `bsp_drv_led`       | `st_led`        |
-| AT24 EEPROM| `bsp_drv_at24`      | `st_iic`        |
-| ST7789 LCD | `bsp_drv_st7789`    | `st_lcd_spi`    |
+### 现有模块一览
+
+| 外设/功能     | 分类                                       | 关键文件                                            |
+| -------------- | -------------------------------------------- | ----------------------------------------------------- |
+| LED            | 片上外设，直接调用                          | `bsp_led.c`                                          |
+| Key            | 片上外设，直接调用（Device 层带消抖状态机） | `bsp_key.c` / `device_key.c`                        |
+| UART           | 片上外设，直接调用                          | `plat_uart.h` / `bsp_uart.c` / `device_uart.c`       |
+| AT24 EEPROM    | 可插拔芯片，ops                             | `eeprom_intf.h` / `bsp_at24_intf.c` / `bsp_at24.c`   |
+| ST7789 LCD     | 可插拔芯片，ops                             | `display_intf.h` / `bsp_st7789_intf.c`               |
+| OV2640 Camera  | 可插拔芯片，ops                             | `camera_intf.h` / `bsp_ov2640_intf.c`                |
 
 ---
 
@@ -180,11 +196,13 @@ led_handle_on(p_handle)
 
 ### 5.2 命名规则
 
-- 全局变量：`g_` 前缀（如 `g_led_handle`）
-- 静态全局变量：无前缀，文件作用域
-- 类型名：`_t` 后缀，结构体/枚举名全大写（如 `LED_DRIVER_T`）
+- 全局变量：`g_` 前缀（如 `g_eeprom_bsp_ops`）
+- 静态全局变量：无前缀，文件作用域（如 `bsp_led.c` 里的 `led_table`）
+- 类型名：`_t` 后缀，结构体/枚举 tag 全大写（如 `typedef struct AT24_DEV_T { ... } at24_dev_t;`）
 - 宏定义：全大写 + 下划线
-- 函数名：小写 + 下划线（如 `led_handle_on`）
+- 函数名：小写 + 下划线，按所在层加前缀，与第 3 章的层级一一对应：
+  `plat_*`（`04_mcu_interface`）/ `bsp_*`（`03_bsp`）/ `device_*`（`02_device`）/ `service_*`（`02_Service`）。
+  如 `plat_uart_send` → `bsp_uart_send` → `device_uart_send`。
 
 ### 5.3 防御性编程
 
