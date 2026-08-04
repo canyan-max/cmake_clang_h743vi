@@ -16,7 +16,6 @@ extern "C"
 #endif
 
 /* Includes -----------------------------------------------------------------*/
-#include <stdint.h> /* stdint lib header file. */
 #include <stddef.h> /* stdint lib header file. */
 #include "plat_error.h"
 /* define -------------------------------------------------------------------*/

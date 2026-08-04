@@ -42,10 +42,10 @@ typedef struct
 typedef struct
 {
     proto_simple_state_t state;
-    uint8_t               len;
-    uint8_t               idx;
-    uint8_t               checksum;
-    uint8_t               payload[PROTO_SIMPLE_MAX_PAYLOAD];
+    uint8_t              len;
+    uint8_t              idx;
+    uint8_t              checksum;
+    uint8_t              payload[PROTO_SIMPLE_MAX_PAYLOAD];
 } proto_simple_parser_t;
 
 /* Exported types -----------------------------------------------------------*/
@@ -54,8 +54,9 @@ typedef struct
 
 /* functions ----------------------------------------------------------------*/
 void    proto_simple_init(proto_simple_parser_t *p_parser);
-uint8_t proto_simple_feed(proto_simple_parser_t *p_parser, uint8_t byte,
-                           proto_simple_frame_t *p_out);
+uint8_t proto_simple_feed(proto_simple_parser_t *p_parser,
+                          uint8_t                byte,
+                          proto_simple_frame_t  *p_out);
 
 #ifdef __cplusplus
 }

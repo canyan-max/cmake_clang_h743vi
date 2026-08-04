@@ -24,7 +24,8 @@
 typedef struct
 {
     kfifo_t                 rx_fifo;
-    uint32_t                last_pos; /* last DMA write position handled (0..BUF_SIZE-1) */
+    /* last DMA write position handled (0..BUF_SIZE-1) */
+    uint32_t                last_pos; 
     bsp_uart_rx_notify_cb_t rx_notify_cb;
 } uart_inst_t;
 
@@ -93,13 +94,13 @@ platform_err_t bsp_uart_init(plat_uart_id_t id)
 }
 
 platform_err_t
-bsp_uart_send(plat_uart_id_t id, const uint8_t *p_data, uint16_t size)
+bsp_uart_send(plat_uart_id_t id, const uint8_t *p_data, uint16_t size ,uint32_t timeout_ms)
 {
     if((id >= PLAT_UART_NUM) || (NULL == p_data))
     {
         return PLATFORM_ERR_PARAM;
     }
-    return plat_uart_send(id, p_data, size);
+    return plat_uart_send(id, p_data, size,timeout_ms);
 }
 
 uint16_t bsp_uart_read(plat_uart_id_t id, uint8_t *p_buf, uint16_t max_len)

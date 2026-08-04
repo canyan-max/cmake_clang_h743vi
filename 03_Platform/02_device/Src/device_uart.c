@@ -42,13 +42,13 @@ platform_err_t device_uart_init(device_uart_id_t id)
 }
 
 platform_err_t device_uart_send(device_uart_id_t id, const uint8_t *p_data,
-                                 uint16_t size)
+                                 uint16_t size, uint32_t timeout_ms)
 {
     if(id >= DEVICE_UART_NUM)
     {
         return PLATFORM_ERR_PARAM;
     }
-    return bsp_uart_send((plat_uart_id_t)id, p_data, size);
+    return bsp_uart_send((plat_uart_id_t)id, p_data, size, timeout_ms);
 }
 
 uint16_t device_uart_read(device_uart_id_t id, uint8_t *p_buf,

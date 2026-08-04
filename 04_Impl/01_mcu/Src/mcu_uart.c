@@ -13,9 +13,6 @@
 #include <stddef.h>
 #include "plat_uart.h"
 #include "board_config.h"
-/* define   -----------------------------------------------------------------*/
-#define MCU_UART_TX_TIMEOUT_MS  (100U)
-
 /* typedef  ---------------------------------------------------------------- */
 
 /* variables ----------------------------------------------------------------*/
@@ -41,15 +38,18 @@ static plat_uart_id_t uart_find_id(const UART_HandleTypeDef *p_huart)
 
 /* exported functions -------------------------------------------------------*/
 
-platform_err_t plat_uart_send(plat_uart_id_t id, const uint8_t *p_data, uint16_t size)
+platform_err_t plat_uart_send(plat_uart_id_t id,
+                              const uint8_t *p_data,
+                              uint16_t       size,
+                              uint32_t       timeout_ms)
 {
     if((id >= PLAT_UART_NUM) || (NULL == p_data))
     {
-        return PLATFORM_ERR_PARAM ;
+        return PLATFORM_ERR_PARAM;
     }
     HAL_StatusTypeDef ret = HAL_OK;
     ret = HAL_UART_Transmit(s_uart_handle_table[id], (uint8_t *)p_data, size,
-                             MCU_UART_TX_TIMEOUT_MS);
+                            timeout_ms);
     if(HAL_OK != ret)
     {
         return PLATFORM_ERR_HW;
@@ -57,16 +57,17 @@ platform_err_t plat_uart_send(plat_uart_id_t id, const uint8_t *p_data, uint16_t
     return PLATFORM_ERR_OK;
 }
 
-platform_err_t plat_uart_receive_start(plat_uart_id_t id, uint8_t *p_buf,
-                              uint16_t buf_size)
+platform_err_t
+plat_uart_receive_start(plat_uart_id_t id, uint8_t *p_buf, uint16_t buf_size)
 {
     if((id >= PLAT_UART_NUM) || (NULL == p_buf))
     {
         return PLATFORM_ERR_PARAM;
     }
     s_buf_size_table[id] = buf_size;
-    HAL_StatusTypeDef ret = HAL_UARTEx_ReceiveToIdle_DMA(s_uart_handle_table[id], p_buf,
-                                                        buf_size);
+    HAL_StatusTypeDef
+        ret = HAL_UARTEx_ReceiveToIdle_DMA(s_uart_handle_table[id], p_buf,
+                                           buf_size);
     if(HAL_OK != ret)
     {
         return PLATFORM_ERR_HW;
@@ -74,7 +75,8 @@ platform_err_t plat_uart_receive_start(plat_uart_id_t id, uint8_t *p_buf,
     return PLATFORM_ERR_OK;
 }
 
-platform_err_t  plat_uart_set_rx_callback(plat_uart_id_t id, plat_uart_rx_cb_t cb)
+platform_err_t plat_uart_set_rx_callback(plat_uart_id_t    id,
+                                         plat_uart_rx_cb_t cb)
 {
     if(id >= PLAT_UART_NUM)
     {

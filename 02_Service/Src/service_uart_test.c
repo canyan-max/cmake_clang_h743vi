@@ -19,7 +19,8 @@
 #include "task.h"
 
 /* define   -----------------------------------------------------------------*/
-#define SERVICE_UART_TEST_POLL_BUF_SIZE  (64U)
+#define SERVICE_UART_TEST_POLL_BUF_SIZE     (64U)
+#define SERVICE_UART_TEST_SEND_TIMEOUT_MS   (100U)
 
 /* variables ----------------------------------------------------------------*/
 static proto_simple_parser_t g_parser;
@@ -68,7 +69,8 @@ void service_uart_test_poll(void)
         if((PROTO_SIMPLE_ST_SOF == g_parser.state) &&
            (PROTO_SIMPLE_SOF != buf[i]))
         {
-            if(PLATFORM_ERR_OK != device_uart_send(DEVICE_UART_PROTO_1, &buf[i], 1U))
+            if(PLATFORM_ERR_OK != device_uart_send(DEVICE_UART_PROTO_1, &buf[i], 1U,
+                                                    SERVICE_UART_TEST_SEND_TIMEOUT_MS))
             {
                 plat_log_w("uart_test", "raw echo send failed");
             }
@@ -79,7 +81,8 @@ void service_uart_test_poll(void)
         if(1U == proto_simple_feed(&g_parser, buf[i], &frame))
         {
             if(PLATFORM_ERR_OK != device_uart_send(DEVICE_UART_PROTO_1, frame.payload,
-                                                    frame.len))
+                                                    frame.len,
+                                                    SERVICE_UART_TEST_SEND_TIMEOUT_MS))
             {
                 plat_log_w("uart_test", "frame reply send failed");
             }
