@@ -244,7 +244,6 @@ static void UartEchoTestTask(void *argument)
 {
     ((void)argument);
     (void)service_uart_test_init();
-
     for(;;)
     {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY); /* wait for RX data */

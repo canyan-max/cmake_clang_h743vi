@@ -18,7 +18,7 @@
 #include "kfifo.h"
 
 /* define   -----------------------------------------------------------------*/
-#define BSP_UART_RX_BUF_SIZE  (256U)  /* power of 2 required (kfifo mask) */
+#define BSP_UART_RX_BUF_SIZE  (2048U)  /* power of 2 required (kfifo mask) */
 
 /* typedef  -------------------------------------------------------------- */
 typedef struct
