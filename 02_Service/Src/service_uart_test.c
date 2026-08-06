@@ -63,7 +63,6 @@ platform_err_t service_uart_test_init(void)
 void service_uart_test_poll(void)
 {
     uint8_t  buf[SERVICE_UART_TEST_POLL_BUF_SIZE];
-    uint32_t crc = 0x00;
     uint16_t n;
 
     /* One wake-up can lag behind an arbitrary amount of already-arrived
@@ -83,8 +82,7 @@ void service_uart_test_poll(void)
             proto_files_state_t prev_state = g_files_parser.state;
             uint8_t             prev_pack  = g_files_parser.package_number;
 #endif
-            proto_files_ret_t ret = proto_files_feed(&g_files_parser, buf[i],
-                                                     &crc);
+            proto_files_ret_t ret = proto_files_feed(&g_files_parser, buf[i]);
 
 #ifdef USE_DEBUG_LOG
             if(PROTO_FILE_RET_OK != ret)
@@ -93,8 +91,9 @@ void service_uart_test_poll(void)
                  * this point, so report the state it broke in, not the
                  * post-reset one. */
                 plat_log_w("uart_test",
-                           "proto_files err=%d crc=%u in state=%d (reset)", ret,
-                           crc, prev_state);
+                           "proto_files err=%d in state=%d (reset)", ret,
+                           prev_state);
+                break;
             }
             else if(g_files_parser.state != prev_state)
             {
@@ -110,8 +109,13 @@ void service_uart_test_poll(void)
 #endif
         }
     }
-    buf[0] = g_files_parser.state;
-    device_uart_send(DEVICE_UART_PROTO_1, &buf[0], 1U,
+    // device_uart_send(DEVICE_UART_PROTO_1, buf, 7U,
+    //                  SERVICE_UART_TEST_SEND_TIMEOUT_MS);
+    device_uart_send(DEVICE_UART_PROTO_1, g_files_parser.buf, 7U,
+                     SERVICE_UART_TEST_SEND_TIMEOUT_MS);
+    device_uart_send(DEVICE_UART_PROTO_1, (uint8_t*)&g_files_parser.idx, 1U,
+                     SERVICE_UART_TEST_SEND_TIMEOUT_MS);
+        device_uart_send(DEVICE_UART_PROTO_1, (uint8_t*)&g_files_parser.state, 1U,
                      SERVICE_UART_TEST_SEND_TIMEOUT_MS);
 
     // for(uint16_t i = 0U; i < n; i++)

@@ -123,23 +123,23 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_THREADS */
     // userShellInit();
 
-    static const osThreadAttr_t battery_task_attr = {
-        .name       = "batteryTask",
-        .stack_size = 512U,
-        .priority   = (osPriority_t)osPriorityBelowNormal,
-    };
-    osThreadNew(BatteryTask, NULL, &battery_task_attr);
+    // static const osThreadAttr_t battery_task_attr = {
+    //     .name       = "batteryTask",
+    //     .stack_size = 512U,
+    //     .priority   = (osPriority_t)osPriorityBelowNormal,
+    // };
+    // osThreadNew(BatteryTask, NULL, &battery_task_attr);
 
-    static const osThreadAttr_t key_task_attr = {
-        .name       = "keyTask",
-        .stack_size = 512U,
-        .priority   = (osPriority_t)osPriorityBelowNormal,
-    };
-    osThreadNew(KeyTask, NULL, &key_task_attr);
+    // static const osThreadAttr_t key_task_attr = {
+    //     .name       = "keyTask",
+    //     .stack_size = 512U,
+    //     .priority   = (osPriority_t)osPriorityBelowNormal,
+    // };
+    // osThreadNew(KeyTask, NULL, &key_task_attr);
 
     static const osThreadAttr_t uart_test_task_attr = {
         .name       = "uartTestTask",
-        .stack_size = 512U,
+        .stack_size = 512 * 4U,
         .priority   = (osPriority_t)osPriorityBelowNormal,
     };
     osThreadNew(UartEchoTestTask, NULL, &uart_test_task_attr);

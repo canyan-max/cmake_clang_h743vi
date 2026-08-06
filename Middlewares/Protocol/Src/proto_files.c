@@ -16,11 +16,17 @@
 #define FILE_SIZE_LENGTH            ((uint32_t)16)
 #define PROTO_FILES_HANDSHAKE_LEN   (7U)
 #define PROTO_FILES_INFO_FRAME_LEN  (PACKET_DATA_INDEX + PACK_FRAME_SIZE_128B + 2U)
+/* worst-case frame (1024B data pack): header + payload + 2B CRC */
+#define PROTO_FILES_MAX_FRAME       (PACKET_DATA_INDEX + PACK_FRAME_SIZE_1K + 2U)
 
+/* memset the parser back to IDLE, then re-point buf at its backing store
+ * (memset also zeroes the pointer itself, so it must be restored after). */
 #define PROTO_CLEAR(ptr) \
 do { \
     memset((ptr), 0, sizeof(*(ptr))); \
-} while(0)
+    (ptr)->buf = g_file_buffer; \
+    (ptr)->idx = 0; \
+} while(0) //     // memset(g_file_buffer,0, PROTO_FILES_MAX_FRAME); 
 
 #define PROTO_GET_ARR_PACK_TYPE(parser, arr) \
 do { \
@@ -45,7 +51,7 @@ do { \
 
 /* variables ----------------------------------------------------------------*/
 static uint8_t g_file_name[FILE_NAME_LENGTH];
-static uint8_t g_file_buffer[PROTO_FILES_INFO_FRAME_LEN];
+static uint8_t g_file_buffer[PROTO_FILES_MAX_FRAME]; /* proto_files_parser_t.buf backing store */
 /* private  functions  ------------------------------------------------------*/
 static uint16_t updata_crc16(uint16_t crc_in, uint8_t byte)
 {
@@ -81,29 +87,35 @@ static uint16_t cal_crc16(const uint8_t *p_data, uint32_t size)
     return crc & 0xffffu;
 }
 
-/* Accumulate the 2-byte handshake (0x42 0x88). Byte-at-a-time so it works
- * no matter how the transport chunks delivery. */
+/* "ISREADY" */
+static const uint8_t g_files_handshake[PROTO_FILES_HANDSHAKE_LEN] = {
+    0x49U, 0x53U, 0x52U, 0x45U, 0x41U, 0x44U, 0x59U};
+
+/* Scan for the handshake byte-at-a-time instead of comparing a fixed 7-byte
+ * window: a stream that loses alignment (e.g. leftover bytes after a mid-
+ * frame error) must still be able to re-lock onto "ISREADY" no matter where
+ * it lands, not only when it happens to start on a multiple-of-7 boundary. */
 static proto_files_ret_t proto_files_feed_idle(proto_files_parser_t *p_parser,
                                                uint8_t               byte)
 {
-    p_parser->buf[p_parser->idx] = byte;
-    p_parser->idx++;
-
-    if(p_parser->idx < PROTO_FILES_HANDSHAKE_LEN)
+    if(byte != g_files_handshake[p_parser->idx])
     {
-        return PROTO_FILE_RET_OK; /* still waiting for the 2nd byte */
-    }
-    /*I->0x49 S->0x53 R->0x52 E->0x45 A->0x41 D->0x44 Y->0x59 */
-    if((0x49U == p_parser->buf[0]) && (0x53U == p_parser->buf[1]) &&
-       (0x52U == p_parser->buf[2]) && (0x45U == p_parser->buf[3]) &&
-       (0x41U == p_parser->buf[4]) && (0x44U == p_parser->buf[5]) &&
-       (0x59U == p_parser->buf[6]))
-    {
-        p_parser->idx   = 0U;
-        p_parser->state = PROTO_FILE_RECEIVE_FILE_INFO;
+        /* mismatch: this byte might itself be the "I" that starts the real
+         * handshake, so re-check it against position 0 instead of always
+         * dropping back to an empty match. */
+        p_parser->idx = (g_files_handshake[0] == byte) ? 1U : 0U;
         return PROTO_FILE_RET_OK;
     }
-    return PROTO_FILE_RET_ERR;
+
+    p_parser->idx++;
+    if(p_parser->idx < PROTO_FILES_HANDSHAKE_LEN)
+    {
+        return PROTO_FILE_RET_OK; /* still matching */
+    }
+
+    p_parser->idx   = 0U;
+    p_parser->state = PROTO_FILE_RECEIVE_FILE_INFO;
+    return PROTO_FILE_RET_OK;
 }
 
 /* Accumulate the fixed-size (134B) file-info frame, then validate + parse
@@ -167,13 +179,27 @@ proto_files_feed_file_info(proto_files_parser_t *p_parser, uint8_t byte)
 /* Accumulate one data pack. Its total length isn't known until the very
  * first byte (pack_type) arrives, so that byte decides frame_len before
  * we know how many more bytes to wait for. */
-static proto_files_ret_t proto_files_feed_data_info(
-    proto_files_parser_t *p_parser, uint8_t byte, uint32_t *crc_ret)
+static proto_files_ret_t
+proto_files_feed_data_info(proto_files_parser_t *p_parser, uint8_t byte)
 {
-    p_parser->buf[p_parser->idx] = byte;
-    p_parser->idx++;
-    if(1U == p_parser->idx)
+    // check head
+    if(p_parser->idx == 0U)
     {
+        switch(byte)
+        {
+            case PACK_TYPE_128_FRAM:
+            {
+                break;
+            }
+            case PACK_TYPE_1024_FRAM:
+            {
+                break;
+            }
+            default:
+            {
+                return PROTO_FILE_RET_HEAD_ERR;
+            }
+        }
         p_parser->pack_type = (pack_type_frame_t)byte;
         p_parser->frame_len = PACKET_DATA_INDEX + 2U +
                               ((PACK_TYPE_128_FRAM == p_parser->pack_type)
@@ -181,6 +207,8 @@ static proto_files_ret_t proto_files_feed_data_info(
                                    : PACK_FRAME_SIZE_1K);
     }
 
+    p_parser->buf[p_parser->idx] = byte;
+    p_parser->idx++;
     if(p_parser->idx < p_parser->frame_len)
     {
         return PROTO_FILE_RET_OK; /* still accumulating */
@@ -206,7 +234,6 @@ static proto_files_ret_t proto_files_feed_data_info(
     crc += data[packet_size + PACKET_DATA_INDEX + 1];
     if(cal_crc16(&data[PACKET_DATA_INDEX], packet_size) != crc)
     {
-        *crc_ret = crc;
         return PROTO_FILE_RET_CRC_ERR;
     }
 
@@ -226,14 +253,12 @@ proto_files_ret_t proto_files_init(proto_files_parser_t *p_parser)
         return PROTO_FILE_RET_ERR;
     }
     PROTO_CLEAR(p_parser);
-    p_parser->buf = g_file_buffer;
     return PROTO_FILE_RET_OK;
 }
 
-proto_files_ret_t
-proto_files_feed(proto_files_parser_t *p_parser, uint8_t byte, uint32_t *crc)
+proto_files_ret_t proto_files_feed(proto_files_parser_t *p_parser, uint8_t byte)
 {
-    if(NULL == p_parser || NULL == crc)
+    if(NULL == p_parser)
     {
         return PROTO_FILE_RET_ERR;
     }
@@ -255,7 +280,7 @@ proto_files_feed(proto_files_parser_t *p_parser, uint8_t byte, uint32_t *crc)
 
         case PROTO_FILE_RECEIVE_DATA_INFO:
         {
-            ret = proto_files_feed_data_info(p_parser, byte, crc);
+            ret = proto_files_feed_data_info(p_parser, byte);
             break;
         }
 

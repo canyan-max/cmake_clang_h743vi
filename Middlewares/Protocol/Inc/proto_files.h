@@ -30,6 +30,7 @@ typedef enum
     PROTO_FILE_RET_ERR,
     PROTO_FILE_RET_PACKNUM_ERR,
     PROTO_FILE_RET_CRC_ERR,
+    PROTO_FILE_RET_HEAD_ERR
 } proto_files_ret_t;
 
 typedef enum
@@ -52,9 +53,11 @@ typedef struct
     uint8_t             reserver;
     uint8_t             package_number;
     uint8_t             package_un_numer;
-    uint16_t            idx;       /* bytes accumulated into buf for the current frame */
-    uint16_t            frame_len; /* total bytes needed (RECEIVE_DATA_INFO only, depends on pack_type) */
-    uint8_t             *buf; /* raw frame accumulation buffer */
+    uint16_t idx;       /* bytes accumulated into buf for the current frame */
+    uint16_t frame_len; /* total bytes needed (RECEIVE_DATA_INFO only, depends
+                           on pack_type) */
+    uint8_t *buf;       /* points at a static max-frame accumulation buffer,
+                           assigned by proto_files_init() (see proto_files.c) */
 } proto_files_parser_t;
 /* exported types -----------------------------------------------------------*/
 
@@ -63,22 +66,19 @@ typedef struct
 /* functions ----------------------------------------------------------------*/
 proto_files_ret_t proto_files_init(proto_files_parser_t *p_parser);
 /**
-  * @brief            : [proto_files_feed] feed one received byte into the
-  *                     parser state machine. Frame length (handshake=2B,
-  *                     file-info=134B, data-pack=134B/1030B) is inferred
-  *                     internally, so the caller never needs to know how
-  *                     many bytes make up "one frame" up front.
-  * @retval           : [PROTO_FILE_RET_OK] byte accepted (frame may still
-  *                     be accumulating, or just completed successfully)
-  * @retval           : [PROTO_FILE_RET_ERR / _PACKNUM_ERR / _CRC_ERR] frame
-  *                     validation failed; parser is reset to PROTO_FILE_IDLE
-  * @param[in]        : [byte] next raw byte from the UART stream
-  * @param[out]       : [crc] on PROTO_FILE_RET_CRC_ERR during a data pack,
-  *                     set to the CRC the frame claimed
-  */
+ * @brief            : [proto_files_feed] feed one received byte into the
+ *                     parser state machine. Frame length (handshake=7B,
+ *                     file-info=134B, data-pack=134B/1030B) is inferred
+ *                     internally, so the caller never needs to know how
+ *                     many bytes make up "one frame" up front.
+ * @retval           : [PROTO_FILE_RET_OK] byte accepted (frame may still
+ *                     be accumulating, or just completed successfully)
+ * @retval           : [PROTO_FILE_RET_ERR / _HEAD_ERR / _PACKNUM_ERR / _CRC_ERR]
+ *                     frame validation failed; parser is reset to PROTO_FILE_IDLE
+ * @param[in]        : [byte] next raw byte from the UART stream
+ */
 proto_files_ret_t proto_files_feed(proto_files_parser_t *p_parser,
-                                   uint8_t                byte,
-                                   uint32_t              *crc);
+                                   uint8_t               byte);
 #ifdef __cplusplus
 }
 #endif
