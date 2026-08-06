@@ -88,8 +88,7 @@ static uint16_t cal_crc16(const uint8_t *p_data, uint32_t size)
 }
 
 /* "ISREADY" */
-static const uint8_t g_files_handshake[PROTO_FILES_HANDSHAKE_LEN] = {
-    0x49U, 0x53U, 0x52U, 0x45U, 0x41U, 0x44U, 0x59U};
+
 
 /* Scan for the handshake byte-at-a-time instead of comparing a fixed 7-byte
  * window: a stream that loses alignment (e.g. leftover bytes after a mid-
@@ -98,12 +97,14 @@ static const uint8_t g_files_handshake[PROTO_FILES_HANDSHAKE_LEN] = {
 static proto_files_ret_t proto_files_feed_idle(proto_files_parser_t *p_parser,
                                                uint8_t               byte)
 {
-    if(byte != g_files_handshake[p_parser->idx])
+    static const uint8_t files_handshake[PROTO_FILES_HANDSHAKE_LEN] = {
+    0x49U, 0x53U, 0x52U, 0x45U, 0x41U, 0x44U, 0x59U};
+    if(byte != files_handshake[p_parser->idx])
     {
         /* mismatch: this byte might itself be the "I" that starts the real
          * handshake, so re-check it against position 0 instead of always
          * dropping back to an empty match. */
-        p_parser->idx = (g_files_handshake[0] == byte) ? 1U : 0U;
+        p_parser->idx = (files_handshake[0] == byte) ? 1U : 0U;
         return PROTO_FILE_RET_OK;
     }
 

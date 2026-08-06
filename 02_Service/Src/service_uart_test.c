@@ -93,7 +93,6 @@ void service_uart_test_poll(void)
                 plat_log_w("uart_test",
                            "proto_files err=%d in state=%d (reset)", ret,
                            prev_state);
-                break;
             }
             else if(g_files_parser.state != prev_state)
             {
