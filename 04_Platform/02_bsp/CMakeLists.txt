@@ -1,4 +1,4 @@
-# ---------- platform_bsp ----------
+# ---------- bsp ----------
 set(PLATFORM_BSP_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_led.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_at24.c
@@ -9,8 +9,8 @@ set(PLATFORM_BSP_SRC
 )
 
 set(PLATFORM_BSP_DEPEND_LIB
-    platform_common
-    platform_mcu_interface
+    common
+    mcu_interface
     letter_shell
     front
     impl_mcu
@@ -18,8 +18,8 @@ set(PLATFORM_BSP_DEPEND_LIB
 )
 
 
-add_library(platform_bsp STATIC ${PLATFORM_BSP_SRC})
+add_library(bsp STATIC ${PLATFORM_BSP_SRC})
 
-target_include_directories(platform_bsp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Inc)
+target_include_directories(bsp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Inc)
 
-target_link_libraries(platform_bsp PRIVATE ${PLATFORM_BSP_DEPEND_LIB})
+target_link_libraries(bsp PRIVATE ${PLATFORM_BSP_DEPEND_LIB})

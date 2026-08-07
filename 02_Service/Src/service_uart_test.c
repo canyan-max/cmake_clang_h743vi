@@ -30,7 +30,7 @@
 
 /* variables ----------------------------------------------------------------*/
 static proto_simple_parser_t     g_parser;
-proto_files_parser_t             g_files_parser;
+static proto_files_parser_t      g_files_parser;
 static uint32_t                  s_last_byte_tick; /* plat_tick_get_ms() snapshot,
                                                         for the mid-frame idle-timeout watchdog */
 static service_uart_test_wake_cb_t s_wake_cb; /* caller-supplied, fired from
@@ -175,12 +175,34 @@ void service_uart_test_poll(void)
     }
     // device_uart_send(DEVICE_UART_PROTO_1, buf, 7U,
     //                  SERVICE_UART_TEST_SEND_TIMEOUT_MS);
-    // device_uart_send(DEVICE_UART_PROTO_1, g_files_parser.buf, 7U,
+    // device_uart_send(DEVICE_UART_PROTO_1,
+    //                  (uint8_t*)service_uart_test_files_buf(), 7U,
     //                  SERVICE_UART_TEST_SEND_TIMEOUT_MS);
-    // device_uart_send(DEVICE_UART_PROTO_1, (uint8_t*)&g_files_parser.idx, 1U,
+    // uint16_t dbg_idx = service_uart_test_files_idx();
+    // device_uart_send(DEVICE_UART_PROTO_1, (uint8_t*)&dbg_idx, 1U,
     //                  SERVICE_UART_TEST_SEND_TIMEOUT_MS);
-    // device_uart_send(DEVICE_UART_PROTO_1, (uint8_t*)&g_files_parser.state, 1U,
+    // uint8_t dbg_state = service_uart_test_files_state();
+    // device_uart_send(DEVICE_UART_PROTO_1, &dbg_state, 1U,
     //                  SERVICE_UART_TEST_SEND_TIMEOUT_MS);
+}
+
+/* Debug probes (read-only): expose the proto_files parser state so the
+ * bring-up loopback echo can inspect buf/idx/state without handing out the
+ * parser struct itself. */
+
+const uint8_t *service_uart_test_files_buf(void)
+{
+    return g_files_parser.buf;
+}
+
+uint16_t service_uart_test_files_idx(void)
+{
+    return g_files_parser.idx;
+}
+
+uint8_t service_uart_test_files_state(void)
+{
+    return (uint8_t)g_files_parser.state;
 }
 
 /* end of file --------------------------------------------------------------*/

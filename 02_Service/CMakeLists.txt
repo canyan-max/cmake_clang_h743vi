@@ -7,7 +7,7 @@ set(SERVICE_SRC
 
 set(SERVICE_DEPEND_LIB
     device
-    platform_mcu_interface
+    mcu_interface
     front
     protocol
     stm32cubemx

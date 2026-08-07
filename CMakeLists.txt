@@ -30,7 +30,7 @@ message("Build type: " ${CMAKE_BUILD_TYPE})
 
 # EasyLogger / Segger RTT switches — set OFF to compile them out entirely.
 # NOTE: the USE_DEBUG_LOG / USE_JLINK_RTT defines themselves are attached to
-# the platform_mcu_interface / EasyLog targets (not added globally here), so
+# the mcu_interface / EasyLog targets (not added globally here), so
 # that any translation unit seeing USE_DEBUG_LOG also always has EasyLog's
 # include path — a blanket add_compile_definitions() here previously put
 # USE_DEBUG_LOG on every file in the project (HAL, FreeRTOS, ...) without the
@@ -100,10 +100,10 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     kfifo
     Soc
     service
-    platform_common
-    platform_bsp
-    platform_bsp_binding
-    platform_mcu_interface
+    common
+    bsp
+    bsp_binding
+    mcu_interface
     impl_mcu
     device
     dwt

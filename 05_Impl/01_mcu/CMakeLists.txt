@@ -9,10 +9,10 @@ set(IMPL_MCU_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/mcu_log.c
 )
 set(IMPL_MCU_DEPEND_LIB
-    platform_bsp
-    platform_mcu_interface
+    bsp
+    mcu_interface
     stm32cubemx
-    platform_common
+    common
     dwt
 )
 

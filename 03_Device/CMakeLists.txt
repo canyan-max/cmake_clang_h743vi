@@ -9,9 +9,9 @@ set(DEVICE_SRC
 )
 
 set(DEVICE_PRIVATE_LIB
-    platform_bsp_binding
-    platform_bsp
-    platform_mcu_interface
+    bsp_binding
+    bsp
+    mcu_interface
     device_interface
 )
 
@@ -19,5 +19,5 @@ add_library(device STATIC ${DEVICE_SRC})
 
 target_include_directories(device PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Inc)
 
-target_link_libraries(device PUBLIC platform_common)
+target_link_libraries(device PUBLIC common)
 target_link_libraries(device PRIVATE ${DEVICE_PRIVATE_LIB})

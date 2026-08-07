@@ -51,6 +51,12 @@ typedef void (*service_uart_test_wake_cb_t)(void);
 platform_err_t service_uart_test_init(service_uart_test_wake_cb_t wake_cb);
 void           service_uart_test_poll(void);
 
+/* Debug probes (read-only): inspect the proto_files parser state without
+ * exposing the parser struct. state is the low byte of proto_files_state_t. */
+const uint8_t *service_uart_test_files_buf(void);
+uint16_t       service_uart_test_files_idx(void);
+uint8_t        service_uart_test_files_state(void);
+
 #ifdef __cplusplus
 }
 #endif
