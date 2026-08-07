@@ -235,6 +235,18 @@ static void KeyTask(void *argument)
         }
     }
 }
+static TaskHandle_t s_uart_task_handle;
+
+/* service_uart_test's RTOS wake mechanism: forwards its ISR-context wake
+ * request to a task notify. Kept here (not in service_uart_test.c) so that
+ * module stays free of RTOS types and is portable to bare metal. */
+static void uart_wake_isr(void)
+{
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    vTaskNotifyGiveFromISR(s_uart_task_handle, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
 /**
  * @brief  DMA+IDLE + proto_simple smoke test: parses framed data received
  *         on DEVICE_UART_PROTO_1 (bound to hlpuart1 for bring-up) and echoes
@@ -243,10 +255,16 @@ static void KeyTask(void *argument)
 static void UartEchoTestTask(void *argument)
 {
     ((void)argument);
-    (void)service_uart_test_init();
+    /* set before service_uart_test_init() registers uart_wake_isr as the RX
+     * notify callback, so it's never called with a still-NULL handle. */
+    s_uart_task_handle = xTaskGetCurrentTaskHandle();
+    (void)service_uart_test_init(uart_wake_isr);
     for(;;)
     {
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY); /* wait for RX data */
+        /* bounded wait (not portMAX_DELAY): also wakes with no new data so
+         * service_uart_test_poll()'s mid-frame idle-timeout watchdog runs
+         * even if the sender stalls and no further RX notify ever comes. */
+        ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(SERVICE_UART_TEST_IDLE_TIMEOUT_MS));
         service_uart_test_poll();
     }
 }

@@ -124,6 +124,21 @@ static proto_files_ret_t proto_files_feed_idle(proto_files_parser_t *p_parser,
 static proto_files_ret_t
 proto_files_feed_file_info(proto_files_parser_t *p_parser, uint8_t byte)
 {
+    /* check head: a file-info frame must start with PACK_TYPE_128_FRAM (it
+     * is always a 128B payload, unlike a data pack which can be 128B or 1K).
+     * Any other first byte means the stream is misaligned (e.g. a stray
+     * CR/LF tail left over after the handshake) — reject it immediately
+     * instead of silently accumulating 134 bytes and only failing at the
+     * PACKNUM/CRC check. Symmetric to proto_files_feed_data_info's head
+     * check. */
+    if(p_parser->idx == 0U)
+    {
+        if(PACK_TYPE_128_FRAM != (pack_type_frame_t)byte)
+        {
+            return PROTO_FILE_RET_HEAD_ERR;
+        }
+    }
+
     p_parser->buf[p_parser->idx] = byte;
     p_parser->idx++;
 
@@ -196,7 +211,7 @@ proto_files_feed_data_info(proto_files_parser_t *p_parser, uint8_t byte)
             {
                 break;
             }
-            default:
+            default: // if not fram type exit 
             {
                 return PROTO_FILE_RET_HEAD_ERR;
             }
