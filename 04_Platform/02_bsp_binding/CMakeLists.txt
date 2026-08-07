@@ -12,6 +12,6 @@ add_library(platform_bsp_binding STATIC ${PLATFORM_BSP_BINDING_SRC})
 
 target_link_libraries(platform_bsp_binding PRIVATE
     platform_bsp
-    platform_device_interface
+    device_interface
     platform_mcu_interface
 )

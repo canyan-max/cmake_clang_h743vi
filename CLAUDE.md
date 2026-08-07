@@ -119,45 +119,51 @@ FreeRTOS 堆由 `heap_4.c` + `configTOTAL_HEAP_SIZE` 控制（放在 AXI SRAM）
 项目按硬件依赖程度分层，从上到下：
 
 ```
-02_Service               ← 业务逻辑
+02_Service                        ← 业务逻辑，不含 RTOS 原语（见下方 service 层原则）
    ↕
-02_device                ← 语义翻译层：把硬件信号变成业务概念（状态机/边界检查等）
-   ↕
-03_bsp                   ← 设备无关的驱动接口
+03_Device                         ← 语义翻译层：把硬件信号变成业务概念（状态机/边界检查等）
    ↕ （仅"可插拔外挂芯片"需要，见下方判断标准）
-03_bsp_binding            ← 绑定层：把具体芯片的驱动接到 ops 接口上，换芯片只改这一份文件
+03_Device_interface                ← ops 接口契约：xxx_intf.h，device 和 bsp_binding 之间的边界
    ↕
-04_Impl/01_mcu            ← STM32 具体硬件实现，直接调 HAL/LL
+04_Platform/02_bsp                 ← 设备无关的驱动接口
+   ↕
+04_Platform/02_bsp_binding          ← 绑定层：把具体芯片的驱动接到 ops 接口上，换芯片只改这一份文件
+   ↕
+05_Impl/01_mcu                     ← STM32 具体硬件实现，直接调 HAL/LL
 ```
 
-`03_Platform/04_mcu_interface` 是横向的：声明 `plat_*` 接口（`plat_uart.h`/`plat_sys.h`/`plat_gpio.h`/`plat_log.h`），由 `04_Impl/01_mcu` 实现，`03_bsp` 直接调用，不经过 `03_bsp_binding`。
+`04_Platform/03_mcu_interface` 是横向的：声明 `plat_*` 接口（`plat_uart.h`/`plat_sys.h`/`plat_gpio.h`/`plat_log.h`），由 `05_Impl/01_mcu` 实现（文件名前缀是 `mcu_*`，跟它实现的 `plat_*` 声明前缀不同），`04_Platform/02_bsp` 直接调用，不经过 `bsp_binding`。
+
+`04_Platform/01_common` 放跨层共享的类型/错误码（如 `plat_error.h`），不属于任何一层专属。
+
+`03_Device` 之所以单独挂在根目录、不再嵌在 `Platform` 里：它翻译的是硬件信号对业务的**含义**（状态机、边界检查、去抖），跟 `Platform` 底下纯硬件访问的 `bsp`/`bsp_binding`/`mcu_interface` 不是一回事，物理位置应该体现这个边界，不是"反正也要接硬件就归到 Platform"。`03_Device_interface` 跟着 `Device` 一起挂在根目录（同样"03"编号），因为它是 `Device` 定义、`bsp_binding` 实现的契约，物理上离两端的消费者都近。
 
 ### 要不要挂 ops（函数指针结构体）？
 
 **判断标准：换一种实现方式，调用方的代码要不要跟着改？** 不用改 → 抽象挂在了正确的地方；要跟着改，或者压根不存在"以后可能换实现"这种可能性 → 不需要挂 ops，直接函数调用就好，不要为了"看起来统一"而挂。
 
 - **MCU 片上外设**（GPIO、UART、Timer、ADC……）：只有这一种实现方式，直接函数调用，不挂 ops。例：`plat_uart_send()`、`bsp_led_on()`。
-- **可插拔外挂芯片**（EEPROM、LCD、Camera……）：同一个"概念"（存储、显示、取像）可能换成完全不同的芯片，用 ops 结构体，把"换芯片"的成本限制在 `03_bsp_binding/` 一份文件里。例：`eeprom_intf.h` 定义 `bsp_eeprom_ops_t`，`bsp_at24_intf.c` 用 AT24 驱动填充它——换成别的 EEPROM 芯片，新写一份 `bsp_xxx_intf.c` 就够了，`device_eeprom.c` 及以上都不用动。
+- **可插拔外挂芯片**（EEPROM、LCD、Camera……）：同一个"概念"（存储、显示、取像）可能换成完全不同的芯片，用 ops 结构体，把"换芯片"的成本限制在 `04_Platform/02_bsp_binding/` 一份文件里。例：`eeprom_intf.h` 定义 `bsp_eeprom_ops_t`，`bsp_at24_intf.c` 用 AT24 驱动填充它——换成别的 EEPROM 芯片，新写一份 `bsp_xxx_intf.c` 就够了，`device_eeprom.c` 及以上都不用动。
 - 同一个模块内部粒度可以更细：`bsp_at24.h` 里 AT24 的协议函数（`at24_write_page` 等分页写入逻辑）是直接调用——这是 AT24 专属逻辑，抽象了也没意义；只有 I2C 收发（`iic_ops_t`）挂了函数指针，因为换一条 I2C 总线/换一种传输方式是真实可能发生的。
 
 ### 数据流示例
 
 **MCU 片上外设（直接调用，无 ops）：**
 ```
-device_indicator_on(id)                    [02_device]
-  → bsp_led_on(id)                         [03_bsp]
-    → plat_gpio_write(port, pin, level)    [04_mcu_interface 声明]
-      → HAL_GPIO_WritePin(...)             [04_Impl/01_mcu 实现]
+device_indicator_on(id)                    [03_Device]
+  → bsp_led_on(id)                         [04_Platform/02_bsp]
+    → plat_gpio_write(port, pin, level)    [04_Platform/03_mcu_interface 声明]
+      → HAL_GPIO_WritePin(...)             [05_Impl/01_mcu 实现]
 ```
 
 **可插拔外挂芯片（ops，换芯片只改一处）：**
 ```
-device_eeprom_write(addr, data, size)                  [02_device：边界检查]
-  → g_eeprom_bsp_ops.pf_write(...)                      [02_device_interface：ops 接口]
-    → eeprom_bsp_write(...)  (bsp_at24_intf.c)          [03_bsp_binding：换芯片只改这里]
-      → at24_write_page(...)                            [03_bsp：AT24 协议逻辑，直接调用]
-        → p_dev->iic_ops->pf_mem_write(...)             [03_bsp 内部 ops：换传输方式的缝合点]
-          → HAL_I2C_Mem_Write(...)                      [04_Impl/01_mcu]
+device_eeprom_write(addr, data, size)                  [03_Device：边界检查]
+  → g_eeprom_bsp_ops.pf_write(...)                      [03_Device_interface：ops 接口]
+    → eeprom_bsp_write(...)  (bsp_at24_intf.c)          [04_Platform/02_bsp_binding：换芯片只改这里]
+      → at24_write_page(...)                            [04_Platform/02_bsp：AT24 协议逻辑，直接调用]
+        → p_dev->iic_ops->pf_mem_write(...)             [04_Platform/02_bsp 内部 ops：换传输方式的缝合点]
+          → HAL_I2C_Mem_Write(...)                      [05_Impl/01_mcu]
 ```
 
 ### 现有模块一览
@@ -201,7 +207,7 @@ device_eeprom_write(addr, data, size)                  [02_device：边界检查
 - 类型名：`_t` 后缀，结构体/枚举 tag 全大写（如 `typedef struct AT24_DEV_T { ... } at24_dev_t;`）
 - 宏定义：全大写 + 下划线
 - 函数名：小写 + 下划线，按所在层加前缀，与第 3 章的层级一一对应：
-  `plat_*`（`04_mcu_interface`）/ `bsp_*`（`03_bsp`）/ `device_*`（`02_device`）/ `service_*`（`02_Service`）。
+  `plat_*`（`04_Platform/03_mcu_interface`）/ `bsp_*`（`04_Platform/02_bsp`）/ `device_*`（`03_Device`）/ `service_*`（`02_Service`）。
   如 `plat_uart_send` → `bsp_uart_send` → `device_uart_send`。
 
 ### 5.3 防御性编程

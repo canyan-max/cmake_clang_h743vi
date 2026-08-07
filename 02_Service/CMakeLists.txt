@@ -6,7 +6,7 @@ set(SERVICE_SRC
 )
 
 set(SERVICE_DEPEND_LIB
-    platform_device
+    device
     platform_mcu_interface
     front
     protocol

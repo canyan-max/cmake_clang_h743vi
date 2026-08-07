@@ -59,13 +59,13 @@ add_subdirectory(Middlewares/SEGGER_RTT)
 add_subdirectory(Middlewares/EasyLog)
 # add_subdirectory(Middlewares/SeggerHardFault)
 add_subdirectory(02_Service)
-add_subdirectory(03_Platform/01_common)
-add_subdirectory(03_Platform/04_mcu_interface)
-add_subdirectory(03_Platform/02_device_interface)
-add_subdirectory(03_Platform/03_bsp)
-add_subdirectory(03_Platform/03_bsp_binding)
-add_subdirectory(03_Platform/02_device)
-add_subdirectory(04_Impl/01_mcu)
+add_subdirectory(03_Device_interface)
+add_subdirectory(03_Device)
+add_subdirectory(04_Platform/01_common)
+add_subdirectory(04_Platform/03_mcu_interface)
+add_subdirectory(04_Platform/02_bsp)
+add_subdirectory(04_Platform/02_bsp_binding)
+add_subdirectory(05_Impl/01_mcu)
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined library search paths
@@ -105,7 +105,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     platform_bsp_binding
     platform_mcu_interface
     impl_mcu
-    platform_device
+    device
     dwt
     front
     minimp3
