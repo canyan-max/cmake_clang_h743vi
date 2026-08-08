@@ -151,12 +151,13 @@ void service_uart_test_poll(void)
      * otherwise sit in a non-IDLE state forever. Force it back to IDLE once
      * too much silence has passed since the last accepted byte.
      *
-     * Only fires while idx > 0, i.e. truly mid-frame. A multi-pack session
-     * legitimately pauses between frames (sender computing/ACKing the next
-     * pack), and during those pauses idx stays 0 waiting for the next pack
-     * header — that gap must NOT be treated as a stall, or normal
-     * interaction gets cut off mid-transfer. So frame-to-frame gaps are
-     * exempt; only a frame that started and then went silent times out.
+     * Only fires while idx > 0 (truly mid-frame) or while matching the
+     * "ESC" end-session marker. A multi-pack session legitimately pauses
+     * between frames (sender computing/ACKing the next pack), and during
+     * those pauses idx stays 0 waiting for the next pack header — that gap
+     * must NOT be treated as a stall, or normal interaction gets cut off
+     * mid-transfer. So frame-to-frame gaps are exempt; only a frame that
+     * started (or an ESC that began) and then went silent times out.
      * plat_tick_get_ms() (not an RTOS tick) so this stays portable if the
      * service layer is ever moved to bare metal. */
     uint32_t now     = plat_tick_get_ms();
@@ -164,7 +165,8 @@ void service_uart_test_poll(void)
                            ? (now - s_last_byte_tick)
                            : (UINT32_MAX - s_last_byte_tick + now + 1U);
     if((PROTO_FILE_IDLE != g_files_parser.state) &&
-       (g_files_parser.idx > 0U) && /* mid-frame only; frame gaps are exempt */
+       ((g_files_parser.idx > 0U) || /* mid-frame only; frame gaps are exempt */
+        (PROTO_FILE_RECEIVE_END_SESSION == g_files_parser.state)) &&
        (elapsed > SERVICE_UART_TEST_IDLE_TIMEOUT_MS))
     {
 #ifdef USE_DEBUG_LOG

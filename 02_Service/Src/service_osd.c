@@ -98,7 +98,7 @@ platform_err_t service_osd_set_battery(uint8_t percent)
  * @brief            :  [service_osd_render] draw OSD bar on LCD.
  *                      Called once per camera frame.  Updates internal FPS.
  *                      On first frame or REC state change: clears bar + draws
- * REC. Subsequent frames: only redraw battery/FPS text 鈥?  * the text bg_color
+ * REC. Subsequent frames: only redraw battery/FPS text   * the text bg_color
  * naturally covers old content.
  * @retval           :  PLATFORM_ERR_OK / PLATFORM_ERR_HW
  */

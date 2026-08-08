@@ -41,9 +41,10 @@ typedef enum
 
 typedef enum
 {
-    PROTO_FILE_IDLE              = 0x00U,
-    PROTO_FILE_RECEIVE_FILE_INFO = 0x01U,
-    PROTO_FILE_RECEIVE_DATA_INFO = 0x02U,
+    PROTO_FILE_IDLE                = 0x00U,
+    PROTO_FILE_RECEIVE_FILE_INFO   = 0x01U,
+    PROTO_FILE_RECEIVE_DATA_INFO   = 0x02U,
+    PROTO_FILE_RECEIVE_END_SESSION = 0x03U,
 } proto_files_state_t;
 
 typedef struct
@@ -56,6 +57,9 @@ typedef struct
     uint16_t idx;       /* bytes accumulated into buf for the current frame */
     uint16_t frame_len; /* total bytes needed (RECEIVE_DATA_INFO only, depends
                            on pack_type) */
+    uint8_t esc_idx;    /* position inside the 3-byte "ESC" end-session marker
+                           (RECEIVE_END_SESSION only); separate from idx so it
+                           never collides with frame accumulation */
     uint8_t *buf;       /* points at a static max-frame accumulation buffer,
                            assigned by proto_files_init() (see proto_files.c) */
 } proto_files_parser_t;

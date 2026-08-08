@@ -29,14 +29,14 @@
 #include <stdint.h>
 #include "shell_port.h"
 #include "log.h"
-#include "kfifo.h"            /* kfifo lib header file. */
-#include "core_dwt.h"         /* dwt header file. */
+#include "kfifo.h"             /* kfifo lib header file. */
+#include "core_dwt.h"          /* dwt header file. */
 #include "service_app.h"       /* service_app header file. */
 #include "service_osd.h"       /* service_osd header file. */
 #include "device_camera.h"     /* for device_camera_frame_isr in ISR */
 #include "device_key.h"        /* for key polling task */
-#include "service_uart_test.h"  /* for DMA+IDLE UART smoke test */
-#include "plat_log.h"           /* platform log header file. */
+#include "service_uart_test.h" /* for DMA+IDLE UART smoke test */
+#include "plat_log.h"          /* platform log header file. */
 // #define MINIMP3_NO_SIMD
 #define MINIMP3_FLOAT_OUTPUT
 #define MINIMP3_IMPLEMENTATION
@@ -65,17 +65,17 @@ __attribute__((section(".ram_dma_buffers"),
                aligned(8))) uint8_t ucHeap[configTOTAL_HEAP_SIZE];
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
-osThreadId_t defaultTaskHandle;
+osThreadId_t         defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
-  .name = "defaultTask",
-  .stack_size = 512 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+    .name       = "defaultTask",
+    .stack_size = 512 * 4,
+    .priority   = (osPriority_t)osPriorityNormal,
 };
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-uint8_t k_fifo_buffer[16];
-kfifo_t g_kfifo;
+uint8_t     k_fifo_buffer[16];
+kfifo_t     g_kfifo;
 static void BatteryTask(void *argument);
 static void KeyTask(void *argument);
 static void UartEchoTestTask(void *argument);
@@ -86,41 +86,43 @@ void StartDefaultTask(void *argument);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
-  * @brief  FreeRTOS initialization
-  * @param  None
-  * @retval None
-  */
-void MX_FREERTOS_Init(void) {
-  /* USER CODE BEGIN Init */
+ * @brief  FreeRTOS initialization
+ * @param  None
+ * @retval None
+ */
+void MX_FREERTOS_Init(void)
+{
+    /* USER CODE BEGIN Init */
     dwt_init();
     if(PLATFORM_ERR_OK == plat_log_init())
     {
         plat_log_i("SYS", "log init OK (build %s %s)", __DATE__, __TIME__);
     }
-  /* USER CODE END Init */
+    /* USER CODE END Init */
 
-  /* USER CODE BEGIN RTOS_MUTEX */
+    /* USER CODE BEGIN RTOS_MUTEX */
     /* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
+    /* USER CODE END RTOS_MUTEX */
 
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
+    /* USER CODE BEGIN RTOS_SEMAPHORES */
     /* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
+    /* USER CODE END RTOS_SEMAPHORES */
 
-  /* USER CODE BEGIN RTOS_TIMERS */
+    /* USER CODE BEGIN RTOS_TIMERS */
     /* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
+    /* USER CODE END RTOS_TIMERS */
 
-  /* USER CODE BEGIN RTOS_QUEUES */
+    /* USER CODE BEGIN RTOS_QUEUES */
     /* add queues, ... */
 
-  /* USER CODE END RTOS_QUEUES */
+    /* USER CODE END RTOS_QUEUES */
 
-  /* Create the thread(s) */
-  /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+    /* Create the thread(s) */
+    /* creation of defaultTask */
+    defaultTaskHandle = osThreadNew(StartDefaultTask, NULL,
+                                    &defaultTask_attributes);
 
-  /* USER CODE BEGIN RTOS_THREADS */
+    /* USER CODE BEGIN RTOS_THREADS */
     // userShellInit();
 
     // static const osThreadAttr_t battery_task_attr = {
@@ -143,12 +145,11 @@ void MX_FREERTOS_Init(void) {
         .priority   = (osPriority_t)osPriorityBelowNormal,
     };
     osThreadNew(UartEchoTestTask, NULL, &uart_test_task_attr);
-  /* USER CODE END RTOS_THREADS */
+    /* USER CODE END RTOS_THREADS */
 
-  /* USER CODE BEGIN RTOS_EVENTS */
+    /* USER CODE BEGIN RTOS_EVENTS */
     /* add events, ... */
-  /* USER CODE END RTOS_EVENTS */
-
+    /* USER CODE END RTOS_EVENTS */
 }
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -160,7 +161,7 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void *argument)
 {
-  /* USER CODE BEGIN StartDefaultTask */
+    /* USER CODE BEGIN StartDefaultTask */
     portTASK_USES_FLOATING_POINT();
     ((void)argument);
 
@@ -172,11 +173,11 @@ void StartDefaultTask(void *argument)
 
     for(;;)
     {
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  /* wait for camera frame */
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY); /* wait for camera frame */
         service_on_frame();
         vTaskDelay(pdMS_TO_TICKS(5U));
     }
-  /* USER CODE END StartDefaultTask */
+    /* USER CODE END StartDefaultTask */
 }
 
 /* Private application code --------------------------------------------------*/
@@ -264,9 +265,9 @@ static void UartEchoTestTask(void *argument)
         /* bounded wait (not portMAX_DELAY): also wakes with no new data so
          * service_uart_test_poll()'s mid-frame idle-timeout watchdog runs
          * even if the sender stalls and no further RX notify ever comes. */
-        ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(SERVICE_UART_TEST_IDLE_TIMEOUT_MS));
+        ulTaskNotifyTake(pdTRUE,
+                         pdMS_TO_TICKS(SERVICE_UART_TEST_IDLE_TIMEOUT_MS));
         service_uart_test_poll();
     }
 }
 /* USER CODE END Application */
-

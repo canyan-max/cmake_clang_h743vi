@@ -15,37 +15,46 @@
 #define FILE_NAME_LENGTH            (64U)
 #define FILE_SIZE_LENGTH            ((uint32_t)16)
 #define PROTO_FILES_HANDSHAKE_LEN   (7U)
+#define PROTO_FILES_END_SESSION_LEN (3U)
+
+// index 
+#define PACK_TYPE_INDEX             (0U)
+#define PACK_RESERVER_INDEX         (1U)
+#define PACK_PACK_NUMBER_INDEX      (2U)
+#define PACK_UNPACK_NUMBER_INDEX    (3U)
 #define PROTO_FILES_INFO_FRAME_LEN  (PACKET_DATA_INDEX + PACK_FRAME_SIZE_128B + 2U)
 /* worst-case frame (1024B data pack): header + payload + 2B CRC */
 #define PROTO_FILES_MAX_FRAME       (PACKET_DATA_INDEX + PACK_FRAME_SIZE_1K + 2U)
 
 /* memset the parser back to IDLE, then re-point buf at its backing store
  * (memset also zeroes the pointer itself, so it must be restored after). */
+
 #define PROTO_CLEAR(ptr) \
 do { \
     memset((ptr), 0, sizeof(*(ptr))); \
     (ptr)->buf = g_file_buffer; \
     (ptr)->idx = 0; \
-} while(0) //     // memset(g_file_buffer,0, PROTO_FILES_MAX_FRAME); 
+} while(0) //      
+
 
 #define PROTO_GET_ARR_PACK_TYPE(parser, arr) \
 do { \
-    (parser)->pack_type = (pack_type_frame_t)(arr)[0]; \
+    (parser)->pack_type = (pack_type_frame_t)(arr)[PACK_TYPE_INDEX]; \
 } while(0)
 
 #define PROTO_GET_ARR_RESERVER(parser, arr) \
 do { \
-    (parser)->reserver = (arr)[1]; \
+    (parser)->reserver = (arr)[PACK_RESERVER_INDEX]; \
 } while(0)
 
 #define PROTO_GET_ARR_PACK_NUM(parser, arr) \
 do { \
-    (parser)->package_number = (arr)[2]; \
+    (parser)->package_number = (arr)[PACK_PACK_NUMBER_INDEX]; \
 } while(0)
 
 #define PROTO_GET_ARR_PACK_UN_NUM(parser, arr) \
 do { \
-    (parser)->package_un_numer = (arr)[3]; \
+    (parser)->package_un_numer = (arr)[PACK_UNPACK_NUMBER_INDEX]; \
 } while(0)
 /* typedef ------------------------------------------------------------------*/
 
@@ -170,7 +179,10 @@ proto_files_feed_file_info(proto_files_parser_t *p_parser, uint8_t byte)
     }
 
     file_ptr = data + PACKET_DATA_INDEX;
-    while((*file_ptr != 0) && (i < FILE_NAME_LENGTH))
+    /* loop bound is length-1: keeps one slot free for the trailing '\0', so
+     * an over-long name is truncated (safe) instead of overflowing
+     * g_file_name[64] by one byte. Same guard below for file_size[16]. */
+    while((*file_ptr != 0) && (i < FILE_NAME_LENGTH - 1U))
     {
         g_file_name[i++] = *file_ptr++;
     }
@@ -178,7 +190,7 @@ proto_files_feed_file_info(proto_files_parser_t *p_parser, uint8_t byte)
     g_file_name[i++] = '\0';
     i                = 0;
     file_ptr++;
-    while((*file_ptr != ' ') && (i < FILE_SIZE_LENGTH))
+    while((*file_ptr != ' ') && (i < FILE_SIZE_LENGTH - 1U))
     {
         file_size[i++] = *file_ptr++;
     }
@@ -192,12 +204,43 @@ proto_files_feed_file_info(proto_files_parser_t *p_parser, uint8_t byte)
     return PROTO_FILE_RET_OK;
 }
 
+static proto_files_ret_t
+proto_files_feed_session_end(proto_files_parser_t *p_parser, uint8_t byte)
+{
+    static const uint8_t files_end_session[PROTO_FILES_END_SESSION_LEN] = {
+    0x45U, 0x53U, 0x43U};
+    if(byte != files_end_session[p_parser->esc_idx])
+    {
+        /* expected 'E','S','C' but got something else mid-match: in
+         * RECEIVE_DATA_INFO phase a byte that is neither a data-pack type
+         * nor a valid ESC continuation means the stream is corrupted. Fail
+         * fast back to IDLE (via the caller's PROTO_CLEAR) rather than
+         * staying here — the host can re-send the session. */
+        return PROTO_FILE_RET_ERR;
+    }
+
+    p_parser->esc_idx++;
+    if(p_parser->esc_idx < PROTO_FILES_END_SESSION_LEN)
+    {
+        return PROTO_FILE_RET_OK; /* still matching */
+    }
+
+    /* full "ESC" matched: the session is over. Return to IDLE to await a
+     * fresh handshake. This is a normal completion, not an error, so return
+     * OK and reset here (otherwise proto_files_feed would log it as one). */
+    p_parser->esc_idx   = 0U;
+    p_parser->idx       = 0U;
+    p_parser->frame_len = 0U;
+    p_parser->state     = PROTO_FILE_IDLE;
+    return PROTO_FILE_RET_OK;
+}
 /* Accumulate one data pack. Its total length isn't known until the very
  * first byte (pack_type) arrives, so that byte decides frame_len before
  * we know how many more bytes to wait for. */
 static proto_files_ret_t
 proto_files_feed_data_info(proto_files_parser_t *p_parser, uint8_t byte)
 {
+
     // check head
     if(p_parser->idx == 0U)
     {
@@ -211,9 +254,13 @@ proto_files_feed_data_info(proto_files_parser_t *p_parser, uint8_t byte)
             {
                 break;
             }
-            default: // if not fram type exit 
+            default: /* not a valid pack type: could be the "ESC" end-of-
+                        session marker, so switch into the ESC-matching state
+                        and let it consume this same byte. */
             {
-                return PROTO_FILE_RET_HEAD_ERR;
+                p_parser->state   = PROTO_FILE_RECEIVE_END_SESSION;
+                p_parser->esc_idx = 0U;
+                return proto_files_feed_session_end(p_parser, byte);
             }
         }
         p_parser->pack_type = (pack_type_frame_t)byte;
@@ -256,6 +303,7 @@ proto_files_feed_data_info(proto_files_parser_t *p_parser, uint8_t byte)
     PROTO_GET_ARR_RESERVER(p_parser, data);
     PROTO_GET_ARR_PACK_NUM(p_parser, data);
     PROTO_GET_ARR_PACK_UN_NUM(p_parser, data);
+    // save data 
 
     p_parser->idx = 0U;
     return PROTO_FILE_RET_OK;
@@ -297,6 +345,12 @@ proto_files_ret_t proto_files_feed(proto_files_parser_t *p_parser, uint8_t byte)
         case PROTO_FILE_RECEIVE_DATA_INFO:
         {
             ret = proto_files_feed_data_info(p_parser, byte);
+            break;
+        }
+
+        case PROTO_FILE_RECEIVE_END_SESSION:
+        {
+            ret = proto_files_feed_session_end(p_parser, byte);
             break;
         }
 
