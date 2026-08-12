@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
  *@file               :   plat_gpio.h
- *@brief              :   MCU GPIO abstraction — write, read, toggle.
+ *@brief              :   MCU GPIO abstraction — access board GPIO by ID.
  *                        Only for board-level GPIO (LED, Key).
  *                        Complex peripherals (SPI/I2C) keep their own ops.
  *@version            :   V1.0
@@ -17,10 +17,22 @@ extern "C"
 #endif
 
 #include <stdint.h>
+#include "plat_error.h"
 
-void    plat_gpio_write(void *p_port, uint16_t pin, uint8_t level);
-uint8_t plat_gpio_read(void *p_port, uint16_t pin);
-void    plat_gpio_toggle(void *p_port, uint16_t pin);
+/* typedef ------------------------------------------------------------------*/
+typedef enum PLAT_GPIO_ID_T
+{
+    PLAT_GPIO_ID_LED1 = 0U,
+    PLAT_GPIO_ID_LED2,
+    PLAT_GPIO_ID_KEY1,
+    PLAT_GPIO_ID_KEY2,
+    PLAT_GPIO_ID_NUM,
+} plat_gpio_id_t;
+
+/* function  ----------------------------------------------------------------*/
+platform_err_t plat_gpio_write(plat_gpio_id_t id, uint8_t level);
+platform_err_t plat_gpio_read(plat_gpio_id_t id, uint8_t *p_level);
+platform_err_t plat_gpio_toggle(plat_gpio_id_t id);
 
 #ifdef __cplusplus
 }

@@ -28,15 +28,14 @@
 /* USER CODE BEGIN Includes */
 #include <stdint.h>
 #include "shell_port.h"
-#include "log.h"
 #include "kfifo.h"             /* kfifo lib header file. */
 #include "core_dwt.h"          /* dwt header file. */
-#include "service_app.h"       /* service_app header file. */
 #include "service_osd.h"       /* service_osd header file. */
 #include "device_camera.h"     /* for device_camera_frame_isr in ISR */
 #include "device_key.h"        /* for key polling task */
 #include "service_uart_test.h" /* for DMA+IDLE UART smoke test */
 #include "plat_log.h"          /* platform log header file. */
+#include "app_main_task.h"     /* default application task */
 // #define MINIMP3_NO_SIMD
 #define MINIMP3_FLOAT_OUTPUT
 #define MINIMP3_IMPLEMENTATION
@@ -162,21 +161,7 @@ void MX_FREERTOS_Init(void)
 void StartDefaultTask(void *argument)
 {
     /* USER CODE BEGIN StartDefaultTask */
-    portTASK_USES_FLOATING_POINT();
-    ((void)argument);
-
-    if(PLATFORM_ERR_OK != service_app_init())
-    {
-        logError("service_app_init failed");
-    }
-    defaultTaskHandle = xTaskGetCurrentTaskHandle();
-
-    for(;;)
-    {
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY); /* wait for camera frame */
-        service_on_frame();
-        vTaskDelay(pdMS_TO_TICKS(5U));
-    }
+    app_main_task(argument);
     /* USER CODE END StartDefaultTask */
 }
 

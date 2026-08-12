@@ -1,3 +1,10 @@
+# ---------- bsp_interface ----------
+# Public BSP driver contracts shared with their MCU implementations.
+add_library(bsp_interface INTERFACE)
+target_include_directories(bsp_interface INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/Inc
+)
+
 # ---------- bsp ----------
 set(PLATFORM_BSP_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_led.c
@@ -11,9 +18,9 @@ set(PLATFORM_BSP_SRC
 set(PLATFORM_BSP_DEPEND_LIB
     common
     mcu_interface
+    board_config
     letter_shell
     front
-    impl_mcu
     kfifo
 )
 
@@ -22,4 +29,4 @@ add_library(bsp STATIC ${PLATFORM_BSP_SRC})
 
 target_include_directories(bsp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Inc)
 
-target_link_libraries(bsp PRIVATE ${PLATFORM_BSP_DEPEND_LIB})
+target_link_libraries(bsp PRIVATE ${PLATFORM_BSP_DEPEND_LIB} bsp_interface)

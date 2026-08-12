@@ -1,221 +1,87 @@
 # AGENTS.md
 
-This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
+本文件适用于整个仓库；进入子目录时，还必须遵守该目录下的 `AGENTS.md`。
 
-> 本文件融合了通用 LLM 编码行为准则（第 0 章）与嵌入式项目特定规范（第 1-5 章）。
+## 工作原则
 
-## 0. 核心行为准则（针对 LLM 的通用要求）
+- 先明确成功标准、影响范围和验证方式；多步骤修改先给出简要计划。
+- 需求存在会影响接口、实时性或硬件行为的歧义时，说明假设并向用户确认。
+- 只做与需求直接相关的手术式修改；不顺带重构、格式化或删除既有死代码。
+- 嵌入式代码必须保留参数检查、数组边界检查、硬件等待超时和必要的缓存一致性处理。
+- 完成改动后必须构建受影响的 preset，并确保没有新增警告或错误。
 
-以下准则适用于所有代码生成与修改任务，优先级高于具体编码规范。
+## 项目环境与构建
 
-**Tradeoff:** 这些准则偏向谨慎而非速度。对于琐碎任务，可自行判断。
-
-### 0.1 先思后写（Think Before Coding）
-
-**不假设、不隐藏困惑、暴露权衡。**
-
-实现之前：
-- 明确列出你的假设。如果不确定，**必须问**，不要猜。
-- 如果存在多种合理解释（如轮询 vs 中断、阻塞 vs 非阻塞），全部列出并说明选择理由。
-- 如果有更简单的方案，直接提出。合理时推翻原要求。
-- 如果某处不清楚，停下来。指出哪里混乱，然后提问。
-
-### 0.2 简洁优先（Simplicity First）
-
-**最小代码解决问题，不写投机性代码。**
-
-- 不实现超出要求的功能。
-- 不为单次使用的代码创建抽象层。
-- 不添加未要求的"灵活性"或"可配置性"。
-- **嵌入式例外**：数组越界检查、超时机制、硬件防御性检查虽然"看似多余"，但必须保留（参见第 3.3 节防御性编程）。
-
-自问："资深工程师会觉得这个过度复杂吗？" 如果是，简化。
-
-### 0.3 手术式修改（Surgical Changes）
-
-**只改必须改的，只清理自己制造的垃圾。**
-
-修改已有代码时：
-- 不"顺便改进"相邻代码、注释或格式。
-- 不重构没坏的东西。
-- 匹配现有风格（即使你不喜欢）。
-- 如果发现无关的死代码，**仅提及**，不要删除。
-
-当你的改动产生孤儿代码时：
-- 删除**因你改动而变得未使用**的导入/变量/函数。
-- 不要删除之前就存在的死代码，除非特别要求。
-
-检验标准：每一行改动都应直接追溯到用户的需求。
-
-### 0.4 目标驱动执行（Goal-Driven Execution）
-
-**定义成功标准，循环验证直到通过。**
-
-将任务转化为可验证的目标：
-- "添加校验" → "编写针对无效输入的测试，然后让测试通过"
-- "修复 bug" → "编写复现 bug 的测试，然后让测试通过"
-- "重构 X" → "确保重构前后测试全部通过"
-
-对于多步骤任务，先给出简要计划（在实现前）。
-
-强成功标准让你可以独立迭代。弱标准（"让它工作"）需要不断澄清。
-
----
-
-## 1. 项目环境
-
-| 项目     | 值                                                    |
-| -------- | ----------------------------------------------------- |
-| MCU      | STM32H743VIT6 (Cortex-M7, 400MHz, FPU, 双 Bank Flash) |
-| 工具链   | starm-clang (基于 LLVM/clang) + CMake + Ninja         |
-| RTOS     | FreeRTOS Kernel V10.6.2 (CMSIS-OS2 接口)              |
-| 调试器   | J-Link (JLinkGDBServer / JLinkExe)                    |
-| 构建系统 | CMake Presets (Debug / Release)                       |
-
-### 构建与烧录
+| 项目 | 值 |
+| --- | --- |
+| MCU | STM32H743VIT6（Cortex-M7，400 MHz，FPU，双 Bank Flash） |
+| 工具链 | starm-clang（LLVM/clang）+ CMake + Ninja |
+| RTOS | FreeRTOS Kernel V10.6.2（CMSIS-OS2） |
+| 调试器 | J-Link |
 
 ```bash
-./runbuid_and_flash.sh -b        # 仅编译（Debug preset）
-./runbuid_and_flash.sh           # 编译 + 烧录
-./runbuid_and_flash.sh -c        # 清理后重新编译（不烧录）
-./runbuid_and_flash.sh -f        # 仅烧录（使用已有 hex）
-./runbuid_and_flash.sh -p Release -b  # Release 模式编译
-./runbuid_and_flash.sh -h        # 查看所有参数
+./runbuid_and_flash.sh -b               # Debug：仅构建
+./runbuid_and_flash.sh                   # Debug：构建并烧录
+./runbuid_and_flash.sh -c                # 清理后构建，不烧录
+./runbuid_and_flash.sh -f                # 仅烧录已有镜像
+./runbuid_and_flash.sh -p Release -b     # Release：仅构建
 ```
 
-**每次改动完成必须编译并确保无警告和错误。**
+构建产物位于 `build/<preset>/cmake-clang-h743vi.{elf,bin,hex}`。常规改动优先使用 `-b`，只有用户明确要求时才烧录。
 
-输出产物：`build/Debug/cmake-clang-h743vi.hex` / `.bin` / `.elf`
+## 目录与依赖方向
 
----
+仓库采用自上而下的分层；上层可以依赖下层公开接口，下层不得反向依赖上层。
 
-## 2. 关键约束（内存/存储）
+```text
+01_App（应用入口；当前可为空）
+  ↓
+02_Service（业务编排、RTOS 调用边界）
+  ↓
+03_Device / 03_Device_interface（设备语义 API 与抽象接口）
+  ↓
+04_Platform（BSP、板级绑定、MCU 抽象接口）
+  ↓
+05_Impl/01_mcu（STM32 HAL/LL 具体实现）
 
-以链接脚本 `STM32H743XX_FLASH.ld` 实际值为准：
-
-| 区域    | 起始地址   | 大小   | 说明                              |
-| ------- | ---------- | ------ | --------------------------------- |
-| Flash   | 0x08000000 | 2048K  | 代码 + 只读数据                   |
-| DTCM    | 0x20000000 | 128K   | 紧耦合数据内存；栈顶 `_estack` 在此 |
-| RAM     | 0x24000000 | 512K   | 通用 AXI SRAM（主堆/数据）        |
-| RAM_D2  | 0x30000000 | 288K   | DMA 外设缓冲区常用区域            |
-| RAM_D3  | 0x38000000 | 64K    | 低功耗域 SRAM                     |
-| ITCM    | 0x00000000 | 64K    | 紧耦合指令内存（可选）            |
-
-链接脚本定义：`_Min_Stack_Size = 0x800`，`_Min_Heap_Size = 0x200`。  
-FreeRTOS 堆由 `heap_4.c` + `configTOTAL_HEAP_SIZE` 控制（放在 AXI SRAM）。
-
-### 运行时约束
-
-- 栈大小：每个 FreeRTOS 任务建议 1024 字 (4KB)
-- 禁止 `malloc`/`free`；动态分配只能用 `pvPortMalloc`，且须注释说明
-- 关键时序：UART 中断响应 < 10us；控制环路周期 1kHz
-- I-Cache / D-Cache 已在 `main()` 启动时开启；DMA 缓冲区须放在非缓存区域或手动维护一致性
-
----
-
-## 3. 驱动架构（四层模型）
-
-项目采用四层解耦架构，**新增外设驱动必须严格遵循此分层**：
-
-```
-Handle        ← 应用逻辑，void* 接口，平台无关
-   ↕ (Adapter 桥接)
-Adapter       ← 类型转换层，将 Bsp 类型 API 适配为 Handle 期望的 void* 签名
-   ↕
-Bsp_drivers   ← 设备无关驱动接口（纯函数指针结构体 + 状态枚举）
-   ↕
-ST_platform   ← STM32 具体硬件实现，填充 Bsp_drivers 的 ops 结构体
+00_Board（板级引脚、外设实例与器件配置）
+  ├── BSP
+  └── 05_Impl/01_mcu
 ```
 
-### 各层职责说明
+`00_Board` 是 BSP 和 MCU 实现共同的基础配置，不包含业务逻辑。
 
-| 层          | 目录           | 职责                                                      |
-| ----------- | -------------- | --------------------------------------------------------- |
-| Handle      | `Handle/`      | 调用 Adapter 完成业务逻辑，不感知底层硬件类型             |
-| Adapter     | `Adapter/`     | 将 `led_driver_t*` 等强类型转换为 `void*`，供 Handle 使用 |
-| Bsp_drivers | `Bsp_drivers/` | 定义驱动接口结构体（ops）和状态枚举，执行驱动初始化逻辑   |
-| ST_platform | `ST_platform/` | 实现 ops 中的每个函数指针，直接调用 HAL / LL 库           |
+### 分层依赖边界
 
-### 数据流示例（LED）
+下表定义新增依赖时的默认边界。受控例外只能使用目标层公开的头文件和 CMake 接口目标，不得访问私有状态或实现文件。
 
-```
-led_handle_on(p_handle)
-  → p_handle->p_ops->pf_led_on(p_handle->p_drv)      [Handle]
-    → drv_led_on(p_drv)                               [Adapter]
-      → p_drv->p_led_ops->pf_led_on(p_drv)           [Bsp_drivers]
-        → st_led_on(self)  →  HAL_GPIO_WritePin()     [ST_platform]
-```
+| 层 | 常规依赖 | 受控例外 | 禁止 |
+| --- | --- | --- | --- |
+| `01_App` | `02_Service` | FreeRTOS/CMSIS-OS2 任务控制接口、通用日志中间件 | BSP、`plat_*`、HAL、CubeMX |
+| `02_Service` | `03_Device`、中间件 | 公共 `bsp_*`、`plat_*`，用于日志、时基、诊断和板级状态 | `board_config.h`、BSP 私有状态、HAL、CubeMX |
+| `03_Device` | `03_Device_interface`、BSP/Binding | `plat_sys`，用于设备自有 DMA 缓冲区的缓存维护 | HAL、CubeMX、板级引脚和句柄 |
+| `04_Platform` | `00_Board`、`03_mcu_interface`、必要中间件 | Binding 可同时依赖设备接口与 BSP | Service、App、HAL 业务逻辑 |
+| `05_Impl/01_mcu` | `mcu_interface`、`bsp_interface`、`board_config`、CubeMX | 无 | Service、Device、BSP 静态实现库 |
 
-### 现有驱动一览
+`Core/` 是 CubeMX 生成层：保留启动、外设初始化、中断入口与任务入口壳；业务流程应委托给 `01_App` 或 `02_Service`。`Middlewares/` 为中间件；`Drivers/` 与第三方中间件代码默认不修改，除非需求明确涉及它们。
 
-| 外设       | Bsp_drivers         | ST_platform     |
-| ---------- | ------------------- | --------------- |
-| LED        | `bsp_drv_led`       | `st_led`        |
-| AT24 EEPROM| `bsp_drv_at24`      | `st_iic`        |
-| ST7789 LCD | `bsp_drv_st7789`    | `st_lcd_spi`    |
+## 内存、实时性与 DMA
 
----
+以 `STM32H743XX_FLASH.ld` 为准：Flash 2 MB；DTCM 128 KB；AXI RAM 512 KB；RAM_D2 288 KB；RAM_D3 64 KB；ITCM 64 KB。链接脚本当前定义 `_Min_Stack_Size = 0x1000`、`_Min_Heap_Size = 0x200`。
 
-## 4. 中间件
+- FreeRTOS 堆由 `heap_4.c` 与 `configTOTAL_HEAP_SIZE` 管理；项目的 `ucHeap` 在 `Core/Src/freertos.c` 中定义。
+- 禁止直接使用 `malloc`/`free`。只有确有必要时才使用 `pvPortMalloc`，并说明生命周期、失败处理及内存影响。
+- DMA 缓冲区放入合适的非缓存/专用段，或在 DMA 前后完成 D-Cache 清理/失效；不得假定缓存自动一致。
+- UART 中断响应小于 10 µs、1 kHz 控制环仅适用于明确承担这些职责的模块；变更相关路径时必须评估并验证时序影响。
 
-| 中间件        | 目录                        | 说明                                          |
-| ------------- | --------------------------- | --------------------------------------------- |
-| FreeRTOS      | `Middlewares/Third_Party/FreeRTOS/` | RTOS 内核，通过 CMSIS-OS2 接口使用     |
-| LetterShell   | `Middlewares/LetterShell/`  | UART 调试 Shell，命令注册在 `Core/Src/cmds.c` |
-| Kfifo         | `Middlewares/Kfifo/`        | 通用环形缓冲区                                |
-| Soc           | `Middlewares/Soc/`          | 电池 SOC 算法（OCV + 安时积分 + 内阻学习）    |
-| Dwt           | `Middlewares/Dwt/`          | DWT 周期计数器（精确微秒延时/计时）           |
-| Front         | `Middlewares/Front/`        | LCD 字体渲染（与 ST7789 驱动配合）            |
+## C 编码规则
 
----
+- 业务数据和硬件寄存器接口使用 `<stdint.h>` 的定宽类型；常量使用 `U` 后缀，避免魔术数字。
+- `int`、`long` 仅用于第三方/HAL/标准库接口或必要索引场景；跨模块接口优先使用定宽类型，并在边界显式转换。
+- 全局变量使用 `g_` 前缀；文件静态变量不加此前缀；宏全大写；函数使用小写下划线风格。新类型遵循相邻模块的现有命名风格。
+- 对外 API、驱动/BSP 接口、ISR 回调及复杂或有副作用的私有函数须使用项目 Doxygen 风格注释；简单私有辅助函数可省略冗余注释。
+- 公共接口和缓冲区操作必须检查 `NULL`、范围及初始化状态；硬件轮询必须有超时；每个 `switch` 必须包含 `default`。
 
-## 5. 编码规范
+## DWT 计时
 
-### 5.1 类型与宽度
-
-- 必须包含 `<stdint.h>`，使用 `uint8_t`、`uint32_t` 等。
-- 常量后缀 `U`（如 `0U`），禁止魔术数字。
-- 禁止使用 `int`、`long`（除非与 HAL 库交互时显式转换）。
-
-### 5.2 命名规则
-
-- 全局变量：`g_` 前缀（如 `g_led_handle`）
-- 静态全局变量：无前缀，文件作用域
-- 类型名：`_t` 后缀，结构体/枚举名全大写（如 `LED_DRIVER_T`）
-- 宏定义：全大写 + 下划线
-- 函数名：小写 + 下划线（如 `led_handle_on`）
-
-### 5.3 防御性编程
-
-- 函数入口检查参数：`NULL`、范围、初始化标志（`is_init`）。
-- 数组/缓冲区访问必须带上界检查。
-- 循环等待硬件标志必须有超时退出机制。
-- 不使用 `malloc`/`free`。
-- 所有 `switch` 必须有 `default`。
-
-### 5.4 注释与文档
-
-函数注释风格如下：
-
-```c
-/**
-  * @brief            : [函数名称] 简单描述一下这个函数的功能（必须添加）
-  * @retval           : [返回值说明] 如果是枚举类型需要列出内部能返回的值，无需全部列出。没有此项可以不添加
-  * @param[in]        : [参数名 参数说明] 没有此项可以不添加
-  * @param[out]       : [参数名 参数说明] 没有此项可以不添加
-  */
-```
-### 5.5 函数测量时间
-
-```c
-可以使用 Middlewares/Dwt/下的函数
-需要使用的时候必须在系统初始化之前调用    dwt_init(); 
-目前已经在MX_FREERTOS_Init 内调用了
-void test ()
-{
-    uint32_t time = get_dwt_us();
-    function();
-    time =  get_dwt_us() - time;
-}
-```
+`dwt_init()` 目前由 `MX_FREERTOS_Init()` 调用。使用 `get_dwt_us()` 前应确认该初始化路径已经执行；不要因测量单个函数而重复初始化 DWT。若测量发生在 FreeRTOS 初始化之前，需在调用点之前显式初始化并说明原因。

@@ -10,19 +10,17 @@
 /* Includes -----------------------------------------------------------------*/
 #include "bsp_led.h"
 #include "plat_gpio.h"
-#include "board_config.h"
 
 /* ---- pin table ----------------------------------------------------------- */
 typedef struct
 {
-    void    *p_port;
-    uint16_t pin;
-    uint8_t  on_level;
+    plat_gpio_id_t gpio_id;
+    uint8_t        on_level;
 } led_pin_t;
 
 static const led_pin_t led_table[] = {
-    { BOARD_LED1_PORT, BOARD_LED1_PIN, BOARD_LED1_ON_LEVEL },
-    { BOARD_LED2_PORT, BOARD_LED2_PIN, BOARD_LED2_ON_LEVEL },
+    { PLAT_GPIO_ID_LED1, 1U },
+    { PLAT_GPIO_ID_LED2, 1U },
 };
 
 #define LED_COUNT  (sizeof(led_table) / sizeof(led_table[0]))
@@ -32,21 +30,20 @@ static const led_pin_t led_table[] = {
 void bsp_led_on(uint8_t id)
 {
     if(id >= (uint8_t)LED_COUNT) { return; }
-    plat_gpio_write(led_table[id].p_port, led_table[id].pin,
-                    led_table[id].on_level);
+    (void)plat_gpio_write(led_table[id].gpio_id, led_table[id].on_level);
 }
 
 void bsp_led_off(uint8_t id)
 {
     if(id >= (uint8_t)LED_COUNT) { return; }
-    plat_gpio_write(led_table[id].p_port, led_table[id].pin,
+    (void)plat_gpio_write(led_table[id].gpio_id,
                     (0U == led_table[id].on_level) ? 1U : 0U);
 }
 
 void bsp_led_toggle(uint8_t id)
 {
     if(id >= (uint8_t)LED_COUNT) { return; }
-    plat_gpio_toggle(led_table[id].p_port, led_table[id].pin);
+    (void)plat_gpio_toggle(led_table[id].gpio_id);
 }
 
 /* end of file --------------------------------------------------------------*/

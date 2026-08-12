@@ -47,6 +47,7 @@ add_executable(${CMAKE_PROJECT_NAME})
 
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
+add_subdirectory(00_Board)
 # Add user-defined sources of the cmakelists files in the project
 add_subdirectory(Middlewares/LetterShell)
 add_subdirectory(Middlewares/Kfifo)
@@ -59,6 +60,7 @@ add_subdirectory(Middlewares/SEGGER_RTT)
 add_subdirectory(Middlewares/EasyLog)
 # add_subdirectory(Middlewares/SeggerHardFault)
 add_subdirectory(02_Service)
+add_subdirectory(01_App)
 add_subdirectory(03_Device_interface)
 add_subdirectory(03_Device)
 add_subdirectory(04_Platform/01_common)
@@ -100,6 +102,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     kfifo
     Soc
     service
+    app
     common
     bsp
     bsp_binding

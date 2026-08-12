@@ -1,0 +1,4 @@
+interface:
+  display_name: "MCU CMake Project Generator"
+  short_description: "Generate portable layered MCU CMake project skeletons."
+  default_prompt: "Use $generate-mcu-cmake-project to create a portable layered MCU project skeleton."

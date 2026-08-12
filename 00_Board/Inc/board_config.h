@@ -2,6 +2,7 @@
  ******************************************************************************
  *@file               :   board_config.h
  *@brief              :   Board-level hardware configuration constants.
+ *                        Shared by BSP and STM32 MCU implementation.
  *@version            :   V1.0
  *@note               :   1 tab == 4 spaces!  2026
  ******************************************************************************

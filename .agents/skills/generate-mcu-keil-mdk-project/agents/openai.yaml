@@ -1,0 +1,4 @@
+interface:
+  display_name: "MCU Keil MDK Project Generator"
+  short_description: "Generate portable layered Keil MDK MCU project skeletons."
+  default_prompt: "Use $generate-mcu-keil-mdk-project to create a portable layered Keil MDK project skeleton."
