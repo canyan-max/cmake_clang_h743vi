@@ -1,0 +1,448 @@
+# MCU 外挂芯片驱动设计规范
+
+## 1. 目的
+
+本文定义 MCU 外挂芯片的通用设计方式，适用于 AT24、AHTxx、W25Qxx、RTC、显示和其他通过 I2C、SPI、UART 等总线连接的芯片。
+
+目标是让芯片协议代码能够跨板卡、跨 MCU、跨工程复用。本文只描述稳定的设计方式，不包含当前工程的迁移计划。MCU 基础能力规则见 [`plat_mcu` 设计规范](./plat_mcu_design.md)。
+
+## 2. 核心原则
+
+最重要的区分是：
+
+> `Components` 描述“这一类芯片怎样工作”，BSP 描述“当前板上具体装了哪个对象，以及它怎样连接”。
+
+例如，`Components/at24` 是可复制到其他工程的 AT24 驱动；`bsp_eeprom` 则是当前板上的那颗 EEPROM，它明确选择 AT24C02、I2C0 和地址 `0x50`，并把这些信息装配成一个可使用的板载对象。
+
+可以把这种关系理解为：
+
+```text
+可复用的芯片类型（Component）
+             +
+板级资源与连接方式（Board/BSP）
+             =
+当前板上的具体对象（bsp_xxx）
+```
+
+外挂芯片同时涉及三类知识，必须分开：
+
+| 知识 | 回答的问题 | 归属 |
+| --- | --- | --- |
+| 芯片协议 | 为什么发送这些字节 | `Components/<chip>` |
+| 板级装配 | 当前板装了什么、怎样连接并形成具体对象 | Board/BSP |
+| MCU 实现 | 怎样把字节送上总线 | `plat_<bus>` + MCU Impl |
+
+完整关系：
+
+```text
+Service
+   ↓ 使用板级能力
+BSP
+   ↓ 创建芯片实例、提供 Adapter
+Components/<chip>
+   ↓ 通过 transport 请求宿主能力
+plat_i2c / plat_spi / ...
+   ↓
+MCU Impl
+   ↓
+Vendor SDK / Hardware
+```
+
+换芯片、换板和换 MCU 时，应分别修改不同模块：
+
+| 变化 | 主要修改位置 |
+| --- | --- |
+| AT24C02 换成 Component 已支持的 AT24 型号 | BSP |
+| AT24 换成另一系列 EEPROM | 新 Component + BSP |
+| AT24 由 I2C0 改接 I2C1 | Board/BSP 实例配置 |
+| STM32 换成 NXP | MCU Impl |
+| 把 AT24 拿到另一个软件框架 | 重新实现薄 Adapter |
+
+## 3. 四个设计角色
+
+### 3.1 Component：芯片协议
+
+Component 负责芯片自身的规则，例如：
+
+- 命令、寄存器和数据格式；
+- 初始化序列和状态检查；
+- CRC、数据换算和协议校验；
+- 芯片规定的延时和超时；
+- 型号参数和芯片内部状态。
+
+Component 不得依赖：
+
+- `plat_*`、`board_config.h`；
+- HAL/LL、CubeMX；
+- FreeRTOS/CMSIS-OS；
+- 当前工程日志和业务模块；
+- 当前板使用的总线、地址和引脚。
+
+判断标准：把整个 Component 复制到另一个工程，只重新实现 transport，芯片协议源码不需要修改。
+
+### 3.2 Transport：Component 的最小宿主契约
+
+Transport 表达芯片驱动需要宿主提供的能力，例如：
+
+- write、read、write-read；
+- 检查设备是否应答；
+- 获取时间或延时；
+- 控制芯片专用片选、复位或电源。
+
+规则是：
+
+> 谁需要能力，谁定义接口。
+
+因此 AT24 定义 `at24_transport_t`，AHTxx 定义 `ahtxx_transport_t`。不要复制 HAL API，也不要设计一张包含所有总线能力的万能 `ops` 表。
+
+### 3.3 Adapter：连接 Component 与 Platform
+
+Adapter 实现 transport，并调用当前工程的 `plat_*`：
+
+```text
+at24_transport.write_read
+            ↓
+at24_plat_adapter
+            ↓
+plat_i2c_write_read
+```
+
+Adapter 只负责：
+
+- 从 context 取得逻辑总线 ID；
+- 转发到 `plat_*`；
+- 转换错误码；
+- 保证 transport 约定的事务语义。
+
+Adapter 不实现芯片协议，也不直接调用 HAL。
+
+### 3.4 BSP：当前板的芯片实例
+
+BSP 不是通用芯片驱动的存放处。它的主要职责是把 Component 实例化为当前板上真实存在、连接关系固定的对象。
+
+BSP 负责：
+
+- 选择芯片型号；
+- 指定逻辑总线、地址、片选和板级引脚；
+- 创建静态芯片实例和 context；
+- 处理 WP、复位和供电等板级连接；
+- 对上提供稳定的 `bsp_*` 能力。
+
+BSP 不重复实现芯片协议，也不直接调用 HAL。
+
+以当前板载 EEPROM 为例：
+
+```text
+Components/at24
+    提供 AT24 类型及其协议能力
+              ↓ 由 BSP 选择和装配
+bsp_eeprom
+    = AT24_MODEL_C02
+    + PLAT_I2C_ID_0
+    + BOARD_EEPROM_I2C_ADDRESS_7B
+    + 当前板的 WP/供电连接（如果存在）
+```
+
+因此，`bsp_eeprom_read()` 表达的是“读取当前板载 EEPROM”，而不是“操作任意一颗 AT24”。上层通常只关心板载能力，不需要知道具体芯片型号、总线编号和器件地址。
+
+### 3.5 Board 与 BSP 的区别
+
+Board 和 BSP 都包含板级知识，但职责不同：
+
+| 模块 | 主要内容 | 是否执行驱动逻辑 |
+| --- | --- | --- |
+| `00_Board` | 引脚、逻辑总线映射、器件地址、功能是否装配等静态资源配置 | 否 |
+| BSP | 创建具体实例、连接 Adapter、处理板级控制并提供 `bsp_*` API | 是 |
+
+`00_Board` 回答“资源是什么”，BSP 回答“怎样用这些资源组成当前板的设备能力”。不要在 `board_config.h` 中放芯片协议流程，也不要让 Component 直接读取 Board 配置。
+
+## 4. Component 的标准模型
+
+可复用芯片组件通常由四部分组成：
+
+```text
+chip_model_t        标准芯片型号；详细规格由内部表维护
+chip_transport_t    芯片需要的宿主能力
+void *context       某个实例的宿主信息
+chip_t              一个独立芯片实例
+```
+
+### 4.1 Model 与可选 Config
+
+标准芯片优先通过 `chip_model_t` 选择型号。例如 AT24 的容量、页大小、存储地址宽度和写周期超时由 Component 的私有型号表维护，BSP 只选择 `AT24_MODEL_C02`，不逐项重复填写数据手册参数。
+
+只有存在非标准兼容型号或真正的运行时规格时才公开 Config。此时 Config 也只保存芯片固有规格，不保存 I2C1、`hi2c1`、板级引脚、RTOS mutex 或产品数据地址。
+
+### 4.2 Transport 与 Context
+
+简化示例：
+
+```c
+typedef struct AT24_TRANSPORT_T
+{
+    at24_status_t (*write)(void *p_context,
+                           uint8_t address_7b,
+                           const uint8_t *p_data,
+                           uint16_t size,
+                           uint32_t timeout_ms);
+
+    at24_status_t (*write_read)(void *p_context,
+                                uint8_t address_7b,
+                                const uint8_t *p_tx_data,
+                                uint16_t tx_size,
+                                uint8_t *p_rx_data,
+                                uint16_t rx_size,
+                                uint32_t timeout_ms);
+
+    at24_status_t (*wait_ready)(void *p_context,
+                                uint8_t address_7b,
+                                uint32_t timeout_ms);
+} at24_transport_t;
+```
+
+`wait_ready` 表示一次完整且有界的就绪等待。Component 决定何时等待以及允许等待多久，Adapter 使用宿主的单次应答探测、时基和延时完成轮询。这样既保留芯片操作超时，又不要求 Component 分别注入 tick、delay 和单次 probe。
+
+`void *p_context` 由 Component 原样保存和回传。当前工程的 Adapter 可以将其解释为：
+
+```c
+typedef struct AT24_PLAT_CONTEXT_T
+{
+    plat_i2c_id_t i2c_id;
+} at24_plat_context_t;
+```
+
+这样同一 transport 可以服务多个实例，Component 也不需要访问全局 HAL 句柄。
+
+### 4.3 Instance
+
+对于规格固定的标准型号，优先使用型号枚举，并由 Component 内部表保存容量、页大小、地址宽度和写周期超时。只有确实需要支持非标准兼容芯片或运行时规格时，才把完整 Config 暴露给调用方。
+
+实例保存运行一个芯片所需的型号、transport、context 和私有状态：
+
+```c
+struct AT24_T
+{
+    const at24_transport_t *p_transport;
+    void                   *p_transport_context;
+    at24_model_t            model;
+    uint8_t                 address_7b;
+    uint8_t                 initialized;
+};
+```
+
+实例规则：
+
+- 支持创建多个独立实例；
+- 初始化时完整注入依赖；
+- 不在 Component 内写死 `g_xxx_ops`；
+- 不在 Component 内选择具体 MCU 总线；
+- 初始化失败时保持明确的未初始化状态。
+
+## 5. 芯片 API 应表达完整能力
+
+Component 的公共 API 不应泄漏内部协议步骤。
+
+AT24 对外适合提供：
+
+```text
+at24_init
+at24_read
+at24_write
+at24_is_ready
+```
+
+以下内容应作为 AT24 私有实现：
+
+```text
+页边界计算
+单页写入
+存储地址编码
+发起有界的写周期 ACK 等待
+```
+
+AHTxx 对外应提供初始化和测量结果，而不是要求调用者手工发送命令、轮询 Busy 位和换算原始数据。
+
+## 6. Platform 与 Component 的边界
+
+`plat_i2c`、`plat_spi` 等只提供 MCU 基础事务：
+
+- 通过逻辑 ID 选择总线实例；
+- 校验参数并转换厂商错误；
+- 执行有超时的总线事务；
+- 保证复合事务的原子性。
+
+与外挂芯片有关的关键约定：
+
+- I2C 公共接口统一使用未左移的 7 位地址；
+- `write_read` 必须明确 repeated START 语义；
+- SPI 必须明确片选由谁控制以及保持时间；
+- 一次复合事务期间不得插入其他设备事务；
+- Platform 不提供 `plat_at24_*()`、`plat_ahtxx_*()` 等具体芯片接口。
+
+## 7. Device 是可选层
+
+Device 不是每个外挂芯片都必须经过的层。只有它增加了以下价值时才建立：
+
+- 独立状态机；
+- DMA 缓冲区等资源所有权；
+- 去抖、滤波、换算或聚合行为；
+- 生命周期、并发或故障恢复；
+- 多个真正可替换实现的统一语义。
+
+如果 `device_xxx()` 只是检查参数后原样调用 `bsp_xxx()`，通常不需要 Device。
+
+BSP 已经给出了当前板上的具体设备对象，因此不能仅因为存在一个外挂芯片就机械地再增加 Device。Device 必须提供独立于板级装配的新语义，才有存在价值。
+
+| 场景 | 推荐归属 |
+| --- | --- |
+| EEPROM 原始字节读写 | BSP + EEPROM Component |
+| 参数分区、CRC、双备份、版本管理 | 更高层存储模块 |
+| 按键原始按下状态 | BSP |
+| 去抖、短按和长按事件 | Device 或输入组件 |
+| 摄像头寄存器协议 | 摄像头 Component |
+| 帧缓冲区和采集生命周期 | Device |
+
+## 8. 内存、并发和超时
+
+### 内存
+
+- 不使用 `malloc/free`；
+- 默认不使用 `pvPortMalloc`；
+- 工作缓冲区必须静态、有界或由调用者提供；
+- 不在栈上创建大小不受控的页缓冲区；
+- DMA 缓冲区必须明确所有者、内存域、对齐和 Cache 责任。
+
+### 并发
+
+- 同一芯片实例默认不保证并发安全；
+- 调用者负责同一实例的串行访问；
+- 复合总线事务必须保持原子性；
+- 芯片内部等待期间不应长期占有共享总线；
+- 通用 Component 不直接引入 RTOS mutex。
+
+### 超时
+
+必须区分：
+
+```text
+总线传输超时：一次总线事务没有完成
+芯片操作超时：芯片内部状态长期没有就绪
+```
+
+两类等待都必须有界，不能用无限循环代替。
+
+## 9. 错误边界
+
+```text
+Vendor/HAL error
+      ↓ MCU Impl
+platform_err_t
+      ↓ Adapter
+chip_status_t 的传输错误子集
+      ↓ Component/BSP
+项目公共错误
+```
+
+简单驱动允许 Transport 直接返回芯片状态码，避免建立内容几乎相同的两套枚举。Adapter 只能返回 `OK`、`BUSY`、`TIMEOUT` 和底层传输错误等与宿主操作有关的状态；参数、未初始化和范围错误仍由 Component 产生。
+
+芯片错误至少应能区分参数错误、未初始化、范围错误、Busy、超时和底层传输错误，不能把所有失败都压缩成一个 `ERROR`。
+
+## 10. 目录和 CMake 规则
+
+推荐目录：
+
+```text
+Components/<chip>/       通用芯片协议
+04_Platform/02_bsp/      板级实例和 Adapter
+04_Platform/03_mcu_interface/  总线公共契约
+05_Impl/<target>/        MCU 总线实现
+```
+
+目标依赖：
+
+```text
+chip_driver
+    无项目内部依赖
+
+bsp
+    PRIVATE -> chip_driver
+    PRIVATE -> mcu_interface
+    PRIVATE -> board_config
+
+impl_mcu
+    PRIVATE -> mcu_interface
+    PRIVATE -> board_config
+    PRIVATE -> vendor SDK
+```
+
+禁止反向依赖：
+
+```text
+chip_driver -X-> bsp / mcu_interface / board_config / vendor SDK
+impl_mcu    -X-> chip_driver / bsp
+```
+
+每个 Component 必须使用独立 CMake target，不能依靠 BSP 顺带编译组件源码。
+
+## 11. 两个示例
+
+### AT24
+
+```text
+Component：型号规格表、地址编码、分页、决定 ACK 等待时机与期限
+Transport：write、write_read、wait_ready
+BSP：AT24C02、I2C0、地址 0x50、WP 引脚
+Platform：完成通用 I2C 事务
+```
+
+### AHTxx
+
+```text
+Component：初始化命令、测量命令、Busy、CRC、温湿度换算
+Transport：write、read、时间能力
+BSP：AHT20、I2C0、地址 0x38、供电方式
+Platform：完成通用 I2C 事务
+```
+
+两个芯片共享 `plat_i2c`，但各自定义最小 transport 和独立协议实现。
+
+## 12. 常见错误
+
+- 为每个 I2C 芯片创建一个 `mcu_xxx.c`；
+- 在 Component 中包含 HAL、Board、Platform 或 RTOS 头文件；
+- 直接复制某个 HAL 的专用接口作为 transport；
+- 在 Component 内写死全局 ops 或具体总线；
+- 使用左移后的 I2C 地址穿过公共层；
+- 把芯片分页、Busy polling 放进 Service；
+- 让单个芯片初始化或反初始化共享总线；
+- 为所有芯片设计一张万能 transport；
+- 为了目录对称而建立纯转发 Device；
+- 在 Component 中动态申请内存或直接使用 RTOS 锁。
+
+## 13. 新增外挂芯片的设计流程
+
+1. 列出芯片协议规则，不考虑 MCU API。
+2. 定义芯片对外提供的完整能力。
+3. 列出实现这些能力所需的最小宿主操作。
+4. 由芯片定义 model、transport、instance 和错误码；Config 仅在确有运行时配置需求时公开。
+5. 明确内存、超时、并发和事务语义。
+6. 使用 Adapter 将 transport 连接到 `plat_*`。
+7. 在 Board 中声明静态资源，在 BSP 中选择型号、总线和地址并创建当前板实例。
+8. 只有出现独立设备语义时才增加 Device。
+
+## 14. 设计检查清单
+
+- [ ] Component 能脱离当前工程编译；
+- [ ] Component 不依赖 HAL、Board、Platform、RTOS 和业务；
+- [ ] 芯片 API 没有泄漏内部协议步骤；
+- [ ] transport 由芯片定义且保持最小化；
+- [ ] 支持通过 context 创建多个实例；
+- [ ] Board 只声明静态资源，不包含芯片协议流程；
+- [ ] BSP 负责把型号、总线、地址和板级连接装配成具体对象；
+- [ ] BSP 对上表达板载能力，不泄漏不必要的芯片和总线细节；
+- [ ] MCU Impl 只实现通用总线；
+- [ ] 内存静态且有界；
+- [ ] 总线传输和芯片操作均有超时；
+- [ ] 并发所有权和复合事务原子性明确；
+- [ ] Device 确实增加了转发之外的价值；
+- [ ] CMake 不存在反向依赖或实现库循环。

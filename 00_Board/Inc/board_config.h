@@ -10,12 +10,15 @@
 #ifndef BOARD_CONFIG_H
 #define BOARD_CONFIG_H
 
-#include "gpio.h"   /* LED1_GPIO_Port / KEY_1_GPIO_Port etc. */
-#include "usart.h"  /* hlpuart1 */
+#include "gpio.h"  /* LED1_GPIO_Port / KEY_1_GPIO_Port etc. */
+#include "usart.h" /* hlpuart1 */
 
 /* OV2640 camera ------------------------------------------------------------*/
 #define BOARD_CAM_I2C_ADDR          (0x60U)
 #define BOARD_CAM_I2C_TIMEOUT       (100U)
+
+/* EEPROM -------------------------------------------------------------------*/
+#define BOARD_EEPROM_I2C_ADDRESS_7B (0x50U)
 
 /* LED ----------------------------------------------------------------------*/
 #define BOARD_LED1_PORT             LED1_GPIO_Port
@@ -32,9 +35,9 @@
 #define BOARD_KEY2_PIN              KEY_2_Pin
 
 /* HAL peripheral handles ---------------------------------------------------*/
+#define BOARD_I2C0_HANDLE           hi2c1
 #define BOARD_CAM_I2C_HANDLE        hi2c1
 #define BOARD_CAM_DCMI_HANDLE       hdcmi
-#define BOARD_EEPROM_I2C_HANDLE     hi2c1
 #define BOARD_UART_PROTO1_HANDLE    hlpuart1
 
 #endif /* BOARD_CONFIG_H */

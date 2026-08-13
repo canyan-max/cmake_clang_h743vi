@@ -48,6 +48,7 @@ add_executable(${CMAKE_PROJECT_NAME})
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
 add_subdirectory(00_Board)
+add_subdirectory(Components)
 # Add user-defined sources of the cmakelists files in the project
 add_subdirectory(Middlewares/LetterShell)
 add_subdirectory(Middlewares/Kfifo)

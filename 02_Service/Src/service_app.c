@@ -14,8 +14,8 @@
 #include "service_osd.h"
 #include "device_camera.h"
 #include "device_display.h"
-#include "device_eeprom.h"
 #include "device_indicator.h"
+#include "bsp_eeprom.h"
 
 /* exported functions -------------------------------------------------------*/
 
@@ -27,7 +27,7 @@ platform_err_t service_app_init(void)
 {
     device_indicator_init(DEVICE_INDICATOR_1);
     device_indicator_init(DEVICE_INDICATOR_2);
-    device_eeprom_init();
+    (void)bsp_eeprom_init();
 
     if(PLATFORM_ERR_OK != device_display_init())
     {
