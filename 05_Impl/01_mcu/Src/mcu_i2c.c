@@ -35,13 +35,12 @@ static I2C_HandleTypeDef *plat_i2c_get_handle(plat_i2c_id_t id)
 }
 
 static uint8_t plat_i2c_common_params_valid(plat_i2c_id_t id,
-                                            uint8_t address_7b,
-                                            uint32_t timeout_ms)
+                                            uint8_t       address_7b,
+                                            uint32_t      timeout_ms)
 {
     return (uint8_t)((NULL != plat_i2c_get_handle(id)) &&
                      (address_7b <= PLAT_I2C_ADDRESS_7B_MAX) &&
-                     (0U != timeout_ms) &&
-                     (UINT32_MAX != timeout_ms));
+                     (0U != timeout_ms) && (UINT32_MAX != timeout_ms));
 }
 
 static platform_err_t plat_i2c_convert_hal_status(HAL_StatusTypeDef status)
@@ -63,12 +62,42 @@ static platform_err_t plat_i2c_convert_hal_status(HAL_StatusTypeDef status)
     }
 }
 
+static uint8_t plat_i2c_memory_address_size_is_valid(
+    plat_i2c_memory_address_size_t memory_address_size)
+{
+    switch(memory_address_size)
+    {
+        case PLAT_I2C_MEMORY_ADDRESS_SIZE_8BIT:
+        case PLAT_I2C_MEMORY_ADDRESS_SIZE_16BIT:
+            return 1U;
+
+        default:
+            return 0U;
+    }
+}
+
+static uint16_t plat_i2c_get_hal_memory_address_size(
+    plat_i2c_memory_address_size_t memory_address_size)
+{
+    switch(memory_address_size)
+    {
+        case PLAT_I2C_MEMORY_ADDRESS_SIZE_8BIT:
+            return I2C_MEMADD_SIZE_8BIT;
+
+        case PLAT_I2C_MEMORY_ADDRESS_SIZE_16BIT:
+            return I2C_MEMADD_SIZE_16BIT;
+
+        default:
+            return 0U;
+    }
+}
+
 /* Exported functions -------------------------------------------------------*/
-platform_err_t plat_i2c_write(plat_i2c_id_t id,
-                              uint8_t address_7b,
+platform_err_t plat_i2c_write(plat_i2c_id_t  id,
+                              uint8_t        address_7b,
                               const uint8_t *p_data,
-                              uint16_t size,
-                              uint32_t timeout_ms)
+                              uint16_t       size,
+                              uint32_t       timeout_ms)
 {
     if((0U == plat_i2c_common_params_valid(id, address_7b, timeout_ms)) ||
        (NULL == p_data) || (0U == size))
@@ -76,17 +105,19 @@ platform_err_t plat_i2c_write(plat_i2c_id_t id,
         return PLATFORM_ERR_PARAM;
     }
 
-    HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(
-        plat_i2c_get_handle(id), (uint16_t)address_7b << 1U,
-        (uint8_t *)p_data, size, timeout_ms);
+    HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(plat_i2c_get_handle(id),
+                                                       (uint16_t)address_7b
+                                                           << 1U,
+                                                       (uint8_t *)p_data, size,
+                                                       timeout_ms);
     return plat_i2c_convert_hal_status(status);
 }
 
 platform_err_t plat_i2c_read(plat_i2c_id_t id,
-                             uint8_t address_7b,
-                             uint8_t *p_data,
-                             uint16_t size,
-                             uint32_t timeout_ms)
+                             uint8_t       address_7b,
+                             uint8_t      *p_data,
+                             uint16_t      size,
+                             uint32_t      timeout_ms)
 {
     if((0U == plat_i2c_common_params_valid(id, address_7b, timeout_ms)) ||
        (NULL == p_data) || (0U == size))
@@ -94,45 +125,65 @@ platform_err_t plat_i2c_read(plat_i2c_id_t id,
         return PLATFORM_ERR_PARAM;
     }
 
-    HAL_StatusTypeDef status = HAL_I2C_Master_Receive(
-        plat_i2c_get_handle(id), (uint16_t)address_7b << 1U,
-        p_data, size, timeout_ms);
+    HAL_StatusTypeDef status = HAL_I2C_Master_Receive(plat_i2c_get_handle(id),
+                                                      (uint16_t)address_7b
+                                                          << 1U,
+                                                      p_data, size, timeout_ms);
     return plat_i2c_convert_hal_status(status);
 }
 
-platform_err_t plat_i2c_write_read(plat_i2c_id_t id,
-                                   uint8_t address_7b,
-                                   const uint8_t *p_tx_data,
-                                   uint16_t tx_size,
-                                   uint8_t *p_rx_data,
-                                   uint16_t rx_size,
-                                   uint32_t timeout_ms)
+platform_err_t
+plat_i2c_memory_write(plat_i2c_id_t                  id,
+                      uint8_t                        address_7b,
+                      uint16_t                       memory_address,
+                      plat_i2c_memory_address_size_t memory_address_size,
+                      const uint8_t                 *p_data,
+                      uint16_t                       size,
+                      uint32_t                       timeout_ms)
 {
     if((0U == plat_i2c_common_params_valid(id, address_7b, timeout_ms)) ||
-       (NULL == p_tx_data) || (NULL == p_rx_data) || (0U == tx_size) ||
-       (tx_size > PLAT_I2C_WRITE_READ_PREFIX_MAX_SIZE) || (0U == rx_size))
+       (0U == plat_i2c_memory_address_size_is_valid(memory_address_size)) ||
+       (NULL == p_data) || (0U == size))
     {
         return PLATFORM_ERR_PARAM;
     }
 
-    uint16_t prefix = p_tx_data[0U];
-    uint16_t address_size = I2C_MEMADD_SIZE_8BIT;
-    if(2U == tx_size)
-    {
-        prefix = (uint16_t)(((uint16_t)p_tx_data[0U] << 8U) |
-                            (uint16_t)p_tx_data[1U]);
-        address_size = I2C_MEMADD_SIZE_16BIT;
-    }
-
-    HAL_StatusTypeDef status = HAL_I2C_Mem_Read(
-        plat_i2c_get_handle(id), (uint16_t)address_7b << 1U,
-        prefix, address_size, p_rx_data, rx_size, timeout_ms);
+    HAL_StatusTypeDef
+        status = HAL_I2C_Mem_Write(plat_i2c_get_handle(id),
+                                   (uint16_t)address_7b << 1U, memory_address,
+                                   plat_i2c_get_hal_memory_address_size(
+                                       memory_address_size),
+                                   (uint8_t *)p_data, size, timeout_ms);
     return plat_i2c_convert_hal_status(status);
 }
 
-platform_err_t plat_i2c_is_ready(plat_i2c_id_t id,
-                                 uint8_t address_7b,
-                                 uint32_t timeout_ms)
+platform_err_t
+plat_i2c_memory_read(plat_i2c_id_t                  id,
+                     uint8_t                        address_7b,
+                     uint16_t                       memory_address,
+                     plat_i2c_memory_address_size_t memory_address_size,
+                     uint8_t                       *p_data,
+                     uint16_t                       size,
+                     uint32_t                       timeout_ms)
+{
+    if((0U == plat_i2c_common_params_valid(id, address_7b, timeout_ms)) ||
+       (0U == plat_i2c_memory_address_size_is_valid(memory_address_size)) ||
+       (NULL == p_data) || (0U == size))
+    {
+        return PLATFORM_ERR_PARAM;
+    }
+
+    HAL_StatusTypeDef
+        status = HAL_I2C_Mem_Read(plat_i2c_get_handle(id),
+                                  (uint16_t)address_7b << 1U, memory_address,
+                                  plat_i2c_get_hal_memory_address_size(
+                                      memory_address_size),
+                                  p_data, size, timeout_ms);
+    return plat_i2c_convert_hal_status(status);
+}
+
+platform_err_t
+plat_i2c_is_ready(plat_i2c_id_t id, uint8_t address_7b, uint32_t timeout_ms)
 {
     if(0U == plat_i2c_common_params_valid(id, address_7b, timeout_ms))
     {
@@ -140,10 +191,16 @@ platform_err_t plat_i2c_is_ready(plat_i2c_id_t id,
     }
 
     I2C_HandleTypeDef *p_handle = plat_i2c_get_handle(id);
-    HAL_StatusTypeDef status = HAL_I2C_IsDeviceReady(
-        p_handle, (uint16_t)address_7b << 1U, 1U, timeout_ms);
-    if((HAL_ERROR == status) &&
-       (0U != (HAL_I2C_GetError(p_handle) & HAL_I2C_ERROR_AF)))
+    HAL_StatusTypeDef status = HAL_I2C_IsDeviceReady(p_handle,
+                                                     (uint16_t)address_7b << 1U,
+                                                     1U, timeout_ms);
+    /* STM32H7 HAL reports an exhausted one-trial NACK probe as TIMEOUT. The
+     * BSP performs the bounded total wait, so these probe-only errors mean
+     * "not ready yet" rather than a permanent bus fault. */
+    uint32_t error           = HAL_I2C_GetError(p_handle);
+    uint32_t not_ready_error = HAL_I2C_ERROR_AF | HAL_I2C_ERROR_TIMEOUT;
+    if((HAL_ERROR == status) && (0U != (error & not_ready_error)) &&
+       (0U == (error & ~not_ready_error)))
     {
         return PLATFORM_ERR_BUSY;
     }

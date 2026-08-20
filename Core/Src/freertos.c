@@ -122,7 +122,7 @@ void MX_FREERTOS_Init(void)
                                     &defaultTask_attributes);
 
     /* USER CODE BEGIN RTOS_THREADS */
-    // userShellInit();
+    userShellInit();
 
     // static const osThreadAttr_t battery_task_attr = {
     //     .name       = "batteryTask",

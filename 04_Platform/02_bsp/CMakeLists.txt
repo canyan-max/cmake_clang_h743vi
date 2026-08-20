@@ -22,7 +22,7 @@ set(PLATFORM_BSP_DEPEND_LIB
     letter_shell
     front
     kfifo
-    at24_driver
+    at24cxx_driver
 )
 
 

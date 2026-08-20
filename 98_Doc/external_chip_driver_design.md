@@ -12,7 +12,7 @@
 
 > `Components` 描述“这一类芯片怎样工作”，BSP 描述“当前板上具体装了哪个对象，以及它怎样连接”。
 
-例如，`Components/at24` 是可复制到其他工程的 AT24 驱动；`bsp_eeprom` 则是当前板上的那颗 EEPROM，它明确选择 AT24C02、I2C0 和地址 `0x50`，并把这些信息装配成一个可使用的板载对象。
+例如，`Components/ChipDrivers/at24cxx_driver.*` 是可复制到其他工程的 AT24Cxx 驱动；`bsp_eeprom` 则是当前板上的那颗 EEPROM，它明确选择 AT24C02、I2C0、地址 `0x50`、容量和页大小，并把这些信息装配成一个可使用的板载对象。
 
 可以把这种关系理解为：
 
@@ -93,23 +93,23 @@ Transport 表达芯片驱动需要宿主提供的能力，例如：
 
 > 谁需要能力，谁定义接口。
 
-因此 AT24 定义 `at24_transport_t`，AHTxx 定义 `ahtxx_transport_t`。不要复制 HAL API，也不要设计一张包含所有总线能力的万能 `ops` 表。
+因此 AT24Cxx 定义 `at24cxx_transport_t`，AHTxx 定义 `ahtxx_transport_t`。不要复制 HAL API，也不要设计一张包含所有总线能力的万能 `ops` 表。
 
 ### 3.3 Adapter：连接 Component 与 Platform
 
 Adapter 实现 transport，并调用当前工程的 `plat_*`：
 
 ```text
-at24_transport.write_read
+at24cxx_transport.read/write
             ↓
-at24_plat_adapter
+at24cxx_plat_adapter
             ↓
-plat_i2c_write_read
+plat_i2c_memory_read/write
 ```
 
 Adapter 只负责：
 
-- 从 context 取得逻辑总线 ID；
+- 绑定当前板使用的逻辑总线 ID，或在需要多实例时从 context 取得；
 - 转发到 `plat_*`；
 - 转换错误码；
 - 保证 transport 约定的事务语义。
@@ -124,7 +124,7 @@ BSP 负责：
 
 - 选择芯片型号；
 - 指定逻辑总线、地址、片选和板级引脚；
-- 创建静态芯片实例和 context；
+- 创建静态芯片实例；只有存在多实例或运行时选路需求时才创建 context；
 - 处理 WP、复位和供电等板级连接；
 - 对上提供稳定的 `bsp_*` 能力。
 
@@ -133,13 +133,15 @@ BSP 不重复实现芯片协议，也不直接调用 HAL。
 以当前板载 EEPROM 为例：
 
 ```text
-Components/at24
+Components/ChipDrivers/at24cxx_driver
     提供 AT24 类型及其协议能力
               ↓ 由 BSP 选择和装配
 bsp_eeprom
-    = AT24_MODEL_C02
+    = AT24CXX_MODEL_C02
     + PLAT_I2C_ID_0
     + BOARD_EEPROM_I2C_ADDRESS_7B
+    + 256-byte capacity
+    + 8-byte page
     + 当前板的 WP/供电连接（如果存在）
 ```
 
@@ -158,81 +160,101 @@ Board 和 BSP 都包含板级知识，但职责不同：
 
 ## 4. Component 的标准模型
 
-可复用芯片组件通常由四部分组成：
+可复用芯片组件通常由以下部分组成：
 
 ```text
-chip_model_t        标准芯片型号；详细规格由内部表维护
+chip_model_t        标准芯片型号；用于选择确实不同的协议和寻址规则
 chip_transport_t    芯片需要的宿主能力
-void *context       某个实例的宿主信息
 chip_t              一个独立芯片实例
+void *context       可选：多实例或运行时宿主信息
 ```
 
 ### 4.1 Model 与可选 Config
 
-标准芯片优先通过 `chip_model_t` 选择型号。例如 AT24 的容量、页大小、存储地址宽度和写周期超时由 Component 的私有型号表维护，BSP 只选择 `AT24_MODEL_C02`，不逐项重复填写数据手册参数。
+不要为了集中参数而机械地建立 `chip_model_config_t`。芯片运行必需且由板上具体型号决定的简单属性，可以直接保存在驱动实例中，由 BSP 初始化。例如当前 AT24Cxx 实例直接保存容量和页大小，用于越界检查和跨页写入。
 
-只有存在非标准兼容型号或真正的运行时规格时才公开 Config。此时 Config 也只保存芯片固有规格，不保存 I2C1、`hi2c1`、板级引脚、RTOS mutex 或产品数据地址。
+`chip_model_t` 只选择容量和页大小无法表达的协议差异。例如 AT24C02 使用 1-byte 字地址，AT24C16 还会把高位存储地址编码进器件地址；驱动根据 `model` 解析这些差异。不要仅根据容量猜测寻址规则。
 
-### 4.2 Transport 与 Context
+只有参数数量确实增多、需要整体校验或被多个 API 反复传递时，才引入 Config 结构体。Config 中也不能保存 I2C1、`hi2c1`、板级引脚、RTOS mutex 或产品数据地址。
+
+### 4.2 Transport 与可选 Context
 
 简化示例：
 
 ```c
-typedef struct AT24_TRANSPORT_T
+typedef struct AT24CXX_TRANSPORT_T
 {
-    at24_status_t (*write)(void *p_context,
-                           uint8_t address_7b,
-                           const uint8_t *p_data,
-                           uint16_t size,
-                           uint32_t timeout_ms);
+    at24cxx_status_t (*write)(uint8_t address_7b,
+                              uint16_t word_address,
+                              uint8_t word_address_size_bytes,
+                              const uint8_t *p_data,
+                              uint16_t size,
+                              uint32_t timeout_ms);
 
-    at24_status_t (*write_read)(void *p_context,
-                                uint8_t address_7b,
-                                const uint8_t *p_tx_data,
-                                uint16_t tx_size,
-                                uint8_t *p_rx_data,
-                                uint16_t rx_size,
-                                uint32_t timeout_ms);
+    at24cxx_status_t (*read)(uint8_t address_7b,
+                             uint16_t word_address,
+                             uint8_t word_address_size_bytes,
+                             uint8_t *p_data,
+                             uint16_t size,
+                             uint32_t timeout_ms);
 
-    at24_status_t (*wait_ready)(void *p_context,
-                                uint8_t address_7b,
-                                uint32_t timeout_ms);
-} at24_transport_t;
+    at24cxx_status_t (*wait_ready)(uint8_t address_7b,
+                                   uint32_t timeout_ms);
+} at24cxx_transport_t;
 ```
 
-`wait_ready` 表示一次完整且有界的就绪等待。Component 决定何时等待以及允许等待多久，Adapter 使用宿主的单次应答探测、时基和延时完成轮询。这样既保留芯片操作超时，又不要求 Component 分别注入 tick、delay 和单次 probe。
+AT24Cxx Component 负责把逻辑存储地址解析为最终的器件地址、字地址和地址宽度；Transport 只执行一次已经解析完整的 memory transaction。这样调用者的数据缓冲区可以直接传到底层，不需要在驱动实例中设置“地址前缀 + 页数据”的工作缓冲区。
 
-`void *p_context` 由 Component 原样保存和回传。当前工程的 Adapter 可以将其解释为：
+`wait_ready` 表示一次完整且有界的就绪等待。Component 决定何时等待，调用者通过 API 传入允许等待多久；Adapter 使用宿主的单次应答探测、时基和延时完成轮询。这样既保留芯片操作超时，又不要求 Component 分别注入 tick、delay 和单次 probe。
+
+Context 不是组件式驱动的必选项。当前板只有一颗固定接在 I2C0 上的 EEPROM，因此 Adapter 直接绑定 `PLAT_I2C_ID_0`，实例无需保存 context：
 
 ```c
-typedef struct AT24_PLAT_CONTEXT_T
+static at24cxx_status_t at24cxx_plat_write(
+    uint8_t address_7b,
+    uint16_t word_address,
+    uint8_t word_address_size_bytes,
+    const uint8_t *p_data,
+    uint16_t size,
+    uint32_t timeout_ms)
 {
-    plat_i2c_id_t i2c_id;
-} at24_plat_context_t;
+    return convert_platform_error(
+        plat_i2c_memory_write(PLAT_I2C_ID_0, address_7b,
+                              word_address, convert_address_size(
+                                  word_address_size_bytes),
+                              p_data, size, timeout_ms));
+}
 ```
 
-这样同一 transport 可以服务多个实例，Component 也不需要访问全局 HAL 句柄。
+只有满足下列任一条件时才增加 `void *p_context`：
+
+- 同一 transport 需要服务多个独立实例；
+- 总线、片选或宿主资源需要在运行时选择；
+- 组件测试或移植环境不能通过固定 Adapter 绑定状态。
+
+无论是否使用 context，Component 都只能调用 transport，不得访问 `plat_*`、Board 或 HAL。context 是解决实例选路的工具，不是组件化必须遵守的形式。
 
 ### 4.3 Instance
 
-对于规格固定的标准型号，优先使用型号枚举，并由 Component 内部表保存容量、页大小、地址宽度和写周期超时。只有确实需要支持非标准兼容芯片或运行时规格时，才把完整 Config 暴露给调用方。
-
-实例保存运行一个芯片所需的型号、transport、context 和私有状态：
+当前 AT24Cxx 实例只保存驱动工作真正需要的数据：
 
 ```c
-struct AT24_T
+typedef struct AT24CXX_DRIVER_T
 {
-    const at24_transport_t *p_transport;
-    void                   *p_transport_context;
-    at24_model_t            model;
-    uint8_t                 address_7b;
-    uint8_t                 initialized;
-};
+    const at24cxx_transport_t *p_transport;
+    uint32_t                   capacity_bytes;
+    uint16_t                   page_size_bytes;
+    at24cxx_model_t            model;
+    uint8_t                    address_7b;
+    uint8_t                    initialized;
+} at24cxx_driver_t;
 ```
+
+其中 `capacity_bytes` 用于范围检查，`page_size_bytes` 用于拆分跨页写入，`model` 只用于寻址规则等协议差异。实例不保存 context，也不保存工作缓冲区。
 
 实例规则：
 
-- 支持创建多个独立实例；
+- 默认支持当前板所需的静态实例；确有多实例需求时再引入 context；
 - 初始化时完整注入依赖；
 - 不在 Component 内写死 `g_xxx_ops`；
 - 不在 Component 内选择具体 MCU 总线；
@@ -245,10 +267,10 @@ Component 的公共 API 不应泄漏内部协议步骤。
 AT24 对外适合提供：
 
 ```text
-at24_init
-at24_read
-at24_write
-at24_is_ready
+at24cxx_init
+at24cxx_read
+at24cxx_write
+at24cxx_is_ready
 ```
 
 以下内容应作为 AT24 私有实现：
@@ -308,7 +330,7 @@ BSP 已经给出了当前板上的具体设备对象，因此不能仅因为存�
 
 - 不使用 `malloc/free`；
 - 默认不使用 `pvPortMalloc`；
-- 工作缓冲区必须静态、有界或由调用者提供；
+- 确实需要的工作缓冲区必须静态、有界或由调用者提供；能够通过完整 transport 事务直接使用调用者缓冲区时，不增加中间缓冲区；
 - 不在栈上创建大小不受控的页缓冲区；
 - DMA 缓冲区必须明确所有者、内存域、对齐和 Cache 责任。
 
@@ -352,7 +374,7 @@ chip_status_t 的传输错误子集
 推荐目录：
 
 ```text
-Components/<chip>/       通用芯片协议
+Components/ChipDrivers/  通用芯片协议源码与头文件
 04_Platform/02_bsp/      板级实例和 Adapter
 04_Platform/03_mcu_interface/  总线公共契约
 05_Impl/<target>/        MCU 总线实现
@@ -361,7 +383,7 @@ Components/<chip>/       通用芯片协议
 目标依赖：
 
 ```text
-chip_driver
+独立的 chip_driver target
     无项目内部依赖
 
 bsp
@@ -382,17 +404,17 @@ chip_driver -X-> bsp / mcu_interface / board_config / vendor SDK
 impl_mcu    -X-> chip_driver / bsp
 ```
 
-每个 Component 必须使用独立 CMake target，不能依靠 BSP 顺带编译组件源码。
+`Components` 可以统一使用一个 `CMakeLists.txt` 管理多个驱动，但每个 Component 必须保持独立 CMake target，不能依靠 BSP 顺带编译组件源码，也不要把所有驱动合并成一个静态库。
 
 ## 11. 两个示例
 
 ### AT24
 
 ```text
-Component：型号规格表、地址编码、分页、决定 ACK 等待时机与期限
-Transport：write、write_read、wait_ready
-BSP：AT24C02、I2C0、地址 0x50、WP 引脚
-Platform：完成通用 I2C 事务
+Component：范围检查、地址规则、分页、决定 ACK 等待时机
+Transport：memory write、memory read、wait_ready
+BSP：AT24C02、I2C0、地址 0x50、容量、页大小、WP 引脚
+Platform：完成通用 I2C memory transaction
 ```
 
 ### AHTxx
@@ -424,7 +446,7 @@ Platform：完成通用 I2C 事务
 1. 列出芯片协议规则，不考虑 MCU API。
 2. 定义芯片对外提供的完整能力。
 3. 列出实现这些能力所需的最小宿主操作。
-4. 由芯片定义 model、transport、instance 和错误码；Config 仅在确有运行时配置需求时公开。
+4. 由芯片定义 model、transport、instance 和错误码；简单且必要的芯片属性可以直接进入 instance，Config 仅在参数集合确实复杂时引入。
 5. 明确内存、超时、并发和事务语义。
 6. 使用 Adapter 将 transport 连接到 `plat_*`。
 7. 在 Board 中声明静态资源，在 BSP 中选择型号、总线和地址并创建当前板实例。
@@ -436,7 +458,7 @@ Platform：完成通用 I2C 事务
 - [ ] Component 不依赖 HAL、Board、Platform、RTOS 和业务；
 - [ ] 芯片 API 没有泄漏内部协议步骤；
 - [ ] transport 由芯片定义且保持最小化；
-- [ ] 支持通过 context 创建多个实例；
+- [ ] context 仅在多实例或运行时选路确有需求时引入；
 - [ ] Board 只声明静态资源，不包含芯片协议流程；
 - [ ] BSP 负责把型号、总线、地址和板级连接装配成具体对象；
 - [ ] BSP 对上表达板载能力，不泄漏不必要的芯片和总线细节；
