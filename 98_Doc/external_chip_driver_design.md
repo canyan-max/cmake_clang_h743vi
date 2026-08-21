@@ -10,9 +10,9 @@
 
 最重要的区分是：
 
-> `Components` 描述“这一类芯片怎样工作”，BSP 描述“当前板上具体装了哪个对象，以及它怎样连接”。
+> `06_Components` 描述“这一类芯片怎样工作”，BSP 描述“当前板上具体装了哪个对象，以及它怎样连接”。
 
-例如，`Components/ChipDrivers/at24cxx_driver.*` 是可复制到其他工程的 AT24Cxx 驱动；`bsp_eeprom` 则是当前板上的那颗 EEPROM，它明确选择 AT24C02、I2C0、地址 `0x50`、容量和页大小，并把这些信息装配成一个可使用的板载对象。
+例如，`06_Components/ChipDrivers/at24cxx_driver.*` 是可复制到其他工程的 AT24Cxx 驱动；`bsp_eeprom` 则是当前板上的那颗 EEPROM，它明确选择 AT24C02、I2C0、地址 `0x50`、容量和页大小，并把这些信息装配成一个可使用的板载对象。
 
 可以把这种关系理解为：
 
@@ -28,7 +28,7 @@
 
 | 知识 | 回答的问题 | 归属 |
 | --- | --- | --- |
-| 芯片协议 | 为什么发送这些字节 | `Components/<chip>` |
+| 芯片协议 | 为什么发送这些字节 | `06_Components/<chip>` |
 | 板级装配 | 当前板装了什么、怎样连接并形成具体对象 | Board/BSP |
 | MCU 实现 | 怎样把字节送上总线 | `plat_<bus>` + MCU Impl |
 
@@ -39,7 +39,7 @@ Service
    ↓ 使用板级能力
 BSP
    ↓ 创建芯片实例、提供 Adapter
-Components/<chip>
+06_Components/<chip>
    ↓ 通过 transport 请求宿主能力
 plat_i2c / plat_spi / ...
    ↓
@@ -133,7 +133,7 @@ BSP 不重复实现芯片协议，也不直接调用 HAL。
 以当前板载 EEPROM 为例：
 
 ```text
-Components/ChipDrivers/at24cxx_driver
+06_Components/ChipDrivers/at24cxx_driver
     提供 AT24 类型及其协议能力
               ↓ 由 BSP 选择和装配
 bsp_eeprom
@@ -374,7 +374,7 @@ chip_status_t 的传输错误子集
 推荐目录：
 
 ```text
-Components/ChipDrivers/  通用芯片协议源码与头文件
+06_Components/ChipDrivers/  通用芯片协议源码与头文件
 04_Platform/02_bsp/      板级实例和 Adapter
 04_Platform/03_mcu_interface/  总线公共契约
 05_Impl/<target>/        MCU 总线实现
@@ -404,7 +404,7 @@ chip_driver -X-> bsp / mcu_interface / board_config / vendor SDK
 impl_mcu    -X-> chip_driver / bsp
 ```
 
-`Components` 可以统一使用一个 `CMakeLists.txt` 管理多个驱动，但每个 Component 必须保持独立 CMake target，不能依靠 BSP 顺带编译组件源码，也不要把所有驱动合并成一个静态库。
+`06_Components/ChipDrivers` 使用目录级 `chip_drivers` 静态库统一管理依赖边界一致的外挂芯片驱动。各驱动仍须保持源码、头文件和 API 独立，不能依靠 BSP 顺带编译驱动源码。新增驱动通常只需加入 `CHIP_DRIVERS_SRC`；若某个驱动需要特殊第三方依赖、编译选项或独立测试，再为它拆分单独的 CMake target。
 
 ## 11. 两个示例
 

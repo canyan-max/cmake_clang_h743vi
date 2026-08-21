@@ -3,7 +3,6 @@
 # When replacing a peripheral chip, only this layer changes.
 
 set(PLATFORM_BSP_BINDING_SRC
-    ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_ov2640_intf.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_st7789_intf.c
 )
 

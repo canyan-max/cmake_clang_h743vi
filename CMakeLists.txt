@@ -48,18 +48,8 @@ add_executable(${CMAKE_PROJECT_NAME})
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
 add_subdirectory(00_Board)
-add_subdirectory(Components)
-# Add user-defined sources of the cmakelists files in the project
-add_subdirectory(Middlewares/LetterShell)
-add_subdirectory(Middlewares/Kfifo)
-add_subdirectory(Middlewares/Soc)
-add_subdirectory(Middlewares/Dwt)
-add_subdirectory(Middlewares/Front)
-add_subdirectory(Middlewares/Minimp3)
-add_subdirectory(Middlewares/Protocol)
-add_subdirectory(Middlewares/SEGGER_RTT)
-add_subdirectory(Middlewares/EasyLog)
-# add_subdirectory(Middlewares/SeggerHardFault)
+add_subdirectory(06_Components)
+# Add project-owned layered sources.
 add_subdirectory(02_Service)
 add_subdirectory(01_App)
 add_subdirectory(03_Device_interface)
@@ -110,7 +100,6 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     mcu_interface
     impl_mcu
     device
-    dwt
     front
     minimp3
     EasyLog

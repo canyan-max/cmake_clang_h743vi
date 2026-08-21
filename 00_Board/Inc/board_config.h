@@ -14,8 +14,9 @@
 #include "usart.h" /* hlpuart1 */
 
 /* OV2640 camera ------------------------------------------------------------*/
-#define BOARD_CAM_I2C_ADDR          (0x60U)
-#define BOARD_CAM_I2C_TIMEOUT       (100U)
+#define BOARD_CAMERA_PWDN_PORT      DCMI_PWDN_GPIO_Port
+#define BOARD_CAMERA_PWDN_PIN       DCMI_PWDN_Pin
+#define BOARD_CAMERA_PWDN_ACTIVE_LEVEL  (1U)
 
 /* EEPROM -------------------------------------------------------------------*/
 #define BOARD_EEPROM_I2C_ADDRESS_7B (0x50U)
@@ -36,7 +37,6 @@
 
 /* HAL peripheral handles ---------------------------------------------------*/
 #define BOARD_I2C0_HANDLE           hi2c1
-#define BOARD_CAM_I2C_HANDLE        hi2c1
 #define BOARD_CAM_DCMI_HANDLE       hdcmi
 #define BOARD_UART_PROTO1_HANDLE    hlpuart1
 

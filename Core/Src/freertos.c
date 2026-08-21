@@ -29,7 +29,7 @@
 #include <stdint.h>
 #include "shell_port.h"
 #include "kfifo.h"             /* kfifo lib header file. */
-#include "core_dwt.h"          /* dwt header file. */
+#include "plat_sys.h"          /* platform time source. */
 #include "service_osd.h"       /* service_osd header file. */
 #include "device_camera.h"     /* for device_camera_frame_isr in ISR */
 #include "device_key.h"        /* for key polling task */
@@ -92,10 +92,15 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 void MX_FREERTOS_Init(void)
 {
     /* USER CODE BEGIN Init */
-    dwt_init();
+    platform_err_t time_init_status = plat_time_init();
     if(PLATFORM_ERR_OK == plat_log_init())
     {
         plat_log_i("SYS", "log init OK (build %s %s)", __DATE__, __TIME__);
+        if(PLATFORM_ERR_OK != time_init_status)
+        {
+            plat_log_e("SYS", "DWT time init failed: %d",
+                       (int)time_init_status);
+        }
     }
     /* USER CODE END Init */
 
@@ -143,7 +148,7 @@ void MX_FREERTOS_Init(void)
         .stack_size = 512 * 4U,
         .priority   = (osPriority_t)osPriorityBelowNormal,
     };
-    osThreadNew(UartEchoTestTask, NULL, &uart_test_task_attr);
+    // osThreadNew(UartEchoTestTask, NULL, &uart_test_task_attr);
     /* USER CODE END RTOS_THREADS */
 
     /* USER CODE BEGIN RTOS_EVENTS */

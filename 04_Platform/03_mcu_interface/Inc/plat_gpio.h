@@ -1,9 +1,7 @@
 /**
  ******************************************************************************
  *@file               :   plat_gpio.h
- *@brief              :   MCU GPIO abstraction — access board GPIO by ID.
- *                        Only for board-level GPIO (LED, Key).
- *                        Complex peripherals (SPI/I2C) keep their own ops.
+ *@brief              :   MCU GPIO abstraction for board control signals.
  *@version            :   V1.0
  *@note               :   1 tab == 4 spaces!  2026
  ******************************************************************************
@@ -26,6 +24,7 @@ typedef enum PLAT_GPIO_ID_T
     PLAT_GPIO_ID_LED2,
     PLAT_GPIO_ID_KEY1,
     PLAT_GPIO_ID_KEY2,
+    PLAT_GPIO_ID_CAMERA_PWDN,
     PLAT_GPIO_ID_NUM,
 } plat_gpio_id_t;
 

@@ -10,11 +10,11 @@
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>
 #include "device_camera.h"
-#include "camera_intf.h"
+#include "bsp_camera.h"
 #include "plat_sys.h"
 
 /* define   -----------------------------------------------------------------*/
-#define DEVICE_CAM_BUF_SIZE  BSP_CAMERA_BUF_SIZE
+#define DEVICE_CAM_BUF_SIZE  BSP_CAMERA_FRAME_SIZE_BYTES
 
 /* variables ----------------------------------------------------------------*/
 __attribute__((section(".ram_d2_dma_buffers"), aligned(32)))
@@ -24,18 +24,17 @@ static uint8_t g_cam_buf[DEVICE_CAM_BUF_SIZE];
 
 platform_err_t device_camera_init(void)
 {
-    return g_camera_bsp_ops.pf_init();
+    return bsp_camera_init();
 }
 
 platform_err_t device_camera_start(void)
 {
-    return g_camera_bsp_ops.pf_start((uint32_t *)g_cam_buf,
-                                      DEVICE_CAM_BUF_SIZE / sizeof(uint32_t));
+    return bsp_camera_start(g_cam_buf, sizeof(g_cam_buf));
 }
 
 platform_err_t device_camera_stop(void)
 {
-    return g_camera_bsp_ops.pf_stop();
+    return bsp_camera_stop();
 }
 
 uint8_t *device_camera_get_buffer(void)

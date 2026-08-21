@@ -44,6 +44,8 @@
   ↓
 05_Impl/01_mcu（STM32 HAL/LL 具体实现）
 
+06_Components（工程主动维护的可复用驱动、协议、算法和工具组件）
+
 00_Board（板级引脚、外设实例与器件配置）
   ├── BSP
   └── 05_Impl/01_mcu
@@ -63,7 +65,7 @@
 | `04_Platform` | `00_Board`、`03_mcu_interface`、必要中间件 | Binding 可同时依赖设备接口与 BSP | Service、App、HAL 业务逻辑 |
 | `05_Impl/01_mcu` | `mcu_interface`、`bsp_interface`、`board_config`、CubeMX | 无 | Service、Device、BSP 静态实现库 |
 
-`Core/` 是 CubeMX 生成层：保留启动、外设初始化、中断入口与任务入口壳；业务流程应委托给 `01_App` 或 `02_Service`。`Middlewares/` 为中间件；`Drivers/` 与第三方中间件代码默认不修改，除非需求明确涉及它们。
+`Core/` 是 CubeMX 生成层：保留启动、外设初始化、中断入口与任务入口壳；业务流程应委托给 `01_App` 或 `02_Service`。`06_Components/` 保存工程主动维护的可复用组件；`Middlewares/Third_Party/` 由 CubeMX 管理。`Drivers/` 与 CubeMX 第三方中间件代码默认不修改，除非需求明确涉及它们。
 
 ## 内存、实时性与 DMA
 
@@ -84,4 +86,4 @@
 
 ## DWT 计时
 
-`dwt_init()` 目前由 `MX_FREERTOS_Init()` 调用。使用 `get_dwt_us()` 前应确认该初始化路径已经执行；不要因测量单个函数而重复初始化 DWT。若测量发生在 FreeRTOS 初始化之前，需在调用点之前显式初始化并说明原因。
+`plat_time_init()` 目前由 `MX_FREERTOS_Init()` 调用，STM32 实现使用 DWT 提供微秒时间。使用 `plat_time_get_us()` 前应确认该初始化路径已经执行；不要因测量单个函数而重复初始化。若测量发生在 FreeRTOS 初始化之前，需在调用点之前显式初始化并说明原因。

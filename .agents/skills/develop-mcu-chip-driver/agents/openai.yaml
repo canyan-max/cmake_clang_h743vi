@@ -1,0 +1,5 @@
+interface:
+  display_name: "Develop MCU Chip Driver"
+  short_description: "Design and integrate portable external MCU chip drivers."
+  default_prompt: "Use $develop-mcu-chip-driver to design or integrate a portable external MCU chip driver."
+
