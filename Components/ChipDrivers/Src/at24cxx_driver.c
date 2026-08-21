@@ -8,7 +8,6 @@
  */
 
 /* Includes -----------------------------------------------------------------*/
-#include <limits.h>
 #include <stddef.h>
 #include "at24cxx_driver.h"
 
