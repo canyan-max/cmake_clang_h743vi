@@ -1,5 +1,5 @@
 # ---------- bsp_interface ----------
-# Public BSP driver contracts shared with their MCU implementations.
+# Public BSP capability headers exported to upper layers.
 add_library(bsp_interface INTERFACE)
 target_include_directories(bsp_interface INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/Inc
@@ -9,7 +9,7 @@ target_include_directories(bsp_interface INTERFACE
 set(PLATFORM_BSP_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_led.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_eeprom.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_st7789.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_display.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_camera.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_key.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_uart.c

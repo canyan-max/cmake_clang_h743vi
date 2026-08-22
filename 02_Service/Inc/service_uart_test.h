@@ -2,7 +2,7 @@
  ******************************************************************************
  *@file               :   service_uart_test.h
  *@brief              :   Bring-up test: parse proto_simple frames off
- *                        DEVICE_UART_PROTO_1 and echo the payload back.
+ *                        BSP_UART_PROTO_1 and echo the payload back.
  *@version            :   V1.0
  *@note               :   1 tab == 4 spaces!  2026
  ******************************************************************************
@@ -42,12 +42,12 @@ typedef void (*service_uart_test_wake_cb_t)(void);
 
 /* functions ----------------------------------------------------------------*/
 /**
-  * @brief            : [service_uart_test_init] init the parsers and start
-  *                     listening on DEVICE_UART_PROTO_1.
-  * @param[in]        : [wake_cb] fired from ISR context on new RX data; may
-  *                     be NULL to disable the wake notification (poll must
-  *                     then be driven some other way, e.g. a fixed period).
-  */
+ * @brief            : [service_uart_test_init] init the parsers and start
+ *                     listening on BSP_UART_PROTO_1.
+ * @param[in]        : [wake_cb] fired from ISR context on new RX data; may
+ *                     be NULL to disable the wake notification (poll must
+ *                     then be driven some other way, e.g. a fixed period).
+ */
 platform_err_t service_uart_test_init(service_uart_test_wake_cb_t wake_cb);
 void           service_uart_test_poll(void);
 

@@ -36,13 +36,13 @@
 ```text
 01_App（应用入口；当前可为空）
   ↓
-02_Service（业务编排、RTOS 调用边界）
-  ↓
-03_Device / 03_Device_interface（设备语义 API 与抽象接口）
-  ↓
-04_Platform（BSP、板级绑定、MCU 抽象接口）
-  ↓
-05_Impl/01_mcu（STM32 HAL/LL 具体实现）
+02_Service（业务编排；保持 RTOS 与硬件实现无关）
+  ↓ 公共 bsp_* 能力
+04_Platform/02_bsp（板级能力与器件组装）
+  ├── 06_Components/ChipDrivers（可复用芯片协议驱动）
+  └── 04_Platform/03_mcu_interface（通用 plat_* MCU 抽象）
+        ↓
+      05_Impl/01_mcu（STM32 HAL/LL 具体实现）
 
 06_Components（工程主动维护的可复用驱动、协议、算法和工具组件）
 
@@ -51,7 +51,7 @@
   └── 05_Impl/01_mcu
 ```
 
-`00_Board` 是 BSP 和 MCU 实现共同的基础配置，不包含业务逻辑。
+`00_Board` 是 BSP 和 MCU 实现共同的基础配置，不包含业务逻辑。工程不再设置通用 `03_Device`、`03_Device_interface` 或 BSP Binding 层；只有出现跨设备聚合、复杂生命周期、并发仲裁或真正可替换的设备语义时，才按需增加独立抽象。
 
 ### 分层依赖边界
 
@@ -60,12 +60,13 @@
 | 层 | 常规依赖 | 受控例外 | 禁止 |
 | --- | --- | --- | --- |
 | `01_App` | `02_Service` | FreeRTOS/CMSIS-OS2 任务控制接口、通用日志中间件 | BSP、`plat_*`、HAL、CubeMX |
-| `02_Service` | `03_Device`、中间件 | 公共 `bsp_*`、`plat_*`，用于日志、时基、诊断和板级状态 | `board_config.h`、BSP 私有状态、HAL、CubeMX |
-| `03_Device` | `03_Device_interface`、BSP/Binding | `plat_sys`，用于设备自有 DMA 缓冲区的缓存维护 | HAL、CubeMX、板级引脚和句柄 |
-| `04_Platform` | `00_Board`、`03_mcu_interface`、必要中间件 | Binding 可同时依赖设备接口与 BSP | Service、App、HAL 业务逻辑 |
-| `05_Impl/01_mcu` | `mcu_interface`、`bsp_interface`、`board_config`、CubeMX | 无 | Service、Device、BSP 静态实现库 |
+| `02_Service` | 公共 `bsp_*`、中间件 | `plat_log`、`plat_time`、必要诊断接口 | `board_config.h`、BSP 私有状态、HAL、CubeMX、RTOS 实现细节 |
+| `04_Platform/02_bsp` | `board_config`、`mcu_interface`、`ChipDrivers`、必要中间件 | 无 | Service、App、HAL、CubeMX |
+| `04_Platform/03_mcu_interface` | `01_common` | 通用日志中间件 | BSP、Board、Service、App、HAL、CubeMX |
+| `05_Impl/01_mcu` | `mcu_interface`、`board_config`、CubeMX、`01_common` | 无 | Service、BSP 实现与公共 API、ChipDrivers |
+| `06_Components` | 标准 C 与显式声明的通用组件 | 芯片驱动可依赖字库等纯软件资源 | `board_config.h`、BSP、`plat_*`、HAL、CubeMX、RTOS、业务层 |
 
-`Core/` 是 CubeMX 生成层：保留启动、外设初始化、中断入口与任务入口壳；业务流程应委托给 `01_App` 或 `02_Service`。`06_Components/` 保存工程主动维护的可复用组件；`Middlewares/Third_Party/` 由 CubeMX 管理。`Drivers/` 与 CubeMX 第三方中间件代码默认不修改，除非需求明确涉及它们。
+`Core/` 是 CubeMX 生成层：保留启动、外设初始化、中断入口与任务入口壳；业务流程应委托给 `01_App` 或 `02_Service`。BSP 对 Service 只公开板级逻辑能力，例如显示区域、像素格式和帧事件，不公开芯片型号、总线、引脚或 HAL 句柄。`06_Components/` 保存工程主动维护的可复用组件；`Middlewares/Third_Party/` 由 CubeMX 管理。`Drivers/` 与 CubeMX 第三方中间件代码默认不修改，除非需求明确涉及它们。
 
 ## 内存、实时性与 DMA
 

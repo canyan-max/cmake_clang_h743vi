@@ -16,9 +16,16 @@ extern "C"
 
 #include <stdint.h>
 
-void bsp_led_on(uint8_t id);
-void bsp_led_off(uint8_t id);
-void bsp_led_toggle(uint8_t id);
+typedef enum BSP_LED_ID_T
+{
+    BSP_LED_1 = 0U,
+    BSP_LED_2,
+    BSP_LED_NUM,
+} bsp_led_id_t;
+
+void bsp_led_on(bsp_led_id_t id);
+void bsp_led_off(bsp_led_id_t id);
+void bsp_led_toggle(bsp_led_id_t id);
 
 #ifdef __cplusplus
 }

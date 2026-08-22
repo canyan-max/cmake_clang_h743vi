@@ -1,7 +1,7 @@
 add_subdirectory(SEGGER_RTT)
+add_subdirectory(Front)
 add_subdirectory(ChipDrivers)
 add_subdirectory(EasyLog)
-add_subdirectory(Front)
 add_subdirectory(Kfifo)
 add_subdirectory(LetterShell)
 add_subdirectory(Minimp3)

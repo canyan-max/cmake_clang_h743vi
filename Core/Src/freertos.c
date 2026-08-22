@@ -31,8 +31,6 @@
 #include "kfifo.h"             /* kfifo lib header file. */
 #include "plat_sys.h"          /* platform time source. */
 #include "service_osd.h"       /* service_osd header file. */
-#include "device_camera.h"     /* for device_camera_frame_isr in ISR */
-#include "device_key.h"        /* for key polling task */
 #include "service_uart_test.h" /* for DMA+IDLE UART smoke test */
 #include "plat_log.h"          /* platform log header file. */
 #include "app_main_task.h"     /* default application task */
@@ -76,7 +74,6 @@ const osThreadAttr_t defaultTask_attributes = {
 uint8_t     k_fifo_buffer[16];
 kfifo_t     g_kfifo;
 static void BatteryTask(void *argument);
-static void KeyTask(void *argument);
 static void UartEchoTestTask(void *argument);
 /* USER CODE END FunctionPrototypes */
 
@@ -136,13 +133,6 @@ void MX_FREERTOS_Init(void)
     // };
     // osThreadNew(BatteryTask, NULL, &battery_task_attr);
 
-    // static const osThreadAttr_t key_task_attr = {
-    //     .name       = "keyTask",
-    //     .stack_size = 512U,
-    //     .priority   = (osPriority_t)osPriorityBelowNormal,
-    // };
-    // osThreadNew(KeyTask, NULL, &key_task_attr);
-
     static const osThreadAttr_t uart_test_task_attr = {
         .name       = "uartTestTask",
         .stack_size = 512 * 4U,
@@ -172,14 +162,6 @@ void StartDefaultTask(void *argument)
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
-{
-    ((void)hdcmi);
-    device_camera_frame_isr();
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    vTaskNotifyGiveFromISR(defaultTaskHandle, &xHigherPriorityTaskWoken);
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-}
 /**
  * @brief  Simulates battery drain: decreases level by 1% every 2 seconds.
  *         Calls service_osd_set_battery() — no display logic here.
@@ -193,37 +175,6 @@ static void BatteryTask(void *argument)
         vTaskDelay(pdMS_TO_TICKS(5000U));
         bat = (bat > 0U) ? (bat - 1U) : 100U;
         service_osd_set_battery(bat);
-    }
-}
-/**
- * @brief  Polls KEY1 at 50ms interval, debounces, toggles REC state on press.
- */
-static void KeyTask(void *argument)
-{
-    ((void)argument);
-    device_key_init(DEVICE_KEY_1);
-    device_key_init(DEVICE_KEY_2);
-
-    static service_osd_rec_state_t s_rec = SERVICE_OSD_REC_ACTIVE;
-
-    for(;;)
-    {
-        vTaskDelay(pdMS_TO_TICKS(50U));
-
-        switch(device_key_get_event(DEVICE_KEY_1))
-        {
-            case DEVICE_KEY_EVT_SHORT_PRESS:
-                s_rec = (SERVICE_OSD_REC_ACTIVE == s_rec)
-                            ? SERVICE_OSD_REC_IDLE
-                            : SERVICE_OSD_REC_ACTIVE;
-                service_osd_set_rec_state(s_rec);
-                break;
-            case DEVICE_KEY_EVT_LONG_PRESS:
-                /* reserved for future use */
-                break;
-            default:
-                break;
-        }
     }
 }
 static TaskHandle_t s_uart_task_handle;
@@ -240,7 +191,7 @@ static void uart_wake_isr(void)
 
 /**
  * @brief  DMA+IDLE + proto_simple smoke test: parses framed data received
- *         on DEVICE_UART_PROTO_1 (bound to hlpuart1 for bring-up) and echoes
+ *         on BSP_UART_PROTO_1 (bound to hlpuart1 for bring-up) and echoes
  *         the decoded payload back.
  */
 static void UartEchoTestTask(void *argument)

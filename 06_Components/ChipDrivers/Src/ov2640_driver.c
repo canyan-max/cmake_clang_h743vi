@@ -89,6 +89,22 @@ static const ov2640_register_value_t ov2640_rgb565_svga_config[] = {
     {0xDDU, 0x7FU}, {0xE0U, 0x00U}, {0x05U, 0x00U},
 };
 
+/* Switch the initialized RGB565 pipeline from SVGA to the native 400x296 CIF
+ * readout. With a 24 MHz sensor input clock and CLKRC=0x80 retained from the
+ * base profile, OV2640 specifies a maximum CIF transfer rate of 60 FPS. */
+static const ov2640_register_value_t ov2640_rgb565_cif_60fps_config[] = {
+    {0xFFU, 0x01U}, {0x12U, 0x20U}, {0x03U, 0x0AU}, {0x32U, 0x89U},
+    {0x17U, 0x11U}, {0x18U, 0x43U}, {0x19U, 0x00U}, {0x1AU, 0x25U},
+    {0x4FU, 0xCAU}, {0x50U, 0xA8U}, {0x5AU, 0x23U}, {0x6DU, 0x00U},
+    {0x3DU, 0x38U}, {0x39U, 0x92U}, {0x35U, 0xDAU}, {0x22U, 0x1AU},
+    {0x37U, 0xC3U}, {0x23U, 0x00U}, {0x34U, 0xC0U}, {0x06U, 0x88U},
+    {0x07U, 0xC0U}, {0x0DU, 0x87U}, {0x0EU, 0x41U}, {0x4CU, 0x00U},
+    {0xFFU, 0x00U}, {0xE0U, 0x04U}, {0xC0U, 0x32U}, {0xC1U, 0x25U},
+    {0x8CU, 0x00U}, {0x51U, 0x64U}, {0x52U, 0x4AU}, {0x53U, 0x00U},
+    {0x54U, 0x00U}, {0x55U, 0x00U}, {0x57U, 0x00U}, {0x86U, 0x3DU},
+    {0x50U, 0x80U},
+};
+
 /* Private  functions  ------------------------------------------------------*/
 static uint8_t ov2640_transport_is_valid(const ov2640_transport_t *p_transport)
 {
@@ -104,33 +120,32 @@ static uint8_t ov2640_timeout_is_valid(uint32_t timeout_ms)
 }
 
 static ov2640_status_t ov2640_write_reg(ov2640_driver_t *p_driver,
-                                        uint8_t           reg,
-                                        uint8_t           value,
-                                        uint32_t          timeout_ms)
+                                        uint8_t          reg,
+                                        uint8_t          value,
+                                        uint32_t         timeout_ms)
 {
     return p_driver->p_transport->pf_write_reg(p_driver->address_7b, reg, value,
                                                timeout_ms);
 }
 
 static ov2640_status_t ov2640_read_reg(ov2640_driver_t *p_driver,
-                                       uint8_t           reg,
-                                       uint8_t          *p_value,
-                                       uint32_t          timeout_ms)
+                                       uint8_t          reg,
+                                       uint8_t         *p_value,
+                                       uint32_t         timeout_ms)
 {
-    return p_driver->p_transport->pf_read_reg(p_driver->address_7b, reg, p_value,
-                                              timeout_ms);
+    return p_driver->p_transport->pf_read_reg(p_driver->address_7b, reg,
+                                              p_value, timeout_ms);
 }
 
-static ov2640_status_t ov2640_select_bank(ov2640_driver_t *p_driver,
-                                          uint8_t           bank,
-                                          uint32_t          timeout_ms)
+static ov2640_status_t
+ov2640_select_bank(ov2640_driver_t *p_driver, uint8_t bank, uint32_t timeout_ms)
 {
     return ov2640_write_reg(p_driver, OV2640_REG_BANK_SELECT, bank, timeout_ms);
 }
 
 static ov2640_status_t ov2640_read_product_id_raw(ov2640_driver_t *p_driver,
-                                                  uint16_t *p_product_id,
-                                                  uint32_t  timeout_ms)
+                                                  uint16_t        *p_product_id,
+                                                  uint32_t         timeout_ms)
 {
     ov2640_status_t status = ov2640_select_bank(p_driver, OV2640_BANK_SENSOR,
                                                 timeout_ms);
@@ -141,7 +156,8 @@ static ov2640_status_t ov2640_read_product_id_raw(ov2640_driver_t *p_driver,
 
     uint8_t id_high;
     uint8_t id_low;
-    status = ov2640_read_reg(p_driver, OV2640_REG_PID_HIGH, &id_high, timeout_ms);
+    status = ov2640_read_reg(p_driver, OV2640_REG_PID_HIGH, &id_high,
+                             timeout_ms);
     if(OV2640_STATUS_OK != status)
     {
         return status;
@@ -157,15 +173,16 @@ static ov2640_status_t ov2640_read_product_id_raw(ov2640_driver_t *p_driver,
 }
 
 static ov2640_status_t
-ov2640_apply_register_config(ov2640_driver_t                  *p_driver,
-                             const ov2640_register_value_t    *p_config,
-                             uint32_t                          config_count,
-                             uint32_t                          timeout_ms)
+ov2640_apply_register_config(ov2640_driver_t               *p_driver,
+                             const ov2640_register_value_t *p_config,
+                             uint32_t                       config_count,
+                             uint32_t                       timeout_ms)
 {
     for(uint32_t i = 0U; i < config_count; i++)
     {
         ov2640_status_t status = ov2640_write_reg(p_driver, p_config[i].reg,
-                                                  p_config[i].value, timeout_ms);
+                                                  p_config[i].value,
+                                                  timeout_ms);
         if(OV2640_STATUS_OK != status)
         {
             return status;
@@ -190,9 +207,9 @@ ov2640_apply_register_config(ov2640_driver_t                  *p_driver,
 }
 
 static ov2640_status_t ov2640_set_output_size(ov2640_driver_t *p_driver,
-                                               uint16_t          width,
-                                               uint16_t          height,
-                                               uint32_t          timeout_ms)
+                                              uint16_t         width,
+                                              uint16_t         height,
+                                              uint32_t         timeout_ms)
 {
     ov2640_status_t status = ov2640_select_bank(p_driver, OV2640_BANK_DSP,
                                                 timeout_ms);
@@ -206,9 +223,8 @@ static ov2640_status_t ov2640_set_output_size(ov2640_driver_t *p_driver,
     const ov2640_register_value_t output_config[] = {
         {OV2640_REG_DSP_WIDTH_LOW, (uint8_t)(width_div4 & 0xFFU)},
         {OV2640_REG_DSP_HEIGHT_LOW, (uint8_t)(height_div4 & 0xFFU)},
-        {OV2640_REG_DSP_SIZE_HIGH,
-         (uint8_t)(((width_div4 >> 8U) & 0x03U) |
-                   ((height_div4 >> 6U) & 0x04U))},
+        {OV2640_REG_DSP_SIZE_HIGH, (uint8_t)(((width_div4 >> 8U) & 0x03U) |
+                                             ((height_div4 >> 6U) & 0x04U))},
         {OV2640_REG_DSP_RESET, 0x00U},
     };
 
@@ -230,8 +246,8 @@ static ov2640_status_t ov2640_set_output_size(ov2640_driver_t *p_driver,
 /* Exported functions -------------------------------------------------------*/
 ov2640_status_t ov2640_init(ov2640_driver_t          *p_driver,
                             const ov2640_transport_t *p_transport,
-                            uint8_t                    address_7b,
-                            uint32_t                   timeout_ms)
+                            uint8_t                   address_7b,
+                            uint32_t                  timeout_ms)
 {
     if(NULL == p_driver)
     {
@@ -249,7 +265,7 @@ ov2640_status_t ov2640_init(ov2640_driver_t          *p_driver,
     p_driver->p_transport = p_transport;
     p_driver->address_7b  = address_7b;
 
-    uint16_t product_id;
+    uint16_t        product_id;
     ov2640_status_t status = ov2640_read_product_id_raw(p_driver, &product_id,
                                                         timeout_ms);
     if(OV2640_STATUS_OK != status)
@@ -267,9 +283,9 @@ ov2640_status_t ov2640_init(ov2640_driver_t          *p_driver,
 
 ov2640_status_t ov2640_configure(ov2640_driver_t *p_driver,
                                  ov2640_profile_t profile,
-                                 uint16_t          output_width,
-                                 uint16_t          output_height,
-                                 uint32_t          timeout_ms)
+                                 uint16_t         output_width,
+                                 uint16_t         output_height,
+                                 uint32_t         timeout_ms)
 {
     if((NULL == p_driver) || (profile >= OV2640_PROFILE_NUM) ||
        (0U == output_width) || (0U == output_height) ||
@@ -289,6 +305,7 @@ ov2640_status_t ov2640_configure(ov2640_driver_t *p_driver,
     switch(profile)
     {
         case OV2640_PROFILE_RGB565_SVGA:
+        case OV2640_PROFILE_RGB565_CIF_60FPS:
         {
             ov2640_status_t status = ov2640_apply_register_config(
                 p_driver, ov2640_rgb565_svga_config,
@@ -298,6 +315,19 @@ ov2640_status_t ov2640_configure(ov2640_driver_t *p_driver,
             if(OV2640_STATUS_OK != status)
             {
                 return status;
+            }
+
+            if(OV2640_PROFILE_RGB565_CIF_60FPS == profile)
+            {
+                status = ov2640_apply_register_config(
+                    p_driver, ov2640_rgb565_cif_60fps_config,
+                    (uint32_t)(sizeof(ov2640_rgb565_cif_60fps_config) /
+                               sizeof(ov2640_rgb565_cif_60fps_config[0])),
+                    timeout_ms);
+                if(OV2640_STATUS_OK != status)
+                {
+                    return status;
+                }
             }
             break;
         }
@@ -312,8 +342,8 @@ ov2640_status_t ov2640_configure(ov2640_driver_t *p_driver,
 }
 
 ov2640_status_t ov2640_read_product_id(ov2640_driver_t *p_driver,
-                                       uint16_t         *p_product_id,
-                                       uint32_t          timeout_ms)
+                                       uint16_t        *p_product_id,
+                                       uint32_t         timeout_ms)
 {
     if((NULL == p_driver) || (NULL == p_product_id) ||
        (0U == ov2640_timeout_is_valid(timeout_ms)))

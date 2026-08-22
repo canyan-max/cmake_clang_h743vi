@@ -20,6 +20,7 @@
 /* typedef ------------------------------------------------------------------*/
 
 /* variables ----------------------------------------------------------------*/
+static plat_dcmi_event_cb_t volatile s_dcmi_event_callback;
 
 /* Private  functions  ------------------------------------------------------*/
 static platform_err_t plat_dcmi_convert_hal_status(HAL_StatusTypeDef status)
@@ -60,7 +61,27 @@ static uint8_t plat_dcmi_get_hal_mode(plat_dcmi_mode_t mode,
     }
 }
 
+static void plat_dcmi_notify_event_from_isr(plat_dcmi_event_t event)
+{
+    plat_dcmi_event_cb_t callback = s_dcmi_event_callback;
+    if(NULL != callback)
+    {
+        callback(event);
+    }
+}
+
 /* Exported functions -------------------------------------------------------*/
+platform_err_t plat_dcmi_set_event_callback(plat_dcmi_event_cb_t callback)
+{
+    if(HAL_DCMI_STATE_BUSY == HAL_DCMI_GetState(&BOARD_CAM_DCMI_HANDLE))
+    {
+        return PLATFORM_ERR_BUSY;
+    }
+
+    s_dcmi_event_callback = callback;
+    return PLATFORM_ERR_OK;
+}
+
 platform_err_t plat_dcmi_config_crop(const plat_dcmi_crop_t *p_crop)
 {
     if((NULL == p_crop) || (0U == p_crop->capture_width_bytes) ||
@@ -79,9 +100,11 @@ platform_err_t plat_dcmi_config_crop(const plat_dcmi_crop_t *p_crop)
         return PLATFORM_ERR_PARAM;
     }
 
-    HAL_StatusTypeDef status = HAL_DCMI_ConfigCrop(
-        &BOARD_CAM_DCMI_HANDLE, p_crop->horizontal_offset_bytes,
-        p_crop->vertical_offset_lines, width_count, height_count);
+    HAL_StatusTypeDef
+        status = HAL_DCMI_ConfigCrop(&BOARD_CAM_DCMI_HANDLE,
+                                     p_crop->horizontal_offset_bytes,
+                                     p_crop->vertical_offset_lines, width_count,
+                                     height_count);
     if(HAL_OK != status)
     {
         return plat_dcmi_convert_hal_status(status);
@@ -104,9 +127,15 @@ platform_err_t plat_dcmi_start_dma(uint8_t         *p_buffer,
         return PLATFORM_ERR_PARAM;
     }
 
-    HAL_StatusTypeDef status = HAL_DCMI_Start_DMA(
-        &BOARD_CAM_DCMI_HANDLE, hal_mode, (uint32_t)(uintptr_t)p_buffer,
-        size_bytes / PLAT_DCMI_DMA_ALIGNMENT_BYTES);
+    HAL_StatusTypeDef
+        status = HAL_DCMI_Start_DMA(&BOARD_CAM_DCMI_HANDLE, hal_mode,
+                                    (uint32_t)(uintptr_t)p_buffer,
+                                    size_bytes / PLAT_DCMI_DMA_ALIGNMENT_BYTES);
+    if(HAL_OK == status)
+    {
+        __HAL_DCMI_ENABLE_IT(&BOARD_CAM_DCMI_HANDLE,
+                             DCMI_IT_FRAME | DCMI_IT_OVR | DCMI_IT_ERR);
+    }
     return plat_dcmi_convert_hal_status(status);
 }
 
@@ -115,5 +144,29 @@ platform_err_t plat_dcmi_stop(void)
     return plat_dcmi_convert_hal_status(HAL_DCMI_Stop(&BOARD_CAM_DCMI_HANDLE));
 }
 
-/* end of file --------------------------------------------------------------*/
+void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *p_hdcmi)
+{
+    if(p_hdcmi == &BOARD_CAM_DCMI_HANDLE)
+    {
+        plat_dcmi_notify_event_from_isr(PLAT_DCMI_EVENT_FRAME_READY);
+    }
+}
 
+void HAL_DCMI_ErrorCallback(DCMI_HandleTypeDef *p_hdcmi)
+{
+    if(p_hdcmi != &BOARD_CAM_DCMI_HANDLE)
+    {
+        return;
+    }
+
+    if(0U != (HAL_DCMI_GetError(p_hdcmi) & HAL_DCMI_ERROR_OVR))
+    {
+        plat_dcmi_notify_event_from_isr(PLAT_DCMI_EVENT_OVERRUN);
+    }
+    else
+    {
+        plat_dcmi_notify_event_from_isr(PLAT_DCMI_EVENT_ERROR);
+    }
+}
+
+/* end of file --------------------------------------------------------------*/

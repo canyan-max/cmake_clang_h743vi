@@ -34,6 +34,8 @@ typedef enum OV2640_STATUS_T
 typedef enum OV2640_PROFILE_T
 {
     OV2640_PROFILE_RGB565_SVGA = 0U,
+    /** CIF sensor timing for up to 60 FPS with a 24 MHz sensor clock. */
+    OV2640_PROFILE_RGB565_CIF_60FPS,
     OV2640_PROFILE_NUM,
 } ov2640_profile_t;
 
@@ -106,4 +108,3 @@ ov2640_status_t ov2640_read_product_id(ov2640_driver_t *p_driver,
 #endif /* OV2640_DRIVER_H */
 
 /* end of file --------------------------------------------------------------*/
-

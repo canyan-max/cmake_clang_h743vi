@@ -21,12 +21,15 @@ typedef struct
 
 /* variables ----------------------------------------------------------------*/
 static const gpio_resource_t gpio_resource_table[PLAT_GPIO_ID_NUM] = {
-    [PLAT_GPIO_ID_LED1] = { BOARD_LED1_PORT, BOARD_LED1_PIN },
-    [PLAT_GPIO_ID_LED2] = { BOARD_LED2_PORT, BOARD_LED2_PIN },
-    [PLAT_GPIO_ID_KEY1] = { BOARD_KEY1_PORT, BOARD_KEY1_PIN },
-    [PLAT_GPIO_ID_KEY2] = { BOARD_KEY2_PORT, BOARD_KEY2_PIN },
-    [PLAT_GPIO_ID_CAMERA_PWDN] = { BOARD_CAMERA_PWDN_PORT,
-                                  BOARD_CAMERA_PWDN_PIN },
+    [PLAT_GPIO_ID_LED1]        = {BOARD_LED1_PORT, BOARD_LED1_PIN},
+    [PLAT_GPIO_ID_LED2]        = {BOARD_LED2_PORT, BOARD_LED2_PIN},
+    [PLAT_GPIO_ID_KEY1]        = {BOARD_KEY1_PORT, BOARD_KEY1_PIN},
+    [PLAT_GPIO_ID_KEY2]        = {BOARD_KEY2_PORT, BOARD_KEY2_PIN},
+    [PLAT_GPIO_ID_CAMERA_PWDN] = {BOARD_CAMERA_PWDN_PORT,
+                                  BOARD_CAMERA_PWDN_PIN},
+    [PLAT_GPIO_ID_DISPLAY_DC]  = {BOARD_DISPLAY_DC_PORT, BOARD_DISPLAY_DC_PIN},
+    [PLAT_GPIO_ID_DISPLAY_BACKLIGHT] = {BOARD_DISPLAY_BACKLIGHT_PORT,
+                                        BOARD_DISPLAY_BACKLIGHT_PIN},
 };
 
 /* Private  functions  ------------------------------------------------------*/

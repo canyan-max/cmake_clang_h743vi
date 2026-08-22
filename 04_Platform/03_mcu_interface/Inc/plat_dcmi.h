@@ -28,6 +28,20 @@ typedef enum PLAT_DCMI_MODE_T
     PLAT_DCMI_MODE_NUM,
 } plat_dcmi_mode_t;
 
+typedef enum PLAT_DCMI_EVENT_T
+{
+    PLAT_DCMI_EVENT_FRAME_READY = 0U,
+    PLAT_DCMI_EVENT_OVERRUN,
+    PLAT_DCMI_EVENT_ERROR,
+    PLAT_DCMI_EVENT_NUM,
+} plat_dcmi_event_t;
+
+/**
+ * @brief DCMI event callback invoked from interrupt context.
+ * @note Implementations must not block or call non-ISR-safe services.
+ */
+typedef void (*plat_dcmi_event_cb_t)(plat_dcmi_event_t event);
+
 typedef struct PLAT_DCMI_CROP_T
 {
     uint16_t horizontal_offset_bytes;
@@ -39,6 +53,14 @@ typedef struct PLAT_DCMI_CROP_T
 /* variables ----------------------------------------------------------------*/
 
 /* function  ----------------------------------------------------------------*/
+/**
+ * @brief Register the DCMI interrupt-event callback.
+ * @param callback Callback to invoke from ISR context; NULL unregisters it.
+ * @note Registration is only allowed while capture is stopped.
+ * @retval PLATFORM_ERR_OK on success; otherwise a stable Platform error.
+ */
+platform_err_t plat_dcmi_set_event_callback(plat_dcmi_event_cb_t callback);
+
 /**
  * @brief Configure and enable the DCMI receive crop window.
  * @param p_crop Crop geometry expressed in received bytes and image lines.
@@ -71,4 +93,3 @@ platform_err_t plat_dcmi_stop(void);
 #endif /* PLAT_DCMI_H */
 
 /* end of file --------------------------------------------------------------*/
-

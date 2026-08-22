@@ -52,12 +52,9 @@ add_subdirectory(06_Components)
 # Add project-owned layered sources.
 add_subdirectory(02_Service)
 add_subdirectory(01_App)
-add_subdirectory(03_Device_interface)
-add_subdirectory(03_Device)
 add_subdirectory(04_Platform/01_common)
 add_subdirectory(04_Platform/03_mcu_interface)
 add_subdirectory(04_Platform/02_bsp)
-add_subdirectory(04_Platform/02_bsp_binding)
 add_subdirectory(05_Impl/01_mcu)
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
@@ -96,10 +93,8 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     app
     common
     bsp
-    bsp_binding
     mcu_interface
     impl_mcu
-    device
     front
     minimp3
     EasyLog

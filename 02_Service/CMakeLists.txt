@@ -6,7 +6,6 @@ set(SERVICE_SRC
 )
 
 set(SERVICE_DEPEND_LIB
-    device
     bsp
     mcu_interface
     front

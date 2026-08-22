@@ -2,7 +2,7 @@
  ******************************************************************************
  *@file               :   service_uart_test.c
  *@brief              :   Bring-up test: two protocols (proto_simple,
- *                        proto_files) share DEVICE_UART_PROTO_1. Whichever
+ *                        proto_files) share BSP_UART_PROTO_1. Whichever
  *                        parser is already mid-frame gets each byte
  *                        exclusively; while both are idle, every byte is
  *                        offered to both idle-scanners in parallel (safe
@@ -18,7 +18,7 @@
 #include <stddef.h> /* NULL */
 #include <stdint.h> /* UINT32_MAX for the idle-timeout wraparound calc */
 #include "service_uart_test.h"
-#include "device_uart.h"
+#include "bsp_uart.h"
 #include "proto_simple.h"
 #include "plat_log.h"
 #include "plat_sys.h" /* plat_tick_get_ms: RTOS-independent tick, keeps the
@@ -29,10 +29,11 @@
 #define SERVICE_UART_TEST_SEND_TIMEOUT_MS   (100U)
 
 /* variables ----------------------------------------------------------------*/
-static proto_simple_parser_t     g_parser;
-static proto_files_parser_t      g_files_parser;
-static uint32_t                  s_last_byte_tick; /* plat_tick_get_ms() snapshot,
-                                                        for the mid-frame idle-timeout watchdog */
+static proto_simple_parser_t g_parser;
+static proto_files_parser_t  g_files_parser;
+static uint32_t
+    s_last_byte_tick;                         /* plat_tick_get_ms() snapshot,
+                                                   for the mid-frame idle-timeout watchdog */
 static service_uart_test_wake_cb_t s_wake_cb; /* caller-supplied, fired from
                                                   ISR context on new RX data */
 /* private  functions  ------------------------------------------------------*/
@@ -41,9 +42,9 @@ static service_uart_test_wake_cb_t s_wake_cb; /* caller-supplied, fired from
  * land in the RX fifo — just forwards to whatever wake mechanism the caller
  * wired up (RTOS task notify, bare-metal flag, ...); this module doesn't
  * know or care which. */
-static void uart_rx_notify_cb(device_uart_id_t id)
+static void uart_rx_notify_cb(bsp_uart_id_t id)
 {
-    if((DEVICE_UART_PROTO_1 == id) && (NULL != s_wake_cb))
+    if((BSP_UART_PROTO_1 == id) && (NULL != s_wake_cb))
     {
         s_wake_cb();
     }
@@ -58,13 +59,13 @@ platform_err_t service_uart_test_init(service_uart_test_wake_cb_t wake_cb)
 #endif
     proto_simple_init(&g_parser);
     proto_files_init(&g_files_parser);
-    s_wake_cb = wake_cb;
-    platform_err_t ret = device_uart_init(DEVICE_UART_PROTO_1);
+    s_wake_cb          = wake_cb;
+    platform_err_t ret = bsp_uart_init(BSP_UART_PROTO_1);
     if(PLATFORM_ERR_OK != ret)
     {
         return ret;
     }
-    return device_uart_set_rx_notify_cb(DEVICE_UART_PROTO_1, uart_rx_notify_cb);
+    return bsp_uart_set_rx_notify_cb(BSP_UART_PROTO_1, uart_rx_notify_cb);
 }
 
 void service_uart_test_poll(void)
@@ -77,8 +78,8 @@ void service_uart_test_poll(void)
      * into a single wake). Drain the fifo down to empty here instead of
      * reading one fixed-size chunk, or leftover bytes never get another
      * chance to be read once the sender goes quiet. */
-    while((n = device_uart_read(DEVICE_UART_PROTO_1, buf,
-                                SERVICE_UART_TEST_POLL_BUF_SIZE)) > 0U)
+    while((n = bsp_uart_read(BSP_UART_PROTO_1, buf,
+                             SERVICE_UART_TEST_POLL_BUF_SIZE)) > 0U)
     {
         s_last_byte_tick = plat_tick_get_ms();
 #ifdef USE_DEBUG_LOG
@@ -132,12 +133,12 @@ void service_uart_test_poll(void)
                 if(1U == proto_simple_feed(&g_parser, byte, &frame))
                 {
                     if(PLATFORM_ERR_OK !=
-                       device_uart_send(DEVICE_UART_PROTO_1, frame.payload,
-                                        frame.len,
-                                        SERVICE_UART_TEST_SEND_TIMEOUT_MS))
+                       bsp_uart_send(BSP_UART_PROTO_1, frame.payload, frame.len,
+                                     SERVICE_UART_TEST_SEND_TIMEOUT_MS))
                     {
 #ifdef USE_DEBUG_LOG
-                        plat_log_w("uart_test", "proto_simple reply send failed");
+                        plat_log_w("uart_test",
+                                   "proto_simple reply send failed");
 #endif
                     }
                 }
@@ -175,16 +176,16 @@ void service_uart_test_poll(void)
 #endif
         proto_files_init(&g_files_parser);
     }
-    // device_uart_send(DEVICE_UART_PROTO_1, buf, 7U,
+    // bsp_uart_send(BSP_UART_PROTO_1, buf, 7U,
     //                  SERVICE_UART_TEST_SEND_TIMEOUT_MS);
-    // device_uart_send(DEVICE_UART_PROTO_1,
+    // bsp_uart_send(BSP_UART_PROTO_1,
     //                  (uint8_t*)service_uart_test_files_buf(), 7U,
     //                  SERVICE_UART_TEST_SEND_TIMEOUT_MS);
     // uint16_t dbg_idx = service_uart_test_files_idx();
-    // device_uart_send(DEVICE_UART_PROTO_1, (uint8_t*)&dbg_idx, 1U,
+    // bsp_uart_send(BSP_UART_PROTO_1, (uint8_t*)&dbg_idx, 1U,
     //                  SERVICE_UART_TEST_SEND_TIMEOUT_MS);
     // uint8_t dbg_state = service_uart_test_files_state();
-    // device_uart_send(DEVICE_UART_PROTO_1, &dbg_state, 1U,
+    // bsp_uart_send(BSP_UART_PROTO_1, &dbg_state, 1U,
     //                  SERVICE_UART_TEST_SEND_TIMEOUT_MS);
 }
 

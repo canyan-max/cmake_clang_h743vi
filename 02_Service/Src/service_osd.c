@@ -13,13 +13,12 @@
 #include <stdio.h>
 #include <limits.h>
 #include "service_osd.h"
-#include "device_display.h"
+#include "bsp_display.h"
 #include "front.h"
 #include "plat_sys.h"
 
 /* ---- layout constants ------------------------------------------------------
  */
-#define OSD_BAR_WIDTH    (240U)
 #define OSD_BG_COLOR     (0x0841U)/* dark gray, readable on black camera bg  */
 #define OSD_TEXT_COLOR   (0xFFFFU)/* white*/
 #define OSD_REC_COLOR    (0xF800U)/* red*/
@@ -29,9 +28,12 @@
 #define OSD_REC_DOT_SZ   (6U)
 #define OSD_REC_TXT_X    (11U)
 
-#define OSD_BAT_X        (86U)
-#define OSD_FPS_X        (168U)
 #define OSD_TXT_Y        (2U)/* text y in 20px bar (16px font + 2px pad) */
+
+#define OSD_BAT_X_DIVISOR       (3U)
+#define OSD_BAT_MAX_CHAR_COUNT  (6U)
+#define OSD_FPS_MAX_CHAR_COUNT  (8U)
+#define OSD_RIGHT_MARGIN        (4U)
 
 #define OSD_FPS_PERIOD   (1000U)/* ms between FPS updates*/
 #define OSD_BATTERY_MOCK (85U)/* default mock value for battery*/
@@ -45,22 +47,47 @@ static float                   s_fps;
 static uint32_t s_frm_cnt;
 static uint32_t s_tick;
 static uint8_t  s_first; /* first render flag                             */
+static uint8_t  s_battery_dirty;
+static uint16_t s_display_width;
+static uint16_t s_battery_x;
+static uint16_t s_fps_x;
 
 /* ---- public API -----------------------------------------------------------
  */
 
 /**
- * @brief            :  [service_osd_init] reset OSD state, set battery mock
- * @retval           :  PLATFORM_ERR_OK
+ * @brief            :  [service_osd_init] configure logical layout and reset
+ *                     OSD state.
+ * @retval           :  PLATFORM_ERR_OK / PLATFORM_ERR_PARAM
  */
-platform_err_t service_osd_init(void)
+platform_err_t service_osd_init(uint16_t display_width)
 {
+    uint32_t battery_end;
+    uint32_t fps_width = (uint32_t)OSD_FPS_MAX_CHAR_COUNT * g_f8x16.char_w;
+    if((0U == display_width) ||
+       ((uint32_t)display_width <= (fps_width + OSD_RIGHT_MARGIN)))
+    {
+        return PLATFORM_ERR_PARAM;
+    }
+
+    s_display_width = display_width;
+    s_battery_x     = (uint16_t)(display_width / OSD_BAT_X_DIVISOR);
+    s_fps_x         = (uint16_t)((uint32_t)display_width - fps_width -
+                                 OSD_RIGHT_MARGIN);
+    battery_end     = (uint32_t)s_battery_x +
+                      ((uint32_t)OSD_BAT_MAX_CHAR_COUNT * g_f8x16.char_w);
+    if(battery_end >= s_fps_x)
+    {
+        return PLATFORM_ERR_PARAM;
+    }
+
     s_rec     = SERVICE_OSD_REC_IDLE;
     s_bat     = OSD_BATTERY_MOCK;
     s_fps     = 0.0f;
     s_frm_cnt = 0U;
     s_tick    = plat_tick_get_ms();
     s_first   = 1U;
+    s_battery_dirty = 1U;
     return PLATFORM_ERR_OK;
 }
 
@@ -90,7 +117,11 @@ platform_err_t service_osd_set_battery(uint8_t percent)
     {
         return PLATFORM_ERR_PARAM;
     }
-    s_bat = percent;
+    if(percent != s_bat)
+    {
+        s_bat           = percent;
+        s_battery_dirty = 1U;
+    }
     return PLATFORM_ERR_OK;
 }
 
@@ -106,6 +137,9 @@ platform_err_t service_osd_render(void)
 {
     char           buf[16];
     platform_err_t ret;
+    uint8_t        redraw_battery = s_battery_dirty;
+    uint8_t        redraw_fps     = 0U;
+    uint8_t        full_redraw    = s_first;
 
     /* ------ FPS update (1 Hz refresh) ------ */
     s_frm_cnt++;
@@ -120,14 +154,15 @@ platform_err_t service_osd_render(void)
         }
         s_frm_cnt = 0U;
         s_tick    = now;
+        redraw_fps = 1U;
     }
 
     /* ------ background + REC: only on first frame or REC state change ------
      */
     if(s_first)
     {
-        ret = device_display_fill_rect(0, OSD_BAR_Y, OSD_BAR_WIDTH,
-                                       OSD_BAR_HEIGHT, OSD_BG_COLOR);
+        ret = bsp_display_fill_rect(0U, OSD_BAR_Y, s_display_width,
+                                    OSD_BAR_HEIGHT, OSD_BG_COLOR);
         if(PLATFORM_ERR_OK != ret)
         {
             return ret;
@@ -135,36 +170,64 @@ platform_err_t service_osd_render(void)
 
         if(SERVICE_OSD_REC_ACTIVE == s_rec)
         {
-            ret = device_display_fill_rect(OSD_REC_DOT_X, OSD_REC_DOT_Y,
-                                           OSD_REC_DOT_SZ, OSD_REC_DOT_SZ,
-                                           OSD_REC_COLOR);
+            ret = bsp_display_fill_rect(OSD_REC_DOT_X, OSD_REC_DOT_Y,
+                                        OSD_REC_DOT_SZ, OSD_REC_DOT_SZ,
+                                        OSD_REC_COLOR);
             if(PLATFORM_ERR_OK != ret)
             {
                 return ret;
             }
 
-            ret = device_display_draw_string(&g_f8x16, OSD_REC_TXT_X, OSD_TXT_Y,
-                                             "REC", OSD_REC_COLOR,
-                                             OSD_BG_COLOR);
+            ret = bsp_display_draw_string(&g_f8x16, OSD_REC_TXT_X, OSD_TXT_Y,
+                                          "REC", OSD_REC_COLOR, OSD_BG_COLOR);
             if(PLATFORM_ERR_OK != ret)
             {
                 return ret;
             }
         }
         s_first = 0U;
+        redraw_battery = 1U;
+        redraw_fps     = 1U;
     }
 
-    /* ------ battery (white, redrawn every frame, bg covers old text) ------ */
-    (void)snprintf(buf, sizeof(buf), "B:%u%%", (unsigned int)s_bat);
-    ret = device_display_draw_string(&g_f8x16, OSD_BAT_X, OSD_TXT_Y, buf,
-                                     OSD_TEXT_COLOR, OSD_BG_COLOR);
-    if(PLATFORM_ERR_OK != ret)
+    /* ------ battery: redraw only after a value/layout change ------ */
+    if(0U != redraw_battery)
     {
-        return ret;
+        if(0U == full_redraw)
+        {
+            ret = bsp_display_fill_rect(
+                s_battery_x, OSD_TXT_Y,
+                (uint16_t)(OSD_BAT_MAX_CHAR_COUNT * g_f8x16.char_w),
+                g_f8x16.char_h, OSD_BG_COLOR);
+            if(PLATFORM_ERR_OK != ret)
+            {
+                return ret;
+            }
+        }
+        (void)snprintf(buf, sizeof(buf), "B:%u%%", (unsigned int)s_bat);
+        ret = bsp_display_draw_string(&g_f8x16, s_battery_x, OSD_TXT_Y, buf,
+                                      OSD_TEXT_COLOR, OSD_BG_COLOR);
+        if(PLATFORM_ERR_OK != ret)
+        {
+            return ret;
+        }
+        s_battery_dirty = 0U;
     }
 
-    /* ------ FPS (white, redrawn every frame, bg covers old text) ------ */
+    /* ------ FPS: redraw only when the 1 Hz measurement is updated ------ */
+    if(0U != redraw_fps)
     {
+        if(0U == full_redraw)
+        {
+            ret = bsp_display_fill_rect(
+                s_fps_x, OSD_TXT_Y,
+                (uint16_t)(OSD_FPS_MAX_CHAR_COUNT * g_f8x16.char_w),
+                g_f8x16.char_h, OSD_BG_COLOR);
+            if(PLATFORM_ERR_OK != ret)
+            {
+                return ret;
+            }
+        }
         uint8_t fps_int = (uint8_t)s_fps;
         uint8_t fps_dec = (uint8_t)((s_fps - (float)fps_int) * 10.0f + 0.5f);
         if(fps_dec > 9U)
@@ -177,8 +240,8 @@ platform_err_t service_osd_render(void)
         }
         (void)snprintf(buf, sizeof(buf), "%u.%uFPS", (unsigned int)fps_int,
                        (unsigned int)fps_dec);
-        ret = device_display_draw_string(&g_f8x16, OSD_FPS_X, OSD_TXT_Y, buf,
-                                         OSD_TEXT_COLOR, OSD_BG_COLOR);
+        ret = bsp_display_draw_string(&g_f8x16, s_fps_x, OSD_TXT_Y, buf,
+                                      OSD_TEXT_COLOR, OSD_BG_COLOR);
         if(PLATFORM_ERR_OK != ret)
         {
             return ret;

@@ -29,16 +29,35 @@
     (((BSP_CAMERA_SENSOR_OUTPUT_HEIGHT - BSP_CAMERA_FRAME_HEIGHT) / 2U) - 1U)
 #define BSP_CAMERA_INITIALIZED              (1U)
 #define BSP_CAMERA_NOT_INITIALIZED          (0U)
+#define BSP_CAMERA_FRAME_BUFFER_COUNT       (2U)
+#define BSP_CAMERA_BUFFER_INDEX_INVALID     (0xFFU)
 
 /* typedef ------------------------------------------------------------------*/
+typedef enum BSP_CAMERA_BUFFER_STATE_T
+{
+    BSP_CAMERA_BUFFER_FREE = 0U,
+    BSP_CAMERA_BUFFER_CAPTURING,
+    BSP_CAMERA_BUFFER_READY,
+    BSP_CAMERA_BUFFER_IN_USE,
+} bsp_camera_buffer_state_t;
 
 /* variables ----------------------------------------------------------------*/
 static ov2640_driver_t s_camera_sensor;
-static uint8_t          s_camera_initialized;
+static uint8_t         s_camera_initialized;
+static bsp_camera_event_cb_t volatile s_camera_event_callback;
+__attribute__((section(".ram_d2_dma_buffers"), aligned(32))) static uint8_t
+    s_camera_frame_buffers[BSP_CAMERA_FRAME_BUFFER_COUNT]
+                          [BSP_CAMERA_FRAME_SIZE_BYTES];
+static volatile bsp_camera_buffer_state_t
+    s_camera_buffer_states[BSP_CAMERA_FRAME_BUFFER_COUNT];
+static volatile uint8_t  s_camera_capture_buffer_index;
+static volatile uint8_t  s_camera_ready_buffer_index;
+static uint8_t           s_camera_dma_needs_stop;
+static volatile uint32_t s_camera_overrun_count;
+static volatile uint32_t s_camera_error_count;
 
 /* Private  functions  ------------------------------------------------------*/
-static ov2640_status_t
-bsp_camera_convert_platform_error(platform_err_t error)
+static ov2640_status_t bsp_camera_convert_platform_error(platform_err_t error)
 {
     switch(error)
     {
@@ -128,8 +147,8 @@ static const ov2640_transport_t s_camera_sensor_transport = {
 static platform_err_t bsp_camera_power_on(void)
 {
     uint8_t power_on_level = (0U == BOARD_CAMERA_PWDN_ACTIVE_LEVEL) ? 1U : 0U;
-    platform_err_t error = plat_gpio_write(PLAT_GPIO_ID_CAMERA_PWDN,
-                                           power_on_level);
+    platform_err_t error   = plat_gpio_write(PLAT_GPIO_ID_CAMERA_PWDN,
+                                             power_on_level);
     if(PLATFORM_ERR_OK == error)
     {
         plat_delay_ms(BSP_CAMERA_POWER_SETTLE_MS);
@@ -137,29 +156,119 @@ static platform_err_t bsp_camera_power_on(void)
     return error;
 }
 
+static void bsp_camera_dcmi_event_from_isr(plat_dcmi_event_t event)
+{
+    bsp_camera_event_t camera_event;
+    switch(event)
+    {
+        case PLAT_DCMI_EVENT_FRAME_READY:
+            if((s_camera_capture_buffer_index >=
+                BSP_CAMERA_FRAME_BUFFER_COUNT) ||
+               (BSP_CAMERA_BUFFER_CAPTURING !=
+                s_camera_buffer_states[s_camera_capture_buffer_index]))
+            {
+                s_camera_error_count++;
+                camera_event = BSP_CAMERA_EVENT_ERROR;
+                break;
+            }
+            s_camera_buffer_states[s_camera_capture_buffer_index] =
+                BSP_CAMERA_BUFFER_READY;
+            s_camera_ready_buffer_index   = s_camera_capture_buffer_index;
+            s_camera_capture_buffer_index = BSP_CAMERA_BUFFER_INDEX_INVALID;
+            camera_event = BSP_CAMERA_EVENT_FRAME_READY;
+            break;
+
+        case PLAT_DCMI_EVENT_OVERRUN:
+            if(s_camera_capture_buffer_index <
+               BSP_CAMERA_FRAME_BUFFER_COUNT)
+            {
+                s_camera_buffer_states[s_camera_capture_buffer_index] =
+                    BSP_CAMERA_BUFFER_FREE;
+                s_camera_capture_buffer_index =
+                    BSP_CAMERA_BUFFER_INDEX_INVALID;
+            }
+            camera_event = BSP_CAMERA_EVENT_OVERRUN;
+            s_camera_overrun_count++;
+            break;
+
+        case PLAT_DCMI_EVENT_ERROR:
+        case PLAT_DCMI_EVENT_NUM:
+        default:
+            if(s_camera_capture_buffer_index <
+               BSP_CAMERA_FRAME_BUFFER_COUNT)
+            {
+                s_camera_buffer_states[s_camera_capture_buffer_index] =
+                    BSP_CAMERA_BUFFER_FREE;
+                s_camera_capture_buffer_index =
+                    BSP_CAMERA_BUFFER_INDEX_INVALID;
+            }
+            camera_event = BSP_CAMERA_EVENT_ERROR;
+            s_camera_error_count++;
+            break;
+    }
+
+    bsp_camera_event_cb_t callback = s_camera_event_callback;
+    if(NULL != callback)
+    {
+        callback(camera_event);
+    }
+}
+
 /* Exported functions -------------------------------------------------------*/
+platform_err_t bsp_camera_set_event_callback(bsp_camera_event_cb_t callback)
+{
+    if(BSP_CAMERA_INITIALIZED == s_camera_initialized)
+    {
+        return PLATFORM_ERR_BUSY;
+    }
+
+    s_camera_event_callback = callback;
+    return PLATFORM_ERR_OK;
+}
+
 platform_err_t bsp_camera_init(void)
 {
-    s_camera_initialized = BSP_CAMERA_NOT_INITIALIZED;
+    uint8_t buffer_index;
 
-    platform_err_t error = bsp_camera_power_on();
+    s_camera_initialized   = BSP_CAMERA_NOT_INITIALIZED;
+    s_camera_overrun_count = 0U;
+    s_camera_error_count   = 0U;
+    s_camera_capture_buffer_index = BSP_CAMERA_BUFFER_INDEX_INVALID;
+    s_camera_ready_buffer_index   = BSP_CAMERA_BUFFER_INDEX_INVALID;
+    s_camera_dma_needs_stop       = 0U;
+    for(buffer_index = 0U; buffer_index < BSP_CAMERA_FRAME_BUFFER_COUNT;
+        buffer_index++)
+    {
+        s_camera_buffer_states[buffer_index] = BSP_CAMERA_BUFFER_FREE;
+    }
+
+    platform_err_t error = plat_dcmi_set_event_callback(
+        bsp_camera_dcmi_event_from_isr);
     if(PLATFORM_ERR_OK != error)
     {
         return error;
     }
 
-    ov2640_status_t sensor_status = ov2640_init(
-        &s_camera_sensor, &s_camera_sensor_transport,
-        BSP_CAMERA_SENSOR_ADDRESS_7B, BSP_CAMERA_SENSOR_TIMEOUT_MS);
+    error = bsp_camera_power_on();
+    if(PLATFORM_ERR_OK != error)
+    {
+        return error;
+    }
+
+    ov2640_status_t sensor_status = ov2640_init(&s_camera_sensor,
+                                                &s_camera_sensor_transport,
+                                                BSP_CAMERA_SENSOR_ADDRESS_7B,
+                                                BSP_CAMERA_SENSOR_TIMEOUT_MS);
     if(OV2640_STATUS_OK != sensor_status)
     {
         return bsp_camera_convert_sensor_status(sensor_status);
     }
 
-    sensor_status = ov2640_configure(
-        &s_camera_sensor, OV2640_PROFILE_RGB565_SVGA,
-        BSP_CAMERA_SENSOR_OUTPUT_WIDTH, BSP_CAMERA_SENSOR_OUTPUT_HEIGHT,
-        BSP_CAMERA_SENSOR_TIMEOUT_MS);
+    sensor_status = ov2640_configure(&s_camera_sensor,
+                                     OV2640_PROFILE_RGB565_CIF_60FPS,
+                                     BSP_CAMERA_SENSOR_OUTPUT_WIDTH,
+                                     BSP_CAMERA_SENSOR_OUTPUT_HEIGHT,
+                                     BSP_CAMERA_SENSOR_TIMEOUT_MS);
     if(OV2640_STATUS_OK != sensor_status)
     {
         return bsp_camera_convert_sensor_status(sensor_status);
@@ -182,19 +291,66 @@ platform_err_t bsp_camera_init(void)
     return PLATFORM_ERR_OK;
 }
 
-platform_err_t bsp_camera_start(uint8_t *p_buffer, uint32_t size_bytes)
+platform_err_t bsp_camera_start(void)
 {
-    if((NULL == p_buffer) || (size_bytes < BSP_CAMERA_FRAME_SIZE_BYTES))
-    {
-        return PLATFORM_ERR_PARAM;
-    }
     if(BSP_CAMERA_INITIALIZED != s_camera_initialized)
     {
         return PLATFORM_ERR_HW;
     }
 
-    return plat_dcmi_start_dma(p_buffer, BSP_CAMERA_FRAME_SIZE_BYTES,
-                               PLAT_DCMI_MODE_CONTINUOUS);
+    return bsp_camera_capture_next();
+}
+
+platform_err_t bsp_camera_capture_next(void)
+{
+    uint8_t buffer_index;
+
+    if(BSP_CAMERA_INITIALIZED != s_camera_initialized)
+    {
+        return PLATFORM_ERR_HW;
+    }
+    if(s_camera_capture_buffer_index < BSP_CAMERA_FRAME_BUFFER_COUNT)
+    {
+        return PLATFORM_ERR_BUSY;
+    }
+
+    for(buffer_index = 0U; buffer_index < BSP_CAMERA_FRAME_BUFFER_COUNT;
+        buffer_index++)
+    {
+        if(BSP_CAMERA_BUFFER_FREE == s_camera_buffer_states[buffer_index])
+        {
+            break;
+        }
+    }
+    if(buffer_index >= BSP_CAMERA_FRAME_BUFFER_COUNT)
+    {
+        return PLATFORM_ERR_BUSY;
+    }
+
+    if(0U != s_camera_dma_needs_stop)
+    {
+        platform_err_t status = plat_dcmi_stop();
+        if(PLATFORM_ERR_OK != status)
+        {
+            return status;
+        }
+        s_camera_dma_needs_stop = 0U;
+    }
+
+    s_camera_buffer_states[buffer_index] = BSP_CAMERA_BUFFER_CAPTURING;
+    s_camera_capture_buffer_index        = buffer_index;
+    platform_err_t status = plat_dcmi_start_dma(
+        s_camera_frame_buffers[buffer_index], BSP_CAMERA_FRAME_SIZE_BYTES,
+        PLAT_DCMI_MODE_SNAPSHOT);
+    if(PLATFORM_ERR_OK != status)
+    {
+        s_camera_buffer_states[buffer_index] = BSP_CAMERA_BUFFER_FREE;
+        s_camera_capture_buffer_index = BSP_CAMERA_BUFFER_INDEX_INVALID;
+        return status;
+    }
+
+    s_camera_dma_needs_stop = 1U;
+    return PLATFORM_ERR_OK;
 }
 
 platform_err_t bsp_camera_stop(void)
@@ -204,8 +360,91 @@ platform_err_t bsp_camera_stop(void)
         return PLATFORM_ERR_HW;
     }
 
-    return plat_dcmi_stop();
+    platform_err_t status = PLATFORM_ERR_OK;
+    if(0U != s_camera_dma_needs_stop)
+    {
+        status = plat_dcmi_stop();
+        if(PLATFORM_ERR_OK != status)
+        {
+            return status;
+        }
+        s_camera_dma_needs_stop = 0U;
+    }
+
+    if(s_camera_capture_buffer_index < BSP_CAMERA_FRAME_BUFFER_COUNT)
+    {
+        s_camera_buffer_states[s_camera_capture_buffer_index] =
+            BSP_CAMERA_BUFFER_FREE;
+        s_camera_capture_buffer_index = BSP_CAMERA_BUFFER_INDEX_INVALID;
+    }
+    return status;
+}
+
+platform_err_t bsp_camera_acquire_frame(const uint8_t **pp_frame)
+{
+    if(NULL == pp_frame)
+    {
+        return PLATFORM_ERR_PARAM;
+    }
+    *pp_frame = NULL;
+    if(BSP_CAMERA_INITIALIZED != s_camera_initialized)
+    {
+        return PLATFORM_ERR_HW;
+    }
+
+    uint8_t buffer_index = s_camera_ready_buffer_index;
+    if((buffer_index >= BSP_CAMERA_FRAME_BUFFER_COUNT) ||
+       (BSP_CAMERA_BUFFER_READY != s_camera_buffer_states[buffer_index]))
+    {
+        return PLATFORM_ERR_BUSY;
+    }
+
+    s_camera_buffer_states[buffer_index] = BSP_CAMERA_BUFFER_IN_USE;
+    s_camera_ready_buffer_index          = BSP_CAMERA_BUFFER_INDEX_INVALID;
+    plat_dcache_invalidate(s_camera_frame_buffers[buffer_index],
+                           (int32_t)BSP_CAMERA_FRAME_SIZE_BYTES);
+    *pp_frame = s_camera_frame_buffers[buffer_index];
+    return PLATFORM_ERR_OK;
+}
+
+platform_err_t bsp_camera_release_frame(const uint8_t *p_frame)
+{
+    uint8_t buffer_index;
+
+    if(NULL == p_frame)
+    {
+        return PLATFORM_ERR_PARAM;
+    }
+    for(buffer_index = 0U; buffer_index < BSP_CAMERA_FRAME_BUFFER_COUNT;
+        buffer_index++)
+    {
+        if(p_frame == s_camera_frame_buffers[buffer_index])
+        {
+            if(BSP_CAMERA_BUFFER_IN_USE !=
+               s_camera_buffer_states[buffer_index])
+            {
+                return PLATFORM_ERR_BUSY;
+            }
+            s_camera_buffer_states[buffer_index] = BSP_CAMERA_BUFFER_FREE;
+            return PLATFORM_ERR_OK;
+        }
+    }
+    return PLATFORM_ERR_PARAM;
+}
+
+uint32_t bsp_camera_get_frame_buffer_size(void)
+{
+    return BSP_CAMERA_FRAME_SIZE_BYTES;
+}
+
+uint32_t bsp_camera_get_overrun_count(void)
+{
+    return s_camera_overrun_count;
+}
+
+uint32_t bsp_camera_get_error_count(void)
+{
+    return s_camera_error_count;
 }
 
 /* end of file --------------------------------------------------------------*/
-
