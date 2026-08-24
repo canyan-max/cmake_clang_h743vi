@@ -176,17 +176,6 @@ void service_uart_test_poll(void)
 #endif
         proto_files_init(&g_files_parser);
     }
-    // bsp_uart_send(BSP_UART_PROTO_1, buf, 7U,
-    //                  SERVICE_UART_TEST_SEND_TIMEOUT_MS);
-    // bsp_uart_send(BSP_UART_PROTO_1,
-    //                  (uint8_t*)service_uart_test_files_buf(), 7U,
-    //                  SERVICE_UART_TEST_SEND_TIMEOUT_MS);
-    // uint16_t dbg_idx = service_uart_test_files_idx();
-    // bsp_uart_send(BSP_UART_PROTO_1, (uint8_t*)&dbg_idx, 1U,
-    //                  SERVICE_UART_TEST_SEND_TIMEOUT_MS);
-    // uint8_t dbg_state = service_uart_test_files_state();
-    // bsp_uart_send(BSP_UART_PROTO_1, &dbg_state, 1U,
-    //                  SERVICE_UART_TEST_SEND_TIMEOUT_MS);
 }
 
 /* Debug probes (read-only): expose the proto_files parser state so the
