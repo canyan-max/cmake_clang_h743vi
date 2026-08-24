@@ -10,7 +10,8 @@
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>
 #include "plat_gpio.h"
-#include "board_config.h"
+#include "board_resources.h"
+#include "board_stm32h743_binding.h"
 
 /* typedef ------------------------------------------------------------------*/
 typedef struct
@@ -20,23 +21,27 @@ typedef struct
 } gpio_resource_t;
 
 /* variables ----------------------------------------------------------------*/
-static const gpio_resource_t gpio_resource_table[PLAT_GPIO_ID_NUM] = {
-    [PLAT_GPIO_ID_LED1]        = {BOARD_LED1_PORT, BOARD_LED1_PIN},
-    [PLAT_GPIO_ID_LED2]        = {BOARD_LED2_PORT, BOARD_LED2_PIN},
-    [PLAT_GPIO_ID_KEY1]        = {BOARD_KEY1_PORT, BOARD_KEY1_PIN},
-    [PLAT_GPIO_ID_KEY2]        = {BOARD_KEY2_PORT, BOARD_KEY2_PIN},
-    [PLAT_GPIO_ID_CAMERA_PWDN] = {BOARD_CAMERA_PWDN_PORT,
-                                  BOARD_CAMERA_PWDN_PIN},
-    [PLAT_GPIO_ID_DISPLAY_DC]  = {BOARD_DISPLAY_DC_PORT, BOARD_DISPLAY_DC_PIN},
-    [PLAT_GPIO_ID_DISPLAY_BACKLIGHT] = {BOARD_DISPLAY_BACKLIGHT_PORT,
-                                        BOARD_DISPLAY_BACKLIGHT_PIN},
+static const gpio_resource_t gpio_resource_table[BOARD_GPIO_RESOURCE_COUNT] = {
+    [BOARD_GPIO_LED1]        = {BOARD_LED1_PORT, BOARD_LED1_PIN},
+    [BOARD_GPIO_LED2]        = {BOARD_LED2_PORT, BOARD_LED2_PIN},
+    [BOARD_GPIO_KEY1]        = {BOARD_KEY1_PORT, BOARD_KEY1_PIN},
+    [BOARD_GPIO_KEY2]        = {BOARD_KEY2_PORT, BOARD_KEY2_PIN},
+    [BOARD_GPIO_CAMERA_PWDN] = {BOARD_CAMERA_PWDN_PORT,
+                                BOARD_CAMERA_PWDN_PIN},
+    [BOARD_GPIO_DISPLAY_DC]  = {BOARD_DISPLAY_DC_PORT, BOARD_DISPLAY_DC_PIN},
+    [BOARD_GPIO_DISPLAY_BACKLIGHT] = {BOARD_DISPLAY_BACKLIGHT_PORT,
+                                      BOARD_DISPLAY_BACKLIGHT_PIN},
 };
+
+_Static_assert((sizeof(gpio_resource_table) /
+                sizeof(gpio_resource_table[0])) == BOARD_GPIO_RESOURCE_COUNT,
+               "Board GPIO resource table size mismatch");
 
 /* Private  functions  ------------------------------------------------------*/
 
 static const gpio_resource_t *plat_gpio_get_resource(plat_gpio_id_t id)
 {
-    if(id >= PLAT_GPIO_ID_NUM)
+    if(id >= BOARD_GPIO_RESOURCE_COUNT)
     {
         return NULL;
     }

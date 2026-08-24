@@ -10,7 +10,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "plat_spi.h"
-#include "board_config.h"
+#include "board_stm32h743_binding.h"
 
 #define PLAT_SPI_HAL_MAX_TRANSFER_SIZE  (0xFFFEU)
 

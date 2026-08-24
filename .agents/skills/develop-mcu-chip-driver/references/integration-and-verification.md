@@ -5,7 +5,8 @@
 Read repository instructions and identify:
 
 - the reusable component directory and its public-header convention;
-- the BSP implementation and board-resource configuration locations;
+- the BSP implementation, vendor-independent board resources, and private MCU
+  binding locations;
 - the generic bus interface and MCU implementation;
 - existing error, timeout, naming, comment, and CMake conventions;
 - user-owned uncommitted changes that must be preserved.
@@ -50,8 +51,8 @@ The BSP should:
 2. implement static transport callbacks using public `plat_*` operations;
 3. convert Platform errors into the driver's transport error subset;
 4. provide an immutable transport table;
-5. select the fitted model, address, bus, pins, capacity, page size, and other
-   board-known values during driver initialization;
+5. select the fitted model and other driver properties, and use semantic Board
+   resource IDs for the selected bus and control signals;
 6. expose stable board capability functions and translate driver errors to the
    BSP's public error type.
 
@@ -60,6 +61,12 @@ and board-resource target. The reusable driver must have no reverse dependency.
 If driver headers appear in a BSP public header, reconsider whether chip details
 are leaking through the board capability.
 
+The BSP must not include the vendor-specific MCU binding or refer to HAL
+handles. The MCU implementation maps Board resource IDs to those handles and
+checks IDs before indexing mapping tables. The generic `plat_*` contract owns
+only opaque category-specific ID types and bus semantics, not board instance
+names.
+
 ## Verification sequence
 
 Match verification to the change and repository instructions:
@@ -67,7 +74,9 @@ Match verification to the change and repository instructions:
 1. Run formatting or diff checks used by the project.
 2. Build the affected official preset and confirm no new warnings or errors.
 3. Inspect includes and target dependencies for HAL leakage, public-header
-   leakage, reverse dependencies, or implementation-library cycles.
+   leakage, Board-resource leakage into Service or Components, vendor-binding
+   leakage outside the MCU implementation, reverse dependencies, or
+   implementation-library cycles.
 4. If host tests exist, exercise range boundaries, zero lengths, null pointers,
    page/register boundaries, timeout paths, transport failures, and model rules.
 5. Flash only with explicit authorization. For hardware smoke tests, verify

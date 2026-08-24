@@ -35,6 +35,8 @@ Decide these items before implementation:
 - protocol rules shared by the family and real model-specific differences;
 - the smallest host operations required by the protocol;
 - finite timeout, memory, concurrency, and transaction-atomicity rules;
+- how logical host-resource IDs are owned by Board and resolved by the MCU
+  implementation without exposing vendor handles upward;
 - which values belong to the reusable instance and which belong to board
   assembly.
 

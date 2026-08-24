@@ -10,11 +10,12 @@
 /* Includes -----------------------------------------------------------------*/
 #include "bsp_key.h"
 #include "plat_gpio.h"
+#include "board_resources.h"
 
 /* ---- pin table ----------------------------------------------------------- */
 static const plat_gpio_id_t key_table[] = {
-    PLAT_GPIO_ID_KEY1,
-    PLAT_GPIO_ID_KEY2,
+    BOARD_GPIO_KEY1,
+    BOARD_GPIO_KEY2,
 };
 
 #define KEY_COUNT  (sizeof(key_table) / sizeof(key_table[0]))

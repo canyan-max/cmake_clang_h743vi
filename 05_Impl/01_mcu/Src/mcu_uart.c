@@ -3,7 +3,7 @@
  *@file               :   mcu_uart.c
  *@brief              :   STM32 implementation of plat_uart (DMA + IDLE line).
  *                        Board wiring (id -> HAL handle) is fixed at compile
- *                        time via board_config.h.
+ *                        time via board_stm32h743_binding.h.
  *@version            :   V1.0
  *@note               :   1 tab == 4 spaces!  2026
  ******************************************************************************
@@ -12,28 +12,34 @@
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>
 #include "plat_uart.h"
-#include "board_config.h"
+#include "board_resources.h"
+#include "board_stm32h743_binding.h"
 /* typedef  ---------------------------------------------------------------- */
 
 /* variables ----------------------------------------------------------------*/
-static UART_HandleTypeDef *const s_uart_handle_table[PLAT_UART_NUM] = {
-    &BOARD_UART_PROTO1_HANDLE,
+static UART_HandleTypeDef *const
+    s_uart_handle_table[BOARD_UART_RESOURCE_COUNT] = {
+        [BOARD_UART_PROTOCOL_1] = &BOARD_UART_PROTOCOL1_HANDLE,
 };
-static plat_uart_rx_cb_t s_rx_cb_table[PLAT_UART_NUM];
-static uint16_t          s_buf_size_table[PLAT_UART_NUM];
+static plat_uart_rx_cb_t s_rx_cb_table[BOARD_UART_RESOURCE_COUNT];
+static uint16_t          s_buf_size_table[BOARD_UART_RESOURCE_COUNT];
+
+_Static_assert((sizeof(s_uart_handle_table) /
+                sizeof(s_uart_handle_table[0])) == BOARD_UART_RESOURCE_COUNT,
+               "Board UART resource table size mismatch");
 
 /* private  functions  ------------------------------------------------------*/
 
 static plat_uart_id_t uart_find_id(const UART_HandleTypeDef *p_huart)
 {
-    for(uint8_t i = 0U; i < (uint8_t)PLAT_UART_NUM; i++)
+    for(uint8_t i = 0U; i < (uint8_t)BOARD_UART_RESOURCE_COUNT; i++)
     {
         if(s_uart_handle_table[i] == p_huart)
         {
             return (plat_uart_id_t)i;
         }
     }
-    return PLAT_UART_NUM;
+    return (plat_uart_id_t)BOARD_UART_RESOURCE_COUNT;
 }
 
 /* exported functions -------------------------------------------------------*/
@@ -43,7 +49,7 @@ platform_err_t plat_uart_send(plat_uart_id_t id,
                               uint16_t       size,
                               uint32_t       timeout_ms)
 {
-    if((id >= PLAT_UART_NUM) || (NULL == p_data))
+    if((id >= BOARD_UART_RESOURCE_COUNT) || (NULL == p_data))
     {
         return PLATFORM_ERR_PARAM;
     }
@@ -60,7 +66,7 @@ platform_err_t plat_uart_send(plat_uart_id_t id,
 platform_err_t
 plat_uart_receive_start(plat_uart_id_t id, uint8_t *p_buf, uint16_t buf_size)
 {
-    if((id >= PLAT_UART_NUM) || (NULL == p_buf))
+    if((id >= BOARD_UART_RESOURCE_COUNT) || (NULL == p_buf))
     {
         return PLATFORM_ERR_PARAM;
     }
@@ -78,7 +84,7 @@ plat_uart_receive_start(plat_uart_id_t id, uint8_t *p_buf, uint16_t buf_size)
 platform_err_t plat_uart_set_rx_callback(plat_uart_id_t    id,
                                          plat_uart_rx_cb_t cb)
 {
-    if(id >= PLAT_UART_NUM)
+    if(id >= BOARD_UART_RESOURCE_COUNT)
     {
         return PLATFORM_ERR_PARAM;
     }
@@ -97,7 +103,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
     // ((void)Size);
 
     plat_uart_id_t id = uart_find_id(huart);
-    if(PLAT_UART_NUM == id)
+    if(BOARD_UART_RESOURCE_COUNT == id)
     {
         return;
     }

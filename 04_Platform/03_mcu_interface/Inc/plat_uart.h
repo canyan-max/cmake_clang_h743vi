@@ -21,14 +21,12 @@ extern "C"
 /* Includes -----------------------------------------------------------------*/
 #include <stdint.h>     /* stdint lib header file. */
 #include "plat_error.h" /* platform error code header file. */
+#include "plat_resource.h"
 /* define -------------------------------------------------------------------*/
 
 /* typedef ------------------------------------------------------------------*/
-typedef enum
-{
-    PLAT_UART_PROTO_1 = 0x00U,
-    PLAT_UART_NUM,
-} plat_uart_id_t;
+/** @brief Opaque UART resource identifier assigned by the active Board. */
+typedef plat_resource_id_t plat_uart_id_t;
 
 typedef void (*plat_uart_rx_cb_t)(plat_uart_id_t id, uint16_t size);
 

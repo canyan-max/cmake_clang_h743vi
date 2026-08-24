@@ -10,7 +10,8 @@
 /* Includes -----------------------------------------------------------------*/
 #include <stddef.h>
 #include "plat_i2c.h"
-#include "board_config.h"
+#include "board_resources.h"
+#include "board_stm32h743_binding.h"
 #include "i2c.h"
 
 /* define   -----------------------------------------------------------------*/
@@ -19,14 +20,19 @@
 /* typedef ------------------------------------------------------------------*/
 
 /* variables ----------------------------------------------------------------*/
-static I2C_HandleTypeDef *const s_i2c_handle_table[PLAT_I2C_ID_NUM] = {
-    [PLAT_I2C_ID_0] = &BOARD_I2C0_HANDLE,
+static I2C_HandleTypeDef *const
+    s_i2c_handle_table[BOARD_I2C_RESOURCE_COUNT] = {
+        [BOARD_I2C_DEVICE_BUS] = &BOARD_I2C_DEVICE_BUS_HANDLE,
 };
+
+_Static_assert((sizeof(s_i2c_handle_table) / sizeof(s_i2c_handle_table[0])) ==
+                   BOARD_I2C_RESOURCE_COUNT,
+               "I2C resource table size mismatch");
 
 /* Private  functions  ------------------------------------------------------*/
 static I2C_HandleTypeDef *plat_i2c_get_handle(plat_i2c_id_t id)
 {
-    if((uint32_t)id >= (uint32_t)PLAT_I2C_ID_NUM)
+    if((uint32_t)id >= (uint32_t)BOARD_I2C_RESOURCE_COUNT)
     {
         return NULL;
     }

@@ -5,7 +5,10 @@ description: Generate or migrate a portable layered MCU firmware project using C
 
 # MCU CMake Project Generator
 
-Create only the project-owned architecture. Keep vendor SDK, startup code, linker scripts, generated initialization, and toolchain files outside the reusable layers.
+Create only the project-owned architecture. Keep vendor SDK, startup code,
+linker scripts, generated initialization, and toolchain files outside the
+reusable layers. Preserve an existing repository's layer names unless the user
+explicitly requests migration to this template.
 
 ## Collect inputs
 
@@ -15,21 +18,40 @@ Read [references/layered-architecture.md](references/layered-architecture.md) an
 
 ## Generate layout
 
-Create `00_Board/Inc`, `01_App/{Inc,Src}`, `02_Service/{Inc,Src}`, `03_Device/{Inc,Src}`, `03_Device_interface/Inc`, `04_Platform/{01_common,02_bsp,02_bsp_binding,03_port_interface}/{Inc,Src}`, `05_Impl/<target>/{Inc,Src}`, and `platform_sdk/<vendor>/`.
+Create project-owned `00_Board`, `01_App`, `02_Service`, `04_Platform`,
+`05_Impl`, and optional `06_Components` directories as described in the
+reference. Do not create generic Device, Device Interface, or BSP Binding
+layers by default.
 
-Use `00_Board` for resource mapping only. Apply the referenced C and header comment style to every generated project-owned source file. Put business configuration in App or Service. Keep vendor headers and SDK source under `platform_sdk` or another clearly external directory.
+Keep vendor-independent resources in `board_resources.h`; keep target pin and
+handle bindings in a target-specific Board header included only by MCU
+Implementation. Apply the referenced C and header comment style to generated
+project-owned source files. Put business configuration in App or Service. Keep
+vendor headers and SDK source under `platform_sdk` or another clearly external
+directory.
 
 ## CMake rules
 
-- Create `INTERFACE` targets for header-only contracts: `board_config`, `bsp_interface`, and `port_interface`.
+- Create separate `INTERFACE` targets for `board_resources`, the target-specific
+  Board binding, `platform_common`, `mcu_interface`, and `bsp_interface` when
+  they are header-only contracts.
 - Use `STATIC` libraries for implementations. Never solve missing headers by linking an implementation library.
 - Export a dependency as `PUBLIC` when it appears in a public header; otherwise use `PRIVATE`.
-- Let `05_Impl/<target>` depend on vendor SDK, `board_config`, `port_interface`, and `bsp_interface`; never link the `bsp` implementation library.
+- Let MCU Implementation depend privately on the vendor SDK,
+  `board_resources`, the target-specific Board binding, `mcu_interface`, and
+  common types. It must not depend on `bsp_interface`, the `bsp`
+  implementation, Service, App, or ChipDrivers.
+- Let BSP depend privately on `board_resources`, `mcu_interface`, and required
+  ChipDrivers while exporting only `bsp_interface` and common public types.
 - Add each owned source in its owning layer's `CMakeLists.txt`; do not keep a global owned-source list.
 
 ## Runtime boundary
 
-Keep reset/startup, vector table, early clock setup, vendor ISR dispatch, and linker scripts in the external platform package. Convert hardware events to public Device/BSP events in `05_Impl` or the startup adapter. Let App own task loops and Service own business flows.
+Keep reset/startup, vector table, early clock setup, vendor ISR dispatch, and
+linker scripts in the external platform package. MCU Implementation converts
+hardware events into `plat_*` callbacks or events; BSP consumes those events
+and exposes board capabilities. Let App own task loops and Service own business
+flows.
 
 ## Verify
 
@@ -39,4 +61,9 @@ Configure from an empty build directory, build with the official command, inspec
 
 ## Generate minimal or layered skeleton
 
-Run scripts/generate_project.py --kind <cmake|keil> --profile <minimal|layered> --output <empty-directory>. Use minimal for Board/App/BSP/Port/Impl. Use layered when Service, Device, Interface, and Binding are needed. The generator refuses to overwrite non-empty directories.
+Run `scripts/generate_project.py --kind cmake --profile <minimal|layered>
+--output <empty-directory>`. Minimal creates buildable architecture boundaries
+and a simple LED path without coupling App directly to BSP. Layered additionally
+creates a Service example. Add an independent Device abstraction only for a
+current aggregation, complex lifecycle, concurrency, or replaceable-device
+requirement. The generator refuses to overwrite non-empty directories.

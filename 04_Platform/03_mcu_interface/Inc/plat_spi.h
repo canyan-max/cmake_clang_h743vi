@@ -16,12 +16,12 @@ extern "C"
 
 #include <stdint.h>
 #include "plat_error.h"
+#include "plat_resource.h"
 
-typedef enum PLAT_SPI_ID_T
-{
-    PLAT_SPI_ID_0 = 0U,
-    PLAT_SPI_ID_NUM,
-} plat_spi_id_t;
+typedef plat_resource_id_t plat_spi_id_t;
+
+#define PLAT_SPI_ID_0    ((plat_spi_id_t)0U)
+#define PLAT_SPI_ID_NUM  ((plat_spi_id_t)1U)
 
 /**
  * @brief SPI DMA transmit completion callback.

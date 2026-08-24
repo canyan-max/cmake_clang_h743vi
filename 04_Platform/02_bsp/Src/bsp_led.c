@@ -10,6 +10,7 @@
 /* Includes -----------------------------------------------------------------*/
 #include "bsp_led.h"
 #include "plat_gpio.h"
+#include "board_resources.h"
 
 /* ---- pin table ----------------------------------------------------------- */
 typedef struct
@@ -19,8 +20,8 @@ typedef struct
 } led_pin_t;
 
 static const led_pin_t led_table[] = {
-    {PLAT_GPIO_ID_LED1, 1U},
-    {PLAT_GPIO_ID_LED2, 1U},
+    {BOARD_GPIO_LED1, BOARD_LED1_ON_LEVEL},
+    {BOARD_GPIO_LED2, BOARD_LED2_ON_LEVEL},
 };
 
 #define LED_COUNT  (sizeof(led_table) / sizeof(led_table[0]))

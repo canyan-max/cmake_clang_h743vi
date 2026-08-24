@@ -13,7 +13,7 @@
 #include "plat_gpio.h"
 #include "plat_spi.h"
 #include "plat_sys.h"
-#include "board_config.h"
+#include "board_resources.h"
 
 #define BSP_ST7789_TRANSFER_TIMEOUT_MS  (100U)
 #define BSP_ST7789_WORK_BUFFER_SIZE     (BOARD_DISPLAY_WIDTH * 2U)
@@ -136,7 +136,7 @@ static st7789_state_t bsp_st7789_set_command_mode(uint8_t command_mode)
     uint8_t level = (0U != command_mode) ? BOARD_DISPLAY_DC_COMMAND_LEVEL
                                          : BOARD_DISPLAY_DC_DATA_LEVEL;
     return bsp_st7789_convert_platform_error(
-        plat_gpio_write(PLAT_GPIO_ID_DISPLAY_DC, level));
+        plat_gpio_write(BOARD_GPIO_DISPLAY_DC, level));
 }
 
 static void bsp_st7789_delay_ms(uint32_t delay_ms)
@@ -178,7 +178,7 @@ platform_err_t bsp_display_get_info(bsp_display_info_t *p_info)
 
 platform_err_t bsp_display_init(void)
 {
-    platform_err_t error = plat_gpio_write(PLAT_GPIO_ID_DISPLAY_BACKLIGHT,
+    platform_err_t error = plat_gpio_write(BOARD_GPIO_DISPLAY_BACKLIGHT,
                                            BOARD_DISPLAY_BACKLIGHT_OFF_LEVEL);
     if(PLATFORM_ERR_OK != error)
     {
@@ -196,7 +196,7 @@ platform_err_t bsp_display_init(void)
         return bsp_st7789_convert_driver_status(status);
     }
 
-    return plat_gpio_write(PLAT_GPIO_ID_DISPLAY_BACKLIGHT,
+    return plat_gpio_write(BOARD_GPIO_DISPLAY_BACKLIGHT,
                            BOARD_DISPLAY_BACKLIGHT_ON_LEVEL);
 }
 

@@ -13,6 +13,12 @@ initialization state, enum values, and finite timeout requirements. Use
 fixed-width integer types across module boundaries. Every hardware or chip-state
 poll must terminate on a finite timeout.
 
+Use standard `<stdint.h>` types directly for numeric widths. Do not introduce
+project aliases such as `plat_u8_t` or `chip_u16_t`; they add no domain meaning.
+Define project types for semantics such as status, model, resource ID, or state.
+Each public header should include the standard headers required by its own
+declarations instead of relying on transitive includes.
+
 ## Instance shape
 
 A simple instance normally contains only state required by protocol execution:

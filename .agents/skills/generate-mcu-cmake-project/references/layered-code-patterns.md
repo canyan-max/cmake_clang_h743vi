@@ -1,6 +1,8 @@
 # Layered C code patterns
 
-Copy and rename these patterns selectively. Keep the file layout from `c-comment-style.md`; do not copy vendor types above `05_Impl`.
+Copy and rename these patterns selectively. Keep the file layout from
+`c-comment-style.md`. Names that start with `vendor_` are placeholders for the
+selected SDK and belong only in MCU Implementation.
 
 ## Common error contract
 
@@ -9,89 +11,144 @@ typedef enum PLATFORM_ERR_T
 {
     PLATFORM_ERR_OK = 0,
     PLATFORM_ERR_PARAM,
+    PLATFORM_ERR_BUSY,
     PLATFORM_ERR_HW,
     PLATFORM_ERR_TIMEOUT,
 } platform_err_t;
 ```
 
-Return `PLATFORM_ERR_PARAM` for public argument validation. Let Binding translate chip-driver states to `PLATFORM_ERR_HW` or `PLATFORM_ERR_TIMEOUT`.
+Public APIs validate their own inputs and preserve finite timeout semantics.
+BSP adapters translate reusable chip-driver status into the project's public
+error contract; a separate Binding layer is not required for that conversion.
 
-## Device wrapper: validate then forward
+## Board resources and target binding
+
+Keep vendor-independent facts in `board_resources.h`:
 
 ```c
-platform_err_t device_example_write(const uint8_t *p_data, uint16_t size)
+#include <stdint.h>
+
+typedef uint8_t board_gpio_resource_id_t;
+
+#define BOARD_GPIO_STATUS_LED      ((board_gpio_resource_id_t)0U)
+#define BOARD_GPIO_RESOURCE_COUNT  ((board_gpio_resource_id_t)1U)
+#define BOARD_STATUS_LED_ON_LEVEL  (1U)
+```
+
+Keep the selected MCU or SDK mapping in a separate target-specific header:
+
+```c
+/* board_<target>_binding.h: MCU Implementation only. */
+#include "vendor_gpio.h"
+
+#define BOARD_STATUS_LED_PORT  VENDOR_GPIO_PORT_A
+#define BOARD_STATUS_LED_PIN   VENDOR_GPIO_PIN_1
+```
+
+BSP includes `board_resources.h`, but never includes the target binding. Service
+and reusable Components include neither Board header.
+
+## Platform resource IDs
+
+Use one small storage type while preserving category-specific API types:
+
+```c
+/* plat_resource.h */
+#include <stdint.h>
+typedef uint8_t plat_resource_id_t;
+
+/* plat_gpio.h */
+typedef plat_resource_id_t plat_gpio_id_t;
+
+platform_err_t plat_gpio_write(plat_gpio_id_t id, uint8_t level);
+```
+
+Do not put `LED1`, `I2C0`, protocol UART names, resource counts, or vendor
+handles in the generic `plat_*` contract. Board owns the semantic IDs and
+counts. Public APIs retain `plat_gpio_id_t`, `plat_i2c_id_t`, and similar aliases
+instead of accepting a single unqualified `plat_resource_id_t` everywhere.
+
+## MCU resource mapping
+
+MCU Implementation is the only layer that includes both Board resources and
+the target binding:
+
+```c
+typedef struct MCU_GPIO_RESOURCE_T
 {
-    if((NULL == p_data) || (0U == size))
+    vendor_gpio_port_t *p_port;
+    uint16_t            pin;
+} mcu_gpio_resource_t;
+
+static const mcu_gpio_resource_t
+    s_gpio_resources[BOARD_GPIO_RESOURCE_COUNT] = {
+        [BOARD_GPIO_STATUS_LED] = {
+            .p_port = BOARD_STATUS_LED_PORT,
+            .pin    = BOARD_STATUS_LED_PIN,
+        },
+};
+
+_Static_assert((sizeof(s_gpio_resources) / sizeof(s_gpio_resources[0])) ==
+                   BOARD_GPIO_RESOURCE_COUNT,
+               "GPIO resource table size mismatch");
+
+platform_err_t plat_gpio_write(plat_gpio_id_t id, uint8_t level)
+{
+    if((uint32_t)id >= (uint32_t)BOARD_GPIO_RESOURCE_COUNT)
     {
         return PLATFORM_ERR_PARAM;
     }
-    return g_example_ops.pf_write(p_data, size);
+
+    vendor_gpio_write(s_gpio_resources[id].p_port,
+                      s_gpio_resources[id].pin,
+                      level);
+    return PLATFORM_ERR_OK;
 }
 ```
 
-Use this in `03_Device` when the API represents device semantics. Validate public inputs here; keep chip protocol details in BSP/Binding.
+Adapt vendor names and error conversion to the selected SDK. Preserve range
+checks and compile-time table-size checks.
 
-## Binding: translate a chip driver to a stable contract
+## BSP board capability
 
-```c
-static platform_err_t example_binding_write(const uint8_t *p_data,
-                                            uint16_t       size)
-{
-    chip_state_t ret = bsp_chip_write(p_data, size);
-
-    switch(ret)
-    {
-        case CHIP_OK:
-            return PLATFORM_ERR_OK;
-        case CHIP_TIMEOUT:
-            return PLATFORM_ERR_TIMEOUT;
-        case CHIP_ERROR:
-        default:
-            return PLATFORM_ERR_HW;
-    }
-}
-
-const example_ops_t g_example_ops = {
-    .pf_write = example_binding_write,
-};
-```
-
-Place this in `02_bsp_binding`. The binding owns chip-state to platform-error translation. Omit Binding for a simple, non-replaceable GPIO capability.
-
-## GPIO port contract: use an ID enum
+BSP gives Service a stable board capability and privately selects Board
+resources:
 
 ```c
-/* 03_port_interface/Inc/port_gpio.h */
-typedef enum PORT_GPIO_ID_T
+platform_err_t bsp_status_led_set(uint8_t enabled)
 {
-    PORT_GPIO_ID_0 = 0,
-    PORT_GPIO_ID_NUM,
-} port_gpio_id_t;
+    uint8_t level = (0U != enabled) ? BOARD_STATUS_LED_ON_LEVEL
+                                    : (uint8_t)!BOARD_STATUS_LED_ON_LEVEL;
 
-platform_err_t port_gpio_write(port_gpio_id_t id, uint8_t level);
-
-/* 05_Impl/<target>/Src/port_gpio.c */
-platform_err_t port_gpio_write(port_gpio_id_t id, uint8_t level)\n{\n    if(id >= PORT_GPIO_ID_NUM)\n    {\n        return PLATFORM_ERR_PARAM;\n    }\n    /* Map id to the selected SDK's GPIO port and pin here. */\n    return PLATFORM_ERR_OK;\n}
-```
-
-Prefer a resource ID enum over `void *p_port` for new portable templates. Return `platform_err_t` from port APIs so invalid IDs and vendor failures propagate upward. Keep vendor port pointers and pin values private to `05_Impl`. Retain an opaque handle only when the resource is genuinely runtime-selected.
-
-## App task loop
-
-```c
-void app_main_task(void *p_argument)
-{
-    (void)p_argument;
-    if(PLATFORM_ERR_OK != service_app_init())
-    {
-        /* Log or enter the project-defined safe state. */
-    }
-    for(;;)
-    {
-        service_app_process();
-        /* Use RTOS wait or a bare-metal scheduler hook as selected. */
-    }
+    return plat_gpio_write(BOARD_GPIO_STATUS_LED, level);
 }
 ```
 
-Keep RTOS primitives in App unless the project deliberately provides an OS port. Keep business operations in Service.
+For an external chip, BSP owns the static chip instance and transport adapter,
+selects the fitted model and Board resource aliases, and maps driver errors.
+The reusable driver owns commands, registers, addressing, conversion, and chip
+protocol sequencing. Its Component must compile without Board, BSP, `plat_*`,
+HAL, generated SDK, RTOS, or business headers.
+
+## Service and App
+
+Service may know the capability category but not the selected bus, chip model,
+pin, DMA channel, or vendor handle:
+
+```c
+platform_err_t service_status_set(uint8_t active)
+{
+    return bsp_status_led_set(active);
+}
+```
+
+App invokes Service and owns task or scheduler orchestration. It does not call
+BSP, `plat_*`, Board, HAL, or generated peripheral APIs directly.
+
+## Optional device abstraction
+
+Do not generate a Device layer merely to validate and forward BSP calls. Add a
+separate device abstraction only when it owns a real product concern such as
+cross-device aggregation, complex lifecycle, concurrency arbitration,
+buffering/filtering, recovery policy, or genuinely replaceable device
+semantics.

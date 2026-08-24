@@ -15,6 +15,7 @@
 #include "bsp_uart.h"
 #include "plat_uart.h"
 #include "plat_sys.h"
+#include "board_resources.h"
 #include "kfifo.h"
 
 /* define   -----------------------------------------------------------------*/
@@ -32,12 +33,13 @@ typedef struct
 /* variables ----------------------------------------------------------------*/
 static uart_inst_t          g_uart_inst[BSP_UART_NUM];
 static const plat_uart_id_t s_uart_resources[BSP_UART_NUM] = {
-    [BSP_UART_PROTO_1] = PLAT_UART_PROTO_1,
+    [BSP_UART_PROTO_1] = BOARD_UART_PROTOCOL_1,
 };
 
 /* DMA writes straight into this buffer; it doubles as the kfifo's buffer.
- * PLAT_UART_PROTO_1 = LPUART1, whose RX DMA is BDMA_Channel0 — BDMA can only
- * reach RAM_D3 (SRAM4 @ 0x38000000), not RAM_D2. If a future instance uses
+ * BOARD_UART_PROTOCOL_1 is bound to LPUART1, whose RX DMA is BDMA_Channel0.
+ * BDMA can only reach RAM_D3 (SRAM4 @ 0x38000000), not RAM_D2. If a future
+ * instance uses
  * a D2-domain peripheral on DMA1/DMA2 instead, its buffer needs to move to
  * RAM_D2/RAM — this single shared array assumes one DMA domain for all
  * instances and will need revisiting then. */

@@ -18,8 +18,7 @@ set(PLATFORM_BSP_SRC
 set(PLATFORM_BSP_DEPEND_LIB
     common
     mcu_interface
-    board_config
-    letter_shell
+    board_resources
     front
     kfifo
     chip_drivers

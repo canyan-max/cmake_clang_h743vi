@@ -17,14 +17,12 @@ extern "C"
 /* Includes -----------------------------------------------------------------*/
 #include <stdint.h>
 #include "plat_error.h"
+#include "plat_resource.h"
 
 /* define -------------------------------------------------------------------*/
 /* typedef ------------------------------------------------------------------*/
-typedef enum PLAT_I2C_ID_T
-{
-    PLAT_I2C_ID_0 = 0U,
-    PLAT_I2C_ID_NUM,
-} plat_i2c_id_t;
+/** @brief Opaque I2C resource identifier assigned by the active Board. */
+typedef plat_resource_id_t plat_i2c_id_t;
 
 typedef enum PLAT_I2C_MEMORY_ADDRESS_SIZE_T
 {

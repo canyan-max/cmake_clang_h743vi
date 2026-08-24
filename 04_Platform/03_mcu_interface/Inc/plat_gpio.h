@@ -16,19 +16,11 @@ extern "C"
 
 #include <stdint.h>
 #include "plat_error.h"
+#include "plat_resource.h"
 
 /* typedef ------------------------------------------------------------------*/
-typedef enum PLAT_GPIO_ID_T
-{
-    PLAT_GPIO_ID_LED1 = 0U,
-    PLAT_GPIO_ID_LED2,
-    PLAT_GPIO_ID_KEY1,
-    PLAT_GPIO_ID_KEY2,
-    PLAT_GPIO_ID_CAMERA_PWDN,
-    PLAT_GPIO_ID_DISPLAY_DC,
-    PLAT_GPIO_ID_DISPLAY_BACKLIGHT,
-    PLAT_GPIO_ID_NUM,
-} plat_gpio_id_t;
+/** @brief Opaque GPIO resource identifier assigned by the active Board. */
+typedef plat_resource_id_t plat_gpio_id_t;
 
 /* function  ----------------------------------------------------------------*/
 platform_err_t plat_gpio_write(plat_gpio_id_t id, uint8_t level);

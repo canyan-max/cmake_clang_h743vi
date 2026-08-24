@@ -50,4 +50,9 @@ extern "C"
 /* end of file --------------------------------------------------------------*/
 ```
 
-Add the project's Doxygen-style function comment to public APIs and non-trivial private functions. Use `<stdint.h>` fixed-width types at API boundaries.
+Add the project's Doxygen-style function comment to public APIs and non-trivial
+private functions. Use `<stdint.h>` fixed-width types directly at API
+boundaries; do not create aliases such as `u8` or `plat_u16_t` that add no
+domain meaning. Define custom types for semantics such as status, resource ID,
+model, or state. Each public header must include the standard headers needed by
+its own declarations rather than relying on transitive includes.

@@ -14,7 +14,7 @@
 #include "at24cxx_driver.h"
 #include "plat_i2c.h"
 #include "plat_sys.h"
-#include "board_config.h"
+#include "board_resources.h"
 
 /* define   -----------------------------------------------------------------*/
 #define BSP_EEPROM_CAPACITY_BYTES        (256U)
@@ -71,7 +71,7 @@ static at24cxx_status_t at24cxx_plat_write(uint8_t  address_7b,
     }
 
     return at24cxx_transport_convert_platform_error(
-        plat_i2c_memory_write(PLAT_I2C_ID_0, address_7b, word_address,
+        plat_i2c_memory_write(BOARD_I2C_EEPROM_BUS, address_7b, word_address,
                               address_size, p_data, size, timeout_ms));
 }
 
@@ -98,7 +98,7 @@ static at24cxx_status_t at24cxx_plat_read(uint8_t  address_7b,
     }
 
     return at24cxx_transport_convert_platform_error(
-        plat_i2c_memory_read(PLAT_I2C_ID_0, address_7b, word_address,
+        plat_i2c_memory_read(BOARD_I2C_EEPROM_BUS, address_7b, word_address,
                              address_size, p_data, size, timeout_ms));
 }
 
@@ -117,7 +117,7 @@ static at24cxx_status_t at24cxx_plat_wait_ready(uint8_t  address_7b,
     for(;;)
     {
         platform_err_t
-            error = plat_i2c_is_ready(PLAT_I2C_ID_0, address_7b,
+            error = plat_i2c_is_ready(BOARD_I2C_EEPROM_BUS, address_7b,
                                       AT24CXX_READY_PROBE_TIMEOUT_MS);
         if(PLATFORM_ERR_OK == error)
         {

@@ -15,7 +15,7 @@
 #include "plat_gpio.h"
 #include "plat_i2c.h"
 #include "plat_sys.h"
-#include "board_config.h"
+#include "board_resources.h"
 
 /* define   -----------------------------------------------------------------*/
 #define BSP_CAMERA_SENSOR_ADDRESS_7B        (0x30U)
@@ -108,7 +108,7 @@ static ov2640_status_t bsp_camera_sensor_write_reg(uint8_t  address_7b,
 {
     uint8_t data[2] = {reg, value};
     return bsp_camera_convert_platform_error(
-        plat_i2c_write(PLAT_I2C_ID_0, address_7b, data, sizeof(data),
+        plat_i2c_write(BOARD_I2C_CAMERA_BUS, address_7b, data, sizeof(data),
                        timeout_ms));
 }
 
@@ -122,7 +122,7 @@ static ov2640_status_t bsp_camera_sensor_read_reg(uint8_t  address_7b,
         return OV2640_STATUS_PARAM;
     }
 
-    platform_err_t error = plat_i2c_write(PLAT_I2C_ID_0, address_7b, &reg, 1U,
+    platform_err_t error = plat_i2c_write(BOARD_I2C_CAMERA_BUS, address_7b, &reg, 1U,
                                           timeout_ms);
     if(PLATFORM_ERR_OK != error)
     {
@@ -130,7 +130,7 @@ static ov2640_status_t bsp_camera_sensor_read_reg(uint8_t  address_7b,
     }
 
     return bsp_camera_convert_platform_error(
-        plat_i2c_read(PLAT_I2C_ID_0, address_7b, p_value, 1U, timeout_ms));
+        plat_i2c_read(BOARD_I2C_CAMERA_BUS, address_7b, p_value, 1U, timeout_ms));
 }
 
 static void bsp_camera_sensor_delay_ms(uint32_t delay_ms)
@@ -147,8 +147,8 @@ static const ov2640_transport_t s_camera_sensor_transport = {
 static platform_err_t bsp_camera_power_on(void)
 {
     uint8_t power_on_level = (0U == BOARD_CAMERA_PWDN_ACTIVE_LEVEL) ? 1U : 0U;
-    platform_err_t error   = plat_gpio_write(PLAT_GPIO_ID_CAMERA_PWDN,
-                                             power_on_level);
+    platform_err_t error   = plat_gpio_write(BOARD_GPIO_CAMERA_PWDN,
+                                              power_on_level);
     if(PLATFORM_ERR_OK == error)
     {
         plat_delay_ms(BSP_CAMERA_POWER_SETTLE_MS);

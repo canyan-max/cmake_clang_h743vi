@@ -138,7 +138,7 @@ BSP 不重复实现芯片协议，也不直接调用 HAL。
               ↓ 由 BSP 选择和装配
 bsp_eeprom
     = AT24CXX_MODEL_C02
-    + PLAT_I2C_ID_0
+    + BOARD_I2C_EEPROM_BUS
     + BOARD_EEPROM_I2C_ADDRESS_7B
     + 256-byte capacity
     + 8-byte page
@@ -156,7 +156,7 @@ Board 和 BSP 都包含板级知识，但职责不同：
 | `00_Board` | 引脚、逻辑总线映射、器件地址、功能是否装配等静态资源配置 | 否 |
 | BSP | 创建具体实例、连接 Adapter、处理板级控制并提供 `bsp_*` API | 是 |
 
-`00_Board` 回答“资源是什么”，BSP 回答“怎样用这些资源组成当前板的设备能力”。不要在 `board_config.h` 中放芯片协议流程，也不要让 Component 直接读取 Board 配置。
+`00_Board` 回答“资源是什么”，BSP 回答“怎样用这些资源组成当前板的设备能力”。不要在 `board_resources.h` 中放芯片协议流程，也不要让 Component 直接读取 Board 配置。
 
 ## 4. Component 的标准模型
 
@@ -207,7 +207,7 @@ AT24Cxx Component 负责把逻辑存储地址解析为最终的器件地址、�
 
 `wait_ready` 表示一次完整且有界的就绪等待。Component 决定何时等待，调用者通过 API 传入允许等待多久；Adapter 使用宿主的单次应答探测、时基和延时完成轮询。这样既保留芯片操作超时，又不要求 Component 分别注入 tick、delay 和单次 probe。
 
-Context 不是组件式驱动的必选项。当前板只有一颗固定接在 I2C0 上的 EEPROM，因此 Adapter 直接绑定 `PLAT_I2C_ID_0`，实例无需保存 context：
+Context 不是组件式驱动的必选项。当前板只有一颗固定接在共享设备 I2C 总线上的 EEPROM，因此 Adapter 直接绑定 `BOARD_I2C_EEPROM_BUS`，实例无需保存 context：
 
 ```c
 static at24cxx_status_t at24cxx_plat_write(
@@ -219,7 +219,7 @@ static at24cxx_status_t at24cxx_plat_write(
     uint32_t timeout_ms)
 {
     return convert_platform_error(
-        plat_i2c_memory_write(PLAT_I2C_ID_0, address_7b,
+        plat_i2c_memory_write(BOARD_I2C_EEPROM_BUS, address_7b,
                               word_address, convert_address_size(
                                   word_address_size_bytes),
                               p_data, size, timeout_ms));

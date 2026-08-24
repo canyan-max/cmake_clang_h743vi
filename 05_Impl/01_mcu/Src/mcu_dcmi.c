@@ -11,7 +11,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "plat_dcmi.h"
-#include "board_config.h"
+#include "board_stm32h743_binding.h"
 #include "dcmi.h"
 
 /* define   -----------------------------------------------------------------*/

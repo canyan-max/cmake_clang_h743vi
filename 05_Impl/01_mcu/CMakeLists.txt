@@ -10,7 +10,8 @@ set(IMPL_MCU_SRC
 )
 set(IMPL_MCU_DEPEND_LIB
     mcu_interface
-    board_config
+    board_resources
+    board_stm32h743_binding
     stm32cubemx
     common
 )
