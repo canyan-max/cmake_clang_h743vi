@@ -19,6 +19,9 @@ extern "C"
 /* returns 1 if pressed, 0 if not pressed */
 uint8_t bsp_key_is_pressed(uint8_t id);
 
+/* returns the number of keys on this board */
+uint8_t bsp_key_count(void);
+
 #ifdef __cplusplus
 }
 #endif

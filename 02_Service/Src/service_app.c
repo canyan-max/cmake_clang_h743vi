@@ -13,6 +13,7 @@
 #include <stddef.h>
 #include "service_app.h"
 #include "service_osd.h"
+#include "service_record.h"
 #include "bsp_camera.h"
 #include "bsp_display.h"
 #include "bsp_eeprom.h"
@@ -117,8 +118,7 @@ platform_err_t service_app_init(void)
     {
         return PLATFORM_ERR_PARAM;
     }
-    service_osd_set_rec_state(SERVICE_OSD_REC_ACTIVE);
-    return PLATFORM_ERR_OK;
+    return service_record_init();
 }
 
 /**

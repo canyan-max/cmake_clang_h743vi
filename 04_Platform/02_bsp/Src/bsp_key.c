@@ -22,6 +22,11 @@ static const plat_gpio_id_t key_table[] = {
 
 /* exported functions -------------------------------------------------------*/
 
+uint8_t bsp_key_count(void)
+{
+    return (uint8_t)KEY_COUNT;
+}
+
 /* returns 1 if key is pressed (active low), 0 otherwise */
 uint8_t bsp_key_is_pressed(uint8_t id)
 {

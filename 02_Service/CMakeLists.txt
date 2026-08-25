@@ -1,7 +1,9 @@
 # ---------- service ----------
 set(SERVICE_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/service_app.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/service_key.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/service_osd.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/service_record.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/service_uart_test.c
 )
 

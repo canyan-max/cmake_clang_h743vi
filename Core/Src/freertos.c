@@ -31,6 +31,8 @@
 #include "kfifo.h"             /* kfifo lib header file. */
 #include "plat_sys.h"          /* platform time source. */
 #include "service_osd.h"       /* service_osd header file. */
+#include "service_key.h"       /* key gesture service (single/double/long) */
+#include "service_record.h"    /* recording state machine driven by key */
 #include "service_uart_test.h" /* for DMA+IDLE UART smoke test */
 #include "plat_log.h"          /* platform log header file. */
 #include "app_main_task.h"     /* default application task */
@@ -38,6 +40,7 @@
 #define MINIMP3_FLOAT_OUTPUT
 #define MINIMP3_IMPLEMENTATION
 #include "minimp3.h"
+#include "log.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -75,6 +78,7 @@ uint8_t     k_fifo_buffer[16];
 kfifo_t     g_kfifo;
 static void BatteryTask(void *argument);
 static void UartEchoTestTask(void *argument);
+static void KeyTestTask(void *argument);
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -139,6 +143,13 @@ void MX_FREERTOS_Init(void)
         .priority   = (osPriority_t)osPriorityBelowNormal,
     };
     // osThreadNew(UartEchoTestTask, NULL, &uart_test_task_attr);
+
+    static const osThreadAttr_t key_test_task_attr = {
+        .name       = "keyTestTask",
+        .stack_size = 512 * 2U,
+        .priority   = (osPriority_t)osPriorityNormal,
+    };
+    osThreadNew(KeyTestTask, NULL, &key_test_task_attr);
     /* USER CODE END RTOS_THREADS */
 
     /* USER CODE BEGIN RTOS_EVENTS */
@@ -209,6 +220,45 @@ static void UartEchoTestTask(void *argument)
         ulTaskNotifyTake(pdTRUE,
                          pdMS_TO_TICKS(SERVICE_UART_TEST_IDLE_TIMEOUT_MS));
         service_uart_test_poll();
+    }
+}
+/**
+ * @brief  Key gesture event handler: applies the gesture to the recording
+ *         state machine (long->REC, single->STOP, double->toggle) and logs
+ *         it for observation. Runs in KeyTestTask context (service_key_poll()).
+ */
+static void key_event_log(uint8_t key_id, service_key_event_t event)
+{
+    service_record_on_key(key_id, event);
+    switch(event)
+    {
+    case SERVICE_KEY_EVENT_CLICK:
+        logInfo("key%u click", key_id);
+        break;
+    case SERVICE_KEY_EVENT_DOUBLE_CLICK:
+        logInfo("key%u double-click", key_id);
+        break;
+    case SERVICE_KEY_EVENT_LONG_PRESS:
+        logInfo("key%u long-press", key_id);
+        break;
+    default:
+        break;
+    }
+}
+
+/**
+ * @brief  Non-blocking key gesture test: polls the key service every
+ *         SERVICE_KEY_POLL_PERIOD_MS and logs click / double-click / long-press.
+ *         No blocking waits inside the key service itself.
+ */
+static void KeyTestTask(void *argument)
+{
+    ((void)argument);
+    (void)service_key_init(key_event_log);
+    for(;;)
+    {
+        service_key_poll();
+        vTaskDelay(pdMS_TO_TICKS(SERVICE_KEY_POLL_PERIOD_MS));
     }
 }
 /* USER CODE END Application */

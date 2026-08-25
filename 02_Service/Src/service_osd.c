@@ -1,4 +1,4 @@
-﻿/**
+/**
  ******************************************************************************
  *@file               :   service_osd.c
  *@brief              :   OSD status bar 鈥?REC indicator / battery / FPS.
@@ -180,6 +180,18 @@ platform_err_t service_osd_render(void)
 
             ret = bsp_display_draw_string(&g_f8x16, OSD_REC_TXT_X, OSD_TXT_Y,
                                           "REC", OSD_REC_COLOR, OSD_BG_COLOR);
+            if(PLATFORM_ERR_OK != ret)
+            {
+                return ret;
+            }
+        }
+        else
+        {
+            /* STOP state: show text so the recording status is always
+             * visible, not just an empty bar. */
+            ret = bsp_display_draw_string(&g_f8x16, OSD_REC_TXT_X, OSD_TXT_Y,
+                                          "STOP", OSD_TEXT_COLOR,
+                                          OSD_BG_COLOR);
             if(PLATFORM_ERR_OK != ret)
             {
                 return ret;

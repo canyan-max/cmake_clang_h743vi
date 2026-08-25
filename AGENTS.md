@@ -29,6 +29,13 @@
 
 构建产物位于 `build/<preset>/cmake-clang-h743vi.{elf,bin,hex}`。常规改动优先使用 `-b`，只有用户明确要求时才烧录。
 
+### 外部命令执行（DSH / PowerShell 7）
+
+- **禁止**把 ninja / cmake / bash / JLink 等外部命令的输出接进 PowerShell 管道（`| Select-Object`、`| Tee-Object`），DSH 沙箱会让这类命令卡住不返回。
+- 改用**文件重定向**：`cmd > 输出文件 2>&1`，再用 `Get-Content` 读取结果，最后检查 `$LASTEXITCODE`。
+- `./runbuid_and_flash.sh` 是 bash 脚本，需用 `bash ./runbuid_and_flash.sh ...` 运行；若沙箱报 `CreateFileMapping ... error 5` 属权限限制，改用等价的 cmake/ninja 命令。
+- 长编译/烧录放后台任务（`run_in_background`），一律使用文件重定向，避免管道缓冲导致的假卡顿。
+
 ## 目录与依赖方向
 
 仓库采用自上而下的分层；上层可以依赖下层公开接口，下层不得反向依赖上层。
