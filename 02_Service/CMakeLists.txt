@@ -9,6 +9,7 @@ set(SERVICE_SRC
 
 set(SERVICE_DEPEND_LIB
     bsp
+    button
     mcu_interface
     front
     protocol

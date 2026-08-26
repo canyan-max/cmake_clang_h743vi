@@ -1,5 +1,6 @@
 add_subdirectory(SEGGER_RTT)
 add_subdirectory(Front)
+add_subdirectory(Button)
 add_subdirectory(ChipDrivers)
 add_subdirectory(EasyLog)
 add_subdirectory(Kfifo)

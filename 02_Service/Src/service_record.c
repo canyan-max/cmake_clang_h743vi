@@ -41,20 +41,20 @@ void service_record_on_key(uint8_t key_id, service_key_event_t event)
 
     switch(event)
     {
-    case SERVICE_KEY_EVENT_LONG_PRESS:
-        service_record_set(SERVICE_OSD_REC_ACTIVE); /* force record */
-        break;
-    case SERVICE_KEY_EVENT_CLICK:
-        service_record_set(SERVICE_OSD_REC_IDLE); /* force stop */
-        break;
-    case SERVICE_KEY_EVENT_DOUBLE_CLICK:
-        /* toggle between stop and record */
-        service_record_set((SERVICE_OSD_REC_ACTIVE == s_state)
-                               ? SERVICE_OSD_REC_IDLE
-                               : SERVICE_OSD_REC_ACTIVE);
-        break;
-    default:
-        break;
+        case SERVICE_KEY_EVENT_LONG_PRESS:
+            service_record_set(SERVICE_OSD_REC_ACTIVE); /* force record */
+            break;
+        case SERVICE_KEY_EVENT_CLICK:
+            service_record_set(SERVICE_OSD_REC_IDLE); /* force stop */
+            break;
+        case SERVICE_KEY_EVENT_DOUBLE_CLICK:
+            /* toggle between stop and record */
+            service_record_set((SERVICE_OSD_REC_ACTIVE == s_state)
+                                   ? SERVICE_OSD_REC_IDLE
+                                   : SERVICE_OSD_REC_ACTIVE);
+            break;
+        default:
+            break;
     }
 }
 

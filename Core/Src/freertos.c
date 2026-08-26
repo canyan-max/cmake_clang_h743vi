@@ -32,7 +32,6 @@
 #include "plat_sys.h"          /* platform time source. */
 #include "service_osd.h"       /* service_osd header file. */
 #include "service_key.h"       /* key gesture service (single/double/long) */
-#include "service_record.h"    /* recording state machine driven by key */
 #include "service_uart_test.h" /* for DMA+IDLE UART smoke test */
 #include "plat_log.h"          /* platform log header file. */
 #include "app_main_task.h"     /* default application task */
@@ -146,10 +145,10 @@ void MX_FREERTOS_Init(void)
 
     static const osThreadAttr_t key_test_task_attr = {
         .name       = "keyTestTask",
-        .stack_size = 512 * 2U,
+        .stack_size = 512U * 2U,
         .priority   = (osPriority_t)osPriorityNormal,
     };
-    osThreadNew(KeyTestTask, NULL, &key_test_task_attr);
+    (void)osThreadNew(KeyTestTask, NULL, &key_test_task_attr);
     /* USER CODE END RTOS_THREADS */
 
     /* USER CODE BEGIN RTOS_EVENTS */
@@ -223,13 +222,18 @@ static void UartEchoTestTask(void *argument)
     }
 }
 /**
- * @brief  Key gesture event handler: applies the gesture to the recording
- *         state machine (long->REC, single->STOP, double->toggle) and logs
- *         it for observation. Runs in KeyTestTask context (service_key_poll()).
+ * @brief  Forward a detected key gesture to the main application task and log
+ *         it for observation. Runs in KeyTestTask context.
  */
 static void key_event_log(uint8_t key_id, service_key_event_t event)
 {
-    service_record_on_key(key_id, event);
+    app_main_post_status_t status = app_main_post_key_event(key_id, event);
+    if(APP_MAIN_POST_OK != status)
+    {
+        logError("key%u event dropped: %u", key_id, (unsigned int)status);
+        return;
+    }
+
     switch(event)
     {
     case SERVICE_KEY_EVENT_CLICK:
@@ -254,11 +258,25 @@ static void key_event_log(uint8_t key_id, service_key_event_t event)
 static void KeyTestTask(void *argument)
 {
     ((void)argument);
-    (void)service_key_init(key_event_log);
+    platform_err_t error = service_key_init(key_event_log);
+    if(PLATFORM_ERR_OK != error)
+    {
+        logError("service_key_init failed: %u", (unsigned int)error);
+        vTaskDelete(NULL);
+        return;
+    }
+
     for(;;)
     {
-        service_key_poll();
+        error = service_key_poll();
+        if(PLATFORM_ERR_OK != error)
+        {
+            logError("service_key_poll failed: %u", (unsigned int)error);
+            vTaskDelete(NULL);
+            return;
+        }
         vTaskDelay(pdMS_TO_TICKS(SERVICE_KEY_POLL_PERIOD_MS));
     }
 }
+
 /* USER CODE END Application */

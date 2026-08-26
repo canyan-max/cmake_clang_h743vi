@@ -14,12 +14,24 @@ extern "C"
 {
 #endif
 
+/* Includes -----------------------------------------------------------------*/
 #include <stdint.h>
+#include "plat_error.h"
 
-/* returns 1 if pressed, 0 if not pressed */
-uint8_t bsp_key_is_pressed(uint8_t id);
+/* functions ----------------------------------------------------------------*/
+/**
+ * @brief Read the normalized pressed state of one fitted board key.
+ * @param[in] id Board key index in the range returned by bsp_key_count().
+ * @param[out] p_pressed Receives 1 when pressed, otherwise 0.
+ * @retval PLATFORM_ERR_OK on success; PLATFORM_ERR_PARAM for invalid input;
+ *         otherwise the GPIO read error.
+ */
+platform_err_t bsp_key_is_pressed(uint8_t id, uint8_t *p_pressed);
 
-/* returns the number of keys on this board */
+/**
+ * @brief Return the number of fitted board keys.
+ * @retval Number of keys addressable by bsp_key_is_pressed().
+ */
 uint8_t bsp_key_count(void);
 
 #ifdef __cplusplus

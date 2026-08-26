@@ -52,15 +52,18 @@ typedef void (*service_key_event_cb_t)(uint8_t key_id, service_key_event_t event
  *                     the gesture state machines for every board key.
  * @param[in]        [cb] Event callback; may be NULL to run detection without
  *                     notifications (e.g. query-only bring-up).
- * @retval           PLATFORM_ERR_OK on success; PLATFORM_ERR_PARAM otherwise.
+ * @retval           PLATFORM_ERR_OK on success; PLATFORM_ERR_PARAM when the
+ *                   fitted key count exceeds the static service capacity;
+ *                   otherwise the BSP read error.
  */
 platform_err_t service_key_init(service_key_event_cb_t cb);
 
 /**
  * @brief            [service_key_poll] Sample all keys once and advance each
  *                     gesture state machine. Non-blocking; call periodically.
+ * @retval           PLATFORM_ERR_OK on success; otherwise the BSP read error.
  */
-void service_key_poll(void);
+platform_err_t service_key_poll(void);
 
 #ifdef __cplusplus
 }

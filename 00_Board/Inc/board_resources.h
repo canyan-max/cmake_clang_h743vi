@@ -56,4 +56,8 @@ typedef uint8_t board_i2c_resource_id_t;
 #define BOARD_LED1_ON_LEVEL  (0x01U)
 #define BOARD_LED2_ON_LEVEL  (0x01U)
 
+/* Key ----------------------------------------------------------------------*/
+#define BOARD_KEY1_ACTIVE_LEVEL  (0U)
+#define BOARD_KEY2_ACTIVE_LEVEL  (0U)
+
 #endif /* BOARD_RESOURCES_H */

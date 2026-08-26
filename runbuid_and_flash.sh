@@ -204,6 +204,12 @@ flash_firmware() {
 
     # Generate temporary JLink command script
     local tmp_script=$(mktemp)
+    local hex_file_arg="$HEX_FILE"
+    local commander_script_arg="$tmp_script"
+    if [[ "$jlink_cmd" == *.exe ]] && command -v cygpath &>/dev/null; then
+        hex_file_arg=$(cygpath -aw "$HEX_FILE")
+        commander_script_arg=$(cygpath -aw "$tmp_script")
+    fi
     cat > "$tmp_script" << EOF
 si SWD
 speed $SPEED
@@ -221,12 +227,12 @@ EOF
     fi
 
     cat >> "$tmp_script" << EOF
-loadfile "$HEX_FILE"
+loadfile "$hex_file_arg"
 EOF
 
     if $VERIFY; then
         cat >> "$tmp_script" << EOF
-verifybin "$HEX_FILE", 0x08000000
+verifybin "$hex_file_arg", 0x08000000
 EOF
     fi
 
@@ -251,7 +257,7 @@ EOF
         "-Speed" "$SPEED"
         "-AutoConnect" "1"
         "-ExitOnError" "1"
-        "-CommanderScript" "$tmp_script"
+        "-CommanderScript" "$commander_script_arg"
     )
     jlink_args+=("${JLINK_EXTRA_ARGS[@]}")
 
