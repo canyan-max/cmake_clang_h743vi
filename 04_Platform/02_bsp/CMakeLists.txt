@@ -13,6 +13,7 @@ set(PLATFORM_BSP_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_camera.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_key.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_uart.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/bsp_rs485.c
 )
 
 set(PLATFORM_BSP_DEPEND_LIB

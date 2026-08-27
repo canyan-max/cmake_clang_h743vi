@@ -33,6 +33,7 @@
 #include "service_osd.h"       /* service_osd header file. */
 #include "service_key.h"       /* key gesture service (single/double/long) */
 #include "service_uart_test.h" /* for DMA+IDLE UART smoke test */
+#include "service_rs485_test.h" /* UART7 master/UART8 slave test */
 #include "plat_log.h"          /* platform log header file. */
 #include "app_main_task.h"     /* default application task */
 // #define MINIMP3_NO_SIMD
@@ -64,11 +65,11 @@ __attribute__((section(".ram_dma_buffers"),
                aligned(8))) uint8_t ucHeap[configTOTAL_HEAP_SIZE];
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
-osThreadId_t         defaultTaskHandle;
+osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
-    .name       = "defaultTask",
-    .stack_size = 512 * 4,
-    .priority   = (osPriority_t)osPriorityNormal,
+  .name = "defaultTask",
+  .stack_size = 512 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -77,6 +78,7 @@ uint8_t     k_fifo_buffer[16];
 kfifo_t     g_kfifo;
 static void BatteryTask(void *argument);
 static void UartEchoTestTask(void *argument);
+static void Rs485TestTask(void *argument);
 static void KeyTestTask(void *argument);
 /* USER CODE END FunctionPrototypes */
 
@@ -85,13 +87,12 @@ void StartDefaultTask(void *argument);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
- * @brief  FreeRTOS initialization
- * @param  None
- * @retval None
- */
-void MX_FREERTOS_Init(void)
-{
-    /* USER CODE BEGIN Init */
+  * @brief  FreeRTOS initialization
+  * @param  None
+  * @retval None
+  */
+void MX_FREERTOS_Init(void) {
+  /* USER CODE BEGIN Init */
     platform_err_t time_init_status = plat_time_init();
     if(PLATFORM_ERR_OK == plat_log_init())
     {
@@ -102,31 +103,30 @@ void MX_FREERTOS_Init(void)
                        (int)time_init_status);
         }
     }
-    /* USER CODE END Init */
+  /* USER CODE END Init */
 
-    /* USER CODE BEGIN RTOS_MUTEX */
+  /* USER CODE BEGIN RTOS_MUTEX */
     /* add mutexes, ... */
-    /* USER CODE END RTOS_MUTEX */
+  /* USER CODE END RTOS_MUTEX */
 
-    /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
     /* add semaphores, ... */
-    /* USER CODE END RTOS_SEMAPHORES */
+  /* USER CODE END RTOS_SEMAPHORES */
 
-    /* USER CODE BEGIN RTOS_TIMERS */
+  /* USER CODE BEGIN RTOS_TIMERS */
     /* start timers, add new ones, ... */
-    /* USER CODE END RTOS_TIMERS */
+  /* USER CODE END RTOS_TIMERS */
 
-    /* USER CODE BEGIN RTOS_QUEUES */
+  /* USER CODE BEGIN RTOS_QUEUES */
     /* add queues, ... */
 
-    /* USER CODE END RTOS_QUEUES */
+  /* USER CODE END RTOS_QUEUES */
 
-    /* Create the thread(s) */
-    /* creation of defaultTask */
-    defaultTaskHandle = osThreadNew(StartDefaultTask, NULL,
-                                    &defaultTask_attributes);
+  /* Create the thread(s) */
+  /* creation of defaultTask */
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-    /* USER CODE BEGIN RTOS_THREADS */
+  /* USER CODE BEGIN RTOS_THREADS */
     userShellInit();
 
     // static const osThreadAttr_t battery_task_attr = {
@@ -143,17 +143,25 @@ void MX_FREERTOS_Init(void)
     };
     // osThreadNew(UartEchoTestTask, NULL, &uart_test_task_attr);
 
+    static const osThreadAttr_t rs485_test_task_attr = {
+        .name       = "rs485TestTask",
+        .stack_size = 512U * 4U,
+        .priority   = (osPriority_t)osPriorityBelowNormal,
+    };
+    (void)osThreadNew(Rs485TestTask, NULL, &rs485_test_task_attr);
+
     static const osThreadAttr_t key_test_task_attr = {
         .name       = "keyTestTask",
         .stack_size = 512U * 2U,
         .priority   = (osPriority_t)osPriorityNormal,
     };
     (void)osThreadNew(KeyTestTask, NULL, &key_test_task_attr);
-    /* USER CODE END RTOS_THREADS */
+  /* USER CODE END RTOS_THREADS */
 
-    /* USER CODE BEGIN RTOS_EVENTS */
+  /* USER CODE BEGIN RTOS_EVENTS */
     /* add events, ... */
-    /* USER CODE END RTOS_EVENTS */
+  /* USER CODE END RTOS_EVENTS */
+
 }
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -165,9 +173,9 @@ void MX_FREERTOS_Init(void)
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void *argument)
 {
-    /* USER CODE BEGIN StartDefaultTask */
+  /* USER CODE BEGIN StartDefaultTask */
     app_main_task(argument);
-    /* USER CODE END StartDefaultTask */
+  /* USER CODE END StartDefaultTask */
 }
 
 /* Private application code --------------------------------------------------*/
@@ -188,6 +196,7 @@ static void BatteryTask(void *argument)
     }
 }
 static TaskHandle_t s_uart_task_handle;
+static TaskHandle_t s_rs485_task_handle;
 
 /* service_uart_test's RTOS wake mechanism: forwards its ISR-context wake
  * request to a task notify. Kept here (not in service_uart_test.c) so that
@@ -197,6 +206,103 @@ static void uart_wake_isr(void)
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     vTaskNotifyGiveFromISR(s_uart_task_handle, &xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+/* service_rs485_test's RTOS wake mechanism.  No parsing or blocking work is
+ * performed from this ISR callback. */
+static void rs485_wake_isr(void)
+{
+    BaseType_t higher_priority_task_woken = pdFALSE;
+    TaskHandle_t task_handle = s_rs485_task_handle;
+    if(NULL != task_handle)
+    {
+        vTaskNotifyGiveFromISR(task_handle, &higher_priority_task_woken);
+        portYIELD_FROM_ISR(higher_priority_task_woken);
+    }
+}
+
+/* Mirror RS485 service events to the LetterShell COM port.  This callback is
+ * called by the service only from Rs485TestTask context; the service itself
+ * remains independent of LetterShell and HAL. */
+static void rs485_event_log(const service_rs485_test_event_t *p_event)
+{
+    if(NULL == p_event)
+    {
+        return;
+    }
+
+    const char *endpoint =
+        (SERVICE_RS485_TEST_ENDPOINT_MASTER == p_event->endpoint)
+            ? "master"
+            : "slave";
+    switch(p_event->event)
+    {
+    case SERVICE_RS485_TEST_EVENT_INIT_OK:
+        logInfo("modbus RTU 03/06 init ok");
+        break;
+    case SERVICE_RS485_TEST_EVENT_INIT_ERROR:
+        logError("modbus %s init error status=%u", endpoint,
+                 (unsigned int)p_event->status);
+        break;
+    case SERVICE_RS485_TEST_EVENT_MASTER_WRITE_REQUEST:
+        logInfo("modbus master FC06 write reg=0x%04X value=%u",
+                (unsigned int)p_event->register_address,
+                (unsigned int)p_event->value);
+        break;
+    case SERVICE_RS485_TEST_EVENT_SLAVE_WRITE_APPLIED:
+        logInfo("modbus slave FC06 applied reg=0x%04X value=%u",
+                (unsigned int)p_event->register_address,
+                (unsigned int)p_event->value);
+        break;
+    case SERVICE_RS485_TEST_EVENT_MASTER_WRITE_OK:
+        logInfo("modbus master FC06 response ok value=%u",
+                (unsigned int)p_event->value);
+        break;
+    case SERVICE_RS485_TEST_EVENT_MASTER_READ_REQUEST:
+        logInfo("modbus master FC03 read reg=0x%04X expected=%u",
+                (unsigned int)p_event->register_address,
+                (unsigned int)p_event->value);
+        break;
+    case SERVICE_RS485_TEST_EVENT_SLAVE_READ_REPLY:
+        logInfo("modbus slave FC03 reply reg=0x%04X value=%u",
+                (unsigned int)p_event->register_address,
+                (unsigned int)p_event->value);
+        break;
+    case SERVICE_RS485_TEST_EVENT_MASTER_READ_OK:
+        logInfo("modbus master FC03 readback ok value=%u",
+                (unsigned int)p_event->value);
+        break;
+    case SERVICE_RS485_TEST_EVENT_RESPONSE_TIMEOUT:
+        logWarning("modbus FC%02X response timeout",
+                   (unsigned int)p_event->function);
+        break;
+    case SERVICE_RS485_TEST_EVENT_SEND_ERROR:
+        logError("modbus %s FC%02X send error status=%u", endpoint,
+                 (unsigned int)p_event->function,
+                 (unsigned int)p_event->status);
+        break;
+    case SERVICE_RS485_TEST_EVENT_PROTOCOL_ERROR:
+        logWarning("modbus %s FC%02X protocol error status=%u exception=%u",
+                   endpoint, (unsigned int)p_event->function,
+                   (unsigned int)p_event->status,
+                   (unsigned int)p_event->value);
+        break;
+    case SERVICE_RS485_TEST_EVENT_VALUE_MISMATCH:
+        logError("modbus FC03 mismatch expected=%u actual=%u",
+                 (unsigned int)p_event->status,
+                 (unsigned int)p_event->value);
+        break;
+    case SERVICE_RS485_TEST_EVENT_FRAME_TIMEOUT:
+        logWarning("modbus %s frame timeout", endpoint);
+        break;
+    case SERVICE_RS485_TEST_EVENT_RX_OVERRUN:
+        logWarning("modbus %s RX overrun dropped=%u", endpoint,
+                   (unsigned int)p_event->status);
+        break;
+    default:
+        logWarning("rs485 unknown event=%u", (unsigned int)p_event->event);
+        break;
+    }
 }
 
 /**
@@ -219,6 +325,31 @@ static void UartEchoTestTask(void *argument)
         ulTaskNotifyTake(pdTRUE,
                          pdMS_TO_TICKS(SERVICE_UART_TEST_IDLE_TIMEOUT_MS));
         service_uart_test_poll();
+    }
+}
+
+/**
+ * @brief Periodically drives the UART7 master/UART8 slave RS485 test.
+ * @param argument Unused.
+ */
+static void Rs485TestTask(void *argument)
+{
+    ((void)argument);
+    s_rs485_task_handle = xTaskGetCurrentTaskHandle();
+    platform_err_t status = service_rs485_test_init(rs485_wake_isr,
+                                                    rs485_event_log);
+    if(PLATFORM_ERR_OK != status)
+    {
+        logError("service_rs485_test_init failed: %u", (unsigned int)status);
+        vTaskDelete(NULL);
+        return;
+    }
+
+    for(;;)
+    {
+        (void)ulTaskNotifyTake(pdTRUE,
+                               pdMS_TO_TICKS(SERVICE_RS485_TEST_POLL_PERIOD_MS));
+        service_rs485_test_poll();
     }
 }
 /**

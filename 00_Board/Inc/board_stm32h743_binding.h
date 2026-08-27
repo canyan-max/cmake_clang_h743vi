@@ -36,5 +36,7 @@
 #define BOARD_CAM_DCMI_HANDLE    hdcmi
 #define BOARD_SPI0_HANDLE        hspi4
 #define BOARD_UART_PROTOCOL1_HANDLE hlpuart1
+#define BOARD_UART_RS485_1_HANDLE huart7
+#define BOARD_UART_RS485_2_HANDLE huart8
 
 #endif /* BOARD_STM32H743_BINDING_H */

@@ -5,6 +5,7 @@ set(SERVICE_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/service_osd.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/service_record.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Src/service_uart_test.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Src/service_rs485_test.c
 )
 
 set(SERVICE_DEPEND_LIB
@@ -12,6 +13,7 @@ set(SERVICE_DEPEND_LIB
     button
     mcu_interface
     front
+    modbus_rtu
     protocol
 )
 

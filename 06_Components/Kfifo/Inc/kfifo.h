@@ -25,8 +25,10 @@ typedef struct KFIFO_T
 {
     uint8_t *buffer;
     uint32_t size;
-    uint32_t in;
-    uint32_t out;
+    /** Single-producer write counter; may be updated from an ISR. */
+    volatile uint32_t in;
+    /** Single-consumer read counter; updated from task context. */
+    volatile uint32_t out;
 } kfifo_t;
 /* Exported types -----------------------------------------------------------*/
 
@@ -114,5 +116,13 @@ static inline uint32_t kfifo_contig_read_data(const kfifo_t *fifo)
  * @param[in]        :  [kfifo_t *fifo, uint32_t len]
  */
 uint8_t kfifo_advance_out(kfifo_t *fifo, uint32_t len);
+
+/**
+ * @brief Discard all bytes visible at the time of the call.
+ * @note Safe for the single-producer/single-consumer pattern: bytes committed
+ *       by the producer after the input snapshot remain available.
+ * @retval Number of bytes discarded; zero for NULL or an empty FIFO.
+ */
+uint32_t kfifo_discard_all(kfifo_t *fifo);
 
 #endif /* KFIFO_H */

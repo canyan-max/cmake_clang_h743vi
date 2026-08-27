@@ -23,12 +23,32 @@ typedef uint8_t board_gpio_resource_id_t;
 #define BOARD_GPIO_DISPLAY_DC         ((board_gpio_resource_id_t)5U)
 #define BOARD_GPIO_DISPLAY_BACKLIGHT  ((board_gpio_resource_id_t)6U)
 #define BOARD_GPIO_RESOURCE_COUNT     ((board_gpio_resource_id_t)7U)
+#define BOARD_GPIO_RESOURCE_NONE      ((board_gpio_resource_id_t)0xFFU)
 
 /* Logical UART resources ---------------------------------------------------*/
 typedef uint8_t board_uart_resource_id_t;
 
 #define BOARD_UART_PROTOCOL_1       ((board_uart_resource_id_t)0U)
-#define BOARD_UART_RESOURCE_COUNT   ((board_uart_resource_id_t)1U)
+#define BOARD_UART_RS485_1          ((board_uart_resource_id_t)1U)
+#define BOARD_UART_RS485_2          ((board_uart_resource_id_t)2U)
+#define BOARD_UART_RESOURCE_COUNT   ((board_uart_resource_id_t)3U)
+
+/* RS485 direction-control properties --------------------------------------*/
+typedef enum
+{
+    BOARD_RS485_DIRECTION_AUTO = 0U,
+    BOARD_RS485_DIRECTION_GPIO,
+} board_rs485_direction_mode_t;
+
+#define BOARD_RS485_1_DIRECTION_MODE      BOARD_RS485_DIRECTION_AUTO
+#define BOARD_RS485_1_DIRECTION_GPIO      BOARD_GPIO_RESOURCE_NONE
+#define BOARD_RS485_1_DIRECTION_TX_LEVEL  (0U) /* unused in AUTO mode */
+#define BOARD_RS485_1_DIRECTION_RX_LEVEL  (0U) /* unused in AUTO mode */
+
+#define BOARD_RS485_2_DIRECTION_MODE      BOARD_RS485_DIRECTION_AUTO
+#define BOARD_RS485_2_DIRECTION_GPIO      BOARD_GPIO_RESOURCE_NONE
+#define BOARD_RS485_2_DIRECTION_TX_LEVEL  (0U) /* unused in AUTO mode */
+#define BOARD_RS485_2_DIRECTION_RX_LEVEL  (0U) /* unused in AUTO mode */
 
 /* Logical I2C resources ----------------------------------------------------*/
 typedef uint8_t board_i2c_resource_id_t;

@@ -54,7 +54,8 @@ static inline uint32_t min_u32(uint32_t a, uint32_t b)
  */
 uint8_t kfifo_init(kfifo_t *fifo, uint8_t *buffer, uint32_t size)
 {
-    if(!check_fifo_size_pow_of_two(size))
+    if((NULL == fifo) || (NULL == buffer) ||
+       !check_fifo_size_pow_of_two(size))
     {
         return 1; /* Error: size is not a pow of 2 */
     }
@@ -72,13 +73,19 @@ uint8_t kfifo_init(kfifo_t *fifo, uint8_t *buffer, uint32_t size)
  */
 uint32_t kfifo_put(kfifo_t *fifo, const uint8_t *data, uint32_t len)
 {
+    if((NULL == fifo) || (NULL == data) || (0U == len))
+    {
+        return 0U;
+    }
     uint32_t l;
-    len = min_u32(len, fifo->size - fifo->in + fifo->out);
-    l   = min_u32(len, fifo->size - (fifo->in & (fifo->size - 1)));
+    uint32_t in = fifo->in;
+    uint32_t out = fifo->out;
+    len = min_u32(len, fifo->size - in + out);
+    l   = min_u32(len, fifo->size - (in & (fifo->size - 1U)));
 
-    memcpy(fifo->buffer + (fifo->in & (fifo->size - 1)), data, l);
+    memcpy(fifo->buffer + (in & (fifo->size - 1U)), data, l);
     memcpy(fifo->buffer, data + l, len - l);
-    fifo->in += len;
+    fifo->in = in + len;
     return len;
 }
 
@@ -89,15 +96,21 @@ uint32_t kfifo_put(kfifo_t *fifo, const uint8_t *data, uint32_t len)
  */
 uint32_t kfifo_get(kfifo_t *fifo, uint8_t *data, uint32_t len)
 {
+    if((NULL == fifo) || (NULL == data) || (0U == len))
+    {
+        return 0U;
+    }
     uint32_t l;
+    uint32_t in = fifo->in;
+    uint32_t out = fifo->out;
 
-    len = min_u32(len, fifo->in - fifo->out);
-    l   = min_u32(len, fifo->size - (fifo->out & (fifo->size - 1)));
+    len = min_u32(len, in - out);
+    l   = min_u32(len, fifo->size - (out & (fifo->size - 1U)));
 
-    memcpy(data, fifo->buffer + (fifo->out & (fifo->size - 1)), l);
+    memcpy(data, fifo->buffer + (out & (fifo->size - 1U)), l);
     memcpy(data + l, fifo->buffer, len - l);
 
-    fifo->out += len;
+    fifo->out = out + len;
     return len;
 }
 
@@ -148,7 +161,7 @@ uint8_t kfifo_advance_in(kfifo_t *fifo, uint32_t len)
 uint8_t kfifo_get_buffer_size(kfifo_t *fifo , uint32_t *buffer_size)
 {
 
-    if(NULL == fifo)
+    if((NULL == fifo) || (NULL == buffer_size))
     {
         return 1U;
     }
@@ -170,6 +183,18 @@ uint8_t kfifo_advance_out(kfifo_t *fifo, uint32_t len)
     }
     fifo->out += len;
     return 0U;
+}
+
+uint32_t kfifo_discard_all(kfifo_t *fifo)
+{
+    if(NULL == fifo)
+    {
+        return 0U;
+    }
+    uint32_t in = fifo->in;
+    uint32_t discarded = in - fifo->out;
+    fifo->out = in;
+    return discarded;
 }
 
 /* end of  file -------------------------------------------------------------*/

@@ -20,6 +20,8 @@
 static UART_HandleTypeDef *const
     s_uart_handle_table[BOARD_UART_RESOURCE_COUNT] = {
         [BOARD_UART_PROTOCOL_1] = &BOARD_UART_PROTOCOL1_HANDLE,
+        [BOARD_UART_RS485_1] = &BOARD_UART_RS485_1_HANDLE,
+        [BOARD_UART_RS485_2] = &BOARD_UART_RS485_2_HANDLE,
 };
 static plat_uart_rx_cb_t s_rx_cb_table[BOARD_UART_RESOURCE_COUNT];
 static uint16_t          s_buf_size_table[BOARD_UART_RESOURCE_COUNT];
@@ -49,7 +51,8 @@ platform_err_t plat_uart_send(plat_uart_id_t id,
                               uint16_t       size,
                               uint32_t       timeout_ms)
 {
-    if((id >= BOARD_UART_RESOURCE_COUNT) || (NULL == p_data))
+    if((id >= BOARD_UART_RESOURCE_COUNT) || (NULL == p_data) ||
+       (0U == size))
     {
         return PLATFORM_ERR_PARAM;
     }
@@ -66,7 +69,8 @@ platform_err_t plat_uart_send(plat_uart_id_t id,
 platform_err_t
 plat_uart_receive_start(plat_uart_id_t id, uint8_t *p_buf, uint16_t buf_size)
 {
-    if((id >= BOARD_UART_RESOURCE_COUNT) || (NULL == p_buf))
+    if((id >= BOARD_UART_RESOURCE_COUNT) || (NULL == p_buf) ||
+       (0U == buf_size))
     {
         return PLATFORM_ERR_PARAM;
     }
@@ -100,20 +104,25 @@ platform_err_t plat_uart_set_rx_callback(plat_uart_id_t    id,
  * of trusting whichever of the two paths happened to run last. */
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 {
-    // ((void)Size);
+    ((void)Size);
 
     plat_uart_id_t id = uart_find_id(huart);
-    if(BOARD_UART_RESOURCE_COUNT == id)
+    if((BOARD_UART_RESOURCE_COUNT == id) || (NULL == huart->hdmarx) ||
+       (0U == s_buf_size_table[id]))
     {
         return;
     }
 
-    // uint16_t remaining   = (uint16_t)__HAL_DMA_GET_COUNTER(huart->hdmarx);
-    // uint16_t actual_size = s_buf_size_table[id] - remaining;
+    uint16_t remaining = (uint16_t)__HAL_DMA_GET_COUNTER(huart->hdmarx);
+    if(remaining > s_buf_size_table[id])
+    {
+        return;
+    }
+    uint16_t actual_size = (uint16_t)(s_buf_size_table[id] - remaining);
 
     if(NULL != s_rx_cb_table[id])
     {
-        s_rx_cb_table[id](id, Size);
+        s_rx_cb_table[id](id, actual_size);
     }
 }
 
