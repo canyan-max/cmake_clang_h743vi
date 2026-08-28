@@ -127,7 +127,7 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-    userShellInit();
+    // userShellInit();
 
     // static const osThreadAttr_t battery_task_attr = {
     //     .name       = "batteryTask",
@@ -141,21 +141,21 @@ void MX_FREERTOS_Init(void) {
         .stack_size = 512 * 4U,
         .priority   = (osPriority_t)osPriorityBelowNormal,
     };
-    // osThreadNew(UartEchoTestTask, NULL, &uart_test_task_attr);
+    osThreadNew(UartEchoTestTask, NULL, &uart_test_task_attr);
 
-    static const osThreadAttr_t rs485_test_task_attr = {
-        .name       = "rs485TestTask",
-        .stack_size = 512U * 4U,
-        .priority   = (osPriority_t)osPriorityBelowNormal,
-    };
-    (void)osThreadNew(Rs485TestTask, NULL, &rs485_test_task_attr);
+    // static const osThreadAttr_t rs485_test_task_attr = {
+    //     .name       = "rs485TestTask",
+    //     .stack_size = 512U * 4U,
+    //     .priority   = (osPriority_t)osPriorityBelowNormal,
+    // };
+    // (void)osThreadNew(Rs485TestTask, NULL, &rs485_test_task_attr);
 
-    static const osThreadAttr_t key_test_task_attr = {
-        .name       = "keyTestTask",
-        .stack_size = 512U * 2U,
-        .priority   = (osPriority_t)osPriorityNormal,
-    };
-    (void)osThreadNew(KeyTestTask, NULL, &key_test_task_attr);
+    // static const osThreadAttr_t key_test_task_attr = {
+    //     .name       = "keyTestTask",
+    //     .stack_size = 512U * 2U,
+    //     .priority   = (osPriority_t)osPriorityNormal,
+    // };
+    // (void)osThreadNew(KeyTestTask, NULL, &key_test_task_attr);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
