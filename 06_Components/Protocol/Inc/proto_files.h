@@ -23,6 +23,11 @@ extern "C"
 #define PACKET_DATA_INDEX     (4U)    /* frame header len: pack_type+reserved+pack_num+~pack_num */
 #define PACK_FRAME_SIZE_128B  (128U)
 #define PACK_FRAME_SIZE_1K    (1024U)
+#define PROTO_FILES_INFO_FRAME_SIZE \
+    (PACKET_DATA_INDEX + PACK_FRAME_SIZE_128B + 2U)
+#define PROTO_FILES_DATA_REPLY_SIZE  (5U)
+#define PROTO_FILES_ACK              (0x06U)
+#define PROTO_FILES_NAK              (0x15U)
 /* typedef ------------------------------------------------------------------*/
 typedef enum
 {
@@ -52,7 +57,9 @@ typedef struct
     proto_files_state_t state;
     pack_type_frame_t   pack_type;
     uint8_t             reserver;
-    uint8_t             package_number;
+    uint8_t             package_number; /* last accepted data package number;
+                                           initialized to 0xFF so the first
+                                           expected package is number 0 */
     uint8_t             package_un_numer;
     uint16_t idx;       /* bytes accumulated into buf for the current frame */
     uint16_t frame_len; /* total bytes needed (RECEIVE_DATA_INFO only, depends

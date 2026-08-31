@@ -13,5 +13,4 @@
 
 /** @brief Storage type shared by opaque Platform resource identifiers. */
 typedef uint8_t plat_resource_id_t;
-/** @brief 中文测试*/
 #endif /* PLAT_RESOURCE_H */

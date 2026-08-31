@@ -36,6 +36,8 @@ static uint32_t
                                                    for the mid-frame idle-timeout watchdog */
 static service_uart_test_wake_cb_t s_wake_cb; /* caller-supplied, fired from
                                                   ISR context on new RX data */
+static const uint8_t s_files_ready_reply[] = {'R', 'E', 'A', 'D', 'Y'};
+static const uint8_t s_files_end_reply[]   = {'E', 'S', 'C'};
 /* private  functions  ------------------------------------------------------*/
 
 /* Fired from ISR context (bsp_uart's DMA/IDLE handler) whenever new bytes
@@ -48,6 +50,48 @@ static void uart_rx_notify_cb(bsp_uart_id_t id)
     {
         s_wake_cb();
     }
+}
+
+/**
+ * @brief Send a proto_files reply without exposing BSP transport to the
+ *        protocol parser.
+ */
+static void service_uart_test_send_files_reply(const uint8_t *p_data,
+                                               uint16_t       size)
+{
+    if((NULL == p_data) || (0U == size))
+    {
+        return;
+    }
+
+    if(PLATFORM_ERR_OK !=
+       bsp_uart_send(BSP_UART_PROTO_1, p_data, size,
+                     SERVICE_UART_TEST_SEND_TIMEOUT_MS))
+    {
+#ifdef USE_DEBUG_LOG
+        plat_log_w("uart_test", "proto_files reply send failed");
+#endif
+    }
+}
+
+/**
+ * @brief Reply to one complete data frame. The first four bytes identify the
+ *        received frame; the fifth byte is ACK or NAK.
+ */
+static void
+service_uart_test_send_files_data_reply(const uint8_t *p_frame,
+                                        uint8_t        result)
+{
+    if((NULL == p_frame) ||
+       ((PACK_TYPE_128_FRAM != (pack_type_frame_t)p_frame[0]) &&
+        (PACK_TYPE_1024_FRAM != (pack_type_frame_t)p_frame[0])))
+    {
+        return;
+    }
+
+    uint8_t reply[PROTO_FILES_DATA_REPLY_SIZE] = {
+        p_frame[0], p_frame[1], p_frame[2], (uint8_t)(~p_frame[2]), result};
+    service_uart_test_send_files_reply(reply, PROTO_FILES_DATA_REPLY_SIZE);
 }
 
 /* exported functions -------------------------------------------------------*/
@@ -95,11 +139,62 @@ void service_uart_test_poll(void)
              * exclusive ownership of the stream. */
             if(!simple_locked)
             {
-#ifdef USE_DEBUG_LOG
                 proto_files_state_t prev_state = g_files_parser.state;
                 uint8_t             prev_pack  = g_files_parser.package_number;
-#endif
                 proto_files_ret_t ret = proto_files_feed(&g_files_parser, byte);
+
+                /* PROTO_FILE_RET_OK also means "still accumulating", so
+                 * replies are tied to unambiguous completion transitions,
+                 * never to the return value alone. */
+                if(PROTO_FILE_RET_OK == ret)
+                {
+                    if((PROTO_FILE_IDLE == prev_state) &&
+                       (PROTO_FILE_RECEIVE_FILE_INFO == g_files_parser.state))
+                    {
+                        service_uart_test_send_files_reply(
+                            s_files_ready_reply,
+                            (uint16_t)sizeof(s_files_ready_reply));
+                    }
+                    else if((PROTO_FILE_RECEIVE_FILE_INFO == prev_state) &&
+                            (PROTO_FILE_RECEIVE_DATA_INFO ==
+                             g_files_parser.state))
+                    {
+                        service_uart_test_send_files_reply(
+                            g_files_parser.buf,
+                            (uint16_t)PROTO_FILES_INFO_FRAME_SIZE);
+                    }
+                    else if((PROTO_FILE_RECEIVE_DATA_INFO == prev_state) &&
+                            (PROTO_FILE_RECEIVE_DATA_INFO ==
+                             g_files_parser.state) &&
+                            (g_files_parser.package_number != prev_pack))
+                    {
+                        service_uart_test_send_files_data_reply(
+                            g_files_parser.buf, PROTO_FILES_ACK);
+                    }
+                    else if((PROTO_FILE_RECEIVE_END_SESSION == prev_state) &&
+                            (PROTO_FILE_IDLE == g_files_parser.state))
+                    {
+                        service_uart_test_send_files_reply(
+                            s_files_end_reply,
+                            (uint16_t)sizeof(s_files_end_reply));
+                    }
+                    else
+                    {
+                        /* Byte accepted, but no complete reply-bearing event. */
+                    }
+                }
+                else if((PROTO_FILE_RECEIVE_DATA_INFO == prev_state) &&
+                        ((PROTO_FILE_RET_PACKNUM_ERR == ret) ||
+                         (PROTO_FILE_RET_CRC_ERR == ret)))
+                {
+                    /* These two data errors are reported only after the full
+                     * frame has been accumulated. PROTO_CLEAR resets parser
+                     * metadata but intentionally leaves its backing buffer
+                     * intact, so the validated data-frame type and complete
+                     * four-byte header remain available for this NAK. */
+                    service_uart_test_send_files_data_reply(
+                        g_files_parser.buf, PROTO_FILES_NAK);
+                }
 
 #ifdef USE_DEBUG_LOG
                 if(PROTO_FILE_RET_OK != ret)

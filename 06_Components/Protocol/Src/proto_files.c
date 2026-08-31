@@ -22,7 +22,6 @@
 #define PACK_RESERVER_INDEX         (1U)
 #define PACK_PACK_NUMBER_INDEX      (2U)
 #define PACK_UNPACK_NUMBER_INDEX    (3U)
-#define PROTO_FILES_INFO_FRAME_LEN  (PACKET_DATA_INDEX + PACK_FRAME_SIZE_128B + 2U)
 /* worst-case frame (1024B data pack): header + payload + 2B CRC */
 #define PROTO_FILES_MAX_FRAME       (PACKET_DATA_INDEX + PACK_FRAME_SIZE_1K + 2U)
 
@@ -34,6 +33,7 @@ do { \
     memset((ptr), 0, sizeof(*(ptr))); \
     (ptr)->buf = g_file_buffer; \
     (ptr)->idx = 0; \
+    (ptr)->package_number = 0xFFU; \
 } while(0) //      
 
 
@@ -151,7 +151,7 @@ proto_files_feed_file_info(proto_files_parser_t *p_parser, uint8_t byte)
     p_parser->buf[p_parser->idx] = byte;
     p_parser->idx++;
 
-    if(p_parser->idx < PROTO_FILES_INFO_FRAME_LEN)
+    if(p_parser->idx < PROTO_FILES_INFO_FRAME_SIZE)
     {
         return PROTO_FILE_RET_OK; /* still accumulating */
     }
@@ -228,10 +228,10 @@ proto_files_feed_session_end(proto_files_parser_t *p_parser, uint8_t byte)
     /* full "ESC" matched: the session is over. Return to IDLE to await a
      * fresh handshake. This is a normal completion, not an error, so return
      * OK and reset here (otherwise proto_files_feed would log it as one). */
-    p_parser->esc_idx   = 0U;
-    p_parser->idx       = 0U;
-    p_parser->frame_len = 0U;
-    p_parser->state     = PROTO_FILE_IDLE;
+    /* A completed session is also the start boundary for the next one. Reset
+     * the last accepted data package to 0xFF so that package 0 is expected
+     * after the next handshake/file-info exchange. */
+    PROTO_CLEAR(p_parser);
     return PROTO_FILE_RET_OK;
 }
 /* Accumulate one data pack. Its total length isn't known until the very
@@ -280,8 +280,9 @@ proto_files_feed_data_info(proto_files_parser_t *p_parser, uint8_t byte)
     uint8_t *data                    = p_parser->buf;
     uint8_t  master_send_pack_num    = data[2];
     uint8_t  master_send_pack_un_num = data[3];
-    uint8_t  self_next_pack_num      = p_parser->package_number + 1;
-    uint8_t  self_next_pack_un_num   = ~self_next_pack_num;
+    uint8_t  self_next_pack_num =
+        (uint8_t)(p_parser->package_number + 1U);
+    uint8_t self_next_pack_un_num = (uint8_t)(~self_next_pack_num);
     uint16_t packet_size = (PACK_TYPE_128_FRAM == p_parser->pack_type)
                                ? PACK_FRAME_SIZE_128B
                                : PACK_FRAME_SIZE_1K;
