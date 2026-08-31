@@ -21,6 +21,7 @@
 #define MODBUS_TEST_SEND_TIMEOUT_MS     (100U)
 #define MODBUS_TEST_RESPONSE_TIMEOUT_MS (200U)
 #define MODBUS_TEST_CYCLE_PERIOD_MS     (500U)
+#define MODBUS_TEST_INTER_FRAME_MS      (4U)
 #define MODBUS_TEST_FRAME_TIMEOUT_MS    (100U)
 #define MODBUS_TEST_RX_CHUNK_SIZE       (64U)
 #define MODBUS_TEST_REQUEST_SIZE        (8U)
@@ -156,8 +157,8 @@ static modbus_test_parse_result_t modbus_test_parser_feed(
             }
             else
             {
-                modbus_test_parser_reset(p_parser);
-                return MODBUS_TEST_PARSE_ERROR;
+                /* Unsupported request length is unknown here. Keep collecting
+                 * until the inter-frame silence so the slave can return 0x01. */
             }
         }
         else if(MODBUS_RTU_FC_WRITE_SINGLE_REGISTER == function)
@@ -207,16 +208,25 @@ static platform_err_t modbus_test_send_read_request(uint32_t now)
     modbus_rtu_status_t status = modbus_rtu_build_read_holding_request(
         MODBUS_TEST_SLAVE_ADDRESS, MODBUS_TEST_REGISTER_ADDRESS, 1U,
         request, sizeof(request), &request_size);
-    if((MODBUS_RTU_OK != status) ||
-       (PLATFORM_ERR_OK != bsp_rs485_send(MODBUS_TEST_MASTER_PORT, request,
-                                          request_size,
-                                          MODBUS_TEST_SEND_TIMEOUT_MS)))
+    if(MODBUS_RTU_OK != status)
     {
-        modbus_test_emit(SERVICE_RS485_TEST_EVENT_SEND_ERROR,
+        modbus_test_emit(SERVICE_RS485_TEST_EVENT_PROTOCOL_ERROR,
                          SERVICE_RS485_TEST_ENDPOINT_MASTER,
                          MODBUS_RTU_FC_READ_HOLDING_REGISTERS,
                          MODBUS_TEST_REGISTER_ADDRESS, s_test_value, status);
         return PLATFORM_ERR_HW;
+    }
+    platform_err_t send_status = bsp_rs485_send(
+        MODBUS_TEST_MASTER_PORT, request, request_size,
+        MODBUS_TEST_SEND_TIMEOUT_MS);
+    if(PLATFORM_ERR_OK != send_status)
+    {
+        modbus_test_emit(SERVICE_RS485_TEST_EVENT_SEND_ERROR,
+                         SERVICE_RS485_TEST_ENDPOINT_MASTER,
+                         MODBUS_RTU_FC_READ_HOLDING_REGISTERS,
+                         MODBUS_TEST_REGISTER_ADDRESS, s_test_value,
+                         send_status);
+        return send_status;
     }
     s_phase = MODBUS_TEST_PHASE_WAIT_READ_RESPONSE;
     s_last_transaction_tick = now;
@@ -249,14 +259,28 @@ static void modbus_test_handle_slave_frame(const uint8_t *p_frame,
                          0U, 0U, status);
         return;
     }
-    if((0U == response_size) ||
-       (PLATFORM_ERR_OK != bsp_rs485_send(MODBUS_TEST_SLAVE_PORT, response,
-                                          response_size,
-                                          MODBUS_TEST_SEND_TIMEOUT_MS)))
+    if(0U == response_size)
+    {
+        modbus_test_emit(SERVICE_RS485_TEST_EVENT_PROTOCOL_ERROR,
+                         SERVICE_RS485_TEST_ENDPOINT_SLAVE, p_frame[1],
+                         0U, 0U, MODBUS_RTU_ERR_FRAME);
+        return;
+    }
+    platform_err_t send_status = bsp_rs485_send(
+        MODBUS_TEST_SLAVE_PORT, response, response_size,
+        MODBUS_TEST_SEND_TIMEOUT_MS);
+    if(PLATFORM_ERR_OK != send_status)
     {
         modbus_test_emit(SERVICE_RS485_TEST_EVENT_SEND_ERROR,
                          SERVICE_RS485_TEST_ENDPOINT_SLAVE, p_frame[1],
-                         0U, 0U, PLATFORM_ERR_HW);
+                         0U, 0U, send_status);
+        return;
+    }
+    if(0U != (response[1] & 0x80U))
+    {
+        modbus_test_emit(SERVICE_RS485_TEST_EVENT_SLAVE_EXCEPTION_REPLY,
+                         SERVICE_RS485_TEST_ENDPOINT_SLAVE, p_frame[1],
+                         0U, response[2], MODBUS_RTU_OK);
         return;
     }
     uint16_t address = (uint16_t)((uint16_t)p_frame[2] << 8U) | p_frame[3];
@@ -337,6 +361,11 @@ static void modbus_test_handle_master_frame(const uint8_t *p_frame,
                      (frame_size > 1U) ? p_frame[1] : 0U,
                      MODBUS_TEST_REGISTER_ADDRESS, (uint16_t)exception,
                      status);
+    if(MODBUS_RTU_ERR_EXCEPTION == status)
+    {
+        s_phase = MODBUS_TEST_PHASE_IDLE;
+        s_last_transaction_tick = now;
+    }
 }
 
 static void modbus_test_drain(bsp_rs485_id_t id,
@@ -382,18 +411,32 @@ static void modbus_test_drain(bsp_rs485_id_t id,
     }
 }
 
-static void modbus_test_expire_parser(
-    modbus_test_parser_t *p_parser,
-    service_rs485_test_endpoint_t endpoint,
-    uint32_t now)
+static void modbus_test_expire_parser(modbus_test_parser_t *p_parser,
+                                      bsp_rs485_id_t id,
+                                      uint32_t now)
 {
-    if((NULL != p_parser) && (p_parser->index > 0U) &&
-       ((uint32_t)(now - p_parser->last_byte_tick) >=
-        MODBUS_TEST_FRAME_TIMEOUT_MS))
+    if((NULL == p_parser) || (0U == p_parser->index))
+    {
+        return;
+    }
+
+    uint32_t elapsed = (uint32_t)(now - p_parser->last_byte_tick);
+    if((MODBUS_TEST_SLAVE_PORT == id) && (p_parser->index >= 2U) &&
+       (0U == p_parser->expected_size) &&
+       (elapsed >= MODBUS_TEST_INTER_FRAME_MS))
+    {
+        modbus_test_handle_slave_frame(p_parser->data, p_parser->index);
+        modbus_test_parser_reset(p_parser);
+    }
+    else if(elapsed >= MODBUS_TEST_FRAME_TIMEOUT_MS)
     {
         modbus_test_parser_reset(p_parser);
-        modbus_test_emit(SERVICE_RS485_TEST_EVENT_FRAME_TIMEOUT, endpoint,
-                         0U, 0U, 0U, MODBUS_RTU_ERR_FRAME);
+        modbus_test_emit(
+            SERVICE_RS485_TEST_EVENT_FRAME_TIMEOUT,
+            (MODBUS_TEST_MASTER_PORT == id)
+                ? SERVICE_RS485_TEST_ENDPOINT_MASTER
+                : SERVICE_RS485_TEST_ENDPOINT_SLAVE,
+            0U, 0U, 0U, MODBUS_RTU_ERR_FRAME);
     }
 }
 
@@ -419,15 +462,25 @@ static void modbus_test_send_write_request(uint32_t now)
     modbus_rtu_status_t status = modbus_rtu_build_write_single_request(
         MODBUS_TEST_SLAVE_ADDRESS, MODBUS_TEST_REGISTER_ADDRESS, s_test_value,
         request, sizeof(request), &request_size);
-    if((MODBUS_RTU_OK != status) ||
-       (PLATFORM_ERR_OK != bsp_rs485_send(MODBUS_TEST_MASTER_PORT, request,
-                                          request_size,
-                                          MODBUS_TEST_SEND_TIMEOUT_MS)))
+    if(MODBUS_RTU_OK != status)
+    {
+        modbus_test_emit(SERVICE_RS485_TEST_EVENT_PROTOCOL_ERROR,
+                         SERVICE_RS485_TEST_ENDPOINT_MASTER,
+                         MODBUS_RTU_FC_WRITE_SINGLE_REGISTER,
+                         MODBUS_TEST_REGISTER_ADDRESS, s_test_value, status);
+        s_last_transaction_tick = now;
+        return;
+    }
+    platform_err_t send_status = bsp_rs485_send(
+        MODBUS_TEST_MASTER_PORT, request, request_size,
+        MODBUS_TEST_SEND_TIMEOUT_MS);
+    if(PLATFORM_ERR_OK != send_status)
     {
         modbus_test_emit(SERVICE_RS485_TEST_EVENT_SEND_ERROR,
                          SERVICE_RS485_TEST_ENDPOINT_MASTER,
                          MODBUS_RTU_FC_WRITE_SINGLE_REGISTER,
-                         MODBUS_TEST_REGISTER_ADDRESS, s_test_value, status);
+                         MODBUS_TEST_REGISTER_ADDRESS, s_test_value,
+                         send_status);
         s_last_transaction_tick = now;
         return;
     }
@@ -498,10 +551,8 @@ void service_rs485_test_poll(void)
                                   SERVICE_RS485_TEST_ENDPOINT_SLAVE);
     modbus_test_report_rx_overrun(MODBUS_TEST_MASTER_PORT,
                                   SERVICE_RS485_TEST_ENDPOINT_MASTER);
-    modbus_test_expire_parser(&s_slave_parser,
-                              SERVICE_RS485_TEST_ENDPOINT_SLAVE, now);
-    modbus_test_expire_parser(&s_master_parser,
-                              SERVICE_RS485_TEST_ENDPOINT_MASTER, now);
+    modbus_test_expire_parser(&s_slave_parser, MODBUS_TEST_SLAVE_PORT, now);
+    modbus_test_expire_parser(&s_master_parser, MODBUS_TEST_MASTER_PORT, now);
 
     if((MODBUS_TEST_PHASE_IDLE != s_phase) &&
        ((uint32_t)(now - s_last_transaction_tick) >=

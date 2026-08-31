@@ -9,6 +9,7 @@
 #include "modbus_rtu.h"
 
 #define MODBUS_RTU_REQUEST_SIZE       (8U)
+#define MODBUS_RTU_MIN_ADU_SIZE       (4U)
 #define MODBUS_RTU_EXCEPTION_SIZE     (5U)
 #define MODBUS_RTU_READ_RESPONSE_BASE (5U)
 
@@ -33,7 +34,8 @@ static void append_crc(uint8_t *p_adu, uint16_t payload_size)
 static modbus_rtu_status_t validate_crc(const uint8_t *p_adu,
                                         uint16_t adu_size)
 {
-    if((NULL == p_adu) || (adu_size < MODBUS_RTU_EXCEPTION_SIZE))
+    if((NULL == p_adu) || (adu_size < MODBUS_RTU_MIN_ADU_SIZE) ||
+       (adu_size > MODBUS_RTU_MAX_ADU_SIZE))
     {
         return MODBUS_RTU_ERR_PARAM;
     }
@@ -173,10 +175,19 @@ modbus_rtu_status_t modbus_rtu_parse_read_holding_response(
     }
     uint16_t expected_size = (uint16_t)(MODBUS_RTU_READ_RESPONSE_BASE +
                                         (2U * expected_quantity));
-    if((adu_size != expected_size) ||
-       (expected_slave_address != p_adu[0]) ||
-       (MODBUS_RTU_FC_READ_HOLDING_REGISTERS != p_adu[1]) ||
-       ((uint16_t)p_adu[2] != (2U * expected_quantity)))
+    if(adu_size != expected_size)
+    {
+        return MODBUS_RTU_ERR_FRAME;
+    }
+    if(expected_slave_address != p_adu[0])
+    {
+        return MODBUS_RTU_ERR_ADDRESS;
+    }
+    if(MODBUS_RTU_FC_READ_HOLDING_REGISTERS != p_adu[1])
+    {
+        return MODBUS_RTU_ERR_FUNCTION;
+    }
+    if((uint16_t)p_adu[2] != (2U * expected_quantity))
     {
         return MODBUS_RTU_ERR_FRAME;
     }
@@ -248,10 +259,19 @@ modbus_rtu_status_t modbus_rtu_parse_write_single_response(
                                MODBUS_RTU_FC_WRITE_SINGLE_REGISTER,
                                p_adu, adu_size, p_exception);
     }
-    if((MODBUS_RTU_REQUEST_SIZE != adu_size) ||
-       (expected_slave_address != p_adu[0]) ||
-       (MODBUS_RTU_FC_WRITE_SINGLE_REGISTER != p_adu[1]) ||
-       (expected_register_address != get_u16_be(&p_adu[2])) ||
+    if(MODBUS_RTU_REQUEST_SIZE != adu_size)
+    {
+        return MODBUS_RTU_ERR_FRAME;
+    }
+    if(expected_slave_address != p_adu[0])
+    {
+        return MODBUS_RTU_ERR_ADDRESS;
+    }
+    if(MODBUS_RTU_FC_WRITE_SINGLE_REGISTER != p_adu[1])
+    {
+        return MODBUS_RTU_ERR_FUNCTION;
+    }
+    if((expected_register_address != get_u16_be(&p_adu[2])) ||
        (expected_value != get_u16_be(&p_adu[4])))
     {
         return MODBUS_RTU_ERR_FRAME;
@@ -279,7 +299,8 @@ modbus_rtu_status_t modbus_rtu_slave_process_request(
         return MODBUS_RTU_ERR_PARAM;
     }
     *p_response_size = 0U;
-    if(MODBUS_RTU_REQUEST_SIZE != request_size)
+    if((request_size < MODBUS_RTU_MIN_ADU_SIZE) ||
+       (request_size > MODBUS_RTU_MAX_ADU_SIZE))
     {
         return MODBUS_RTU_ERR_FRAME;
     }
@@ -297,6 +318,10 @@ modbus_rtu_status_t modbus_rtu_slave_process_request(
     modbus_rtu_exception_t exception = MODBUS_RTU_EXCEPTION_NONE;
     if(MODBUS_RTU_FC_READ_HOLDING_REGISTERS == function)
     {
+        if(MODBUS_RTU_REQUEST_SIZE != request_size)
+        {
+            return MODBUS_RTU_ERR_FRAME;
+        }
         uint16_t start_address = get_u16_be(&p_request[2]);
         uint16_t quantity = get_u16_be(&p_request[4]);
         if((0U == quantity) || (quantity > MODBUS_RTU_MAX_READ_REGISTERS))
@@ -336,6 +361,10 @@ modbus_rtu_status_t modbus_rtu_slave_process_request(
     }
     else if(MODBUS_RTU_FC_WRITE_SINGLE_REGISTER == function)
     {
+        if(MODBUS_RTU_REQUEST_SIZE != request_size)
+        {
+            return MODBUS_RTU_ERR_FRAME;
+        }
         if(NULL == p_slave->write_single)
         {
             exception = MODBUS_RTU_EXCEPTION_SLAVE_DEVICE_FAILURE;
